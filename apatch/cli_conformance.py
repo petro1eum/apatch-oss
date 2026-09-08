@@ -146,6 +146,7 @@ def conformance_gate_cmd(live, no_live, base, specs, ci_safe, blocking, timeout_
             click.echo(f"conformance gate: {gate} — {out.get('reason')}")
             click.echo("  drifted: " + ", ".join(out.get("drifted") or []))
             _print_verify_details(out)
-    # --blocking forces a non-zero exit on a red contract regardless of config mode.
-    if blocking and not out.get("contract_holds", True):
+    # Honor the configured blocking verdict as well as the explicit override.
+    # JSON and human-readable output must report the same process outcome.
+    if not out.get("ok", True) or (blocking and not out.get("contract_holds", True)):
         raise SystemExit(1)

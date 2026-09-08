@@ -32,10 +32,16 @@ declare the target. Editable prose is never completion authority.
 
 owns: `apatch/spec_ownership.py`, `tests/test_spec_owned_mutation_gate.py`
 
-Resolve an existing slug/category contract to one exact SPEC and enumerate all
-owned target paths without fuzzy matching.
+Resolve an existing slug/category contract to one exact SPEC using bounded legacy
+category paths and the exact category-surface fields listed in RFP-039. A shared
+filename or a shared/global dependency does not create an owner. Strict `owns:`
+takes precedence; malformed declarations and conflicting explicit owners fail
+closed. Preserve canonical category, atomic, schema, test, and contract protection,
+including both sides of a rename. Shared-maintenance owner mismatches reject the
+whole batch while naming only the actual conflicting targets and their expected
+SPEC / actual requirement.
 
-(verify: python3 -m pytest tests/test_spec_owned_mutation_gate.py::test_exact_slug_ownership_resolution -q)
+(verify: python3 -m pytest tests/test_spec_owned_mutation_gate.py -q)
 
 ## R2 Generic mutation rejection
 
@@ -117,14 +123,21 @@ list. Verify commands and narrative prose must not silently enlarge it.
 
 ## R10 OLang consumer enforcement profile
 
-owns: `apatch/consumer_profiles.py`, `apatch/doctor.py`, `apatch/sandbox.py`, `apatch/cli.py`, `tests/test_doctor.py`, `docs/AGENTS.template.md`
+owns: `apatch/consumer_profiles.py`, `apatch/doctor.py`, `apatch/sandbox.py`, `apatch/cli.py`, `tests/test_doctor.py`, `tests/test_distribution.py`, `setup.py`, `MANIFEST.in`, `docs/AGENTS.template.md`
 
 Provide an OLang consumer profile selectable through the public `init-consumer`
 command whose sandbox protects `o_lang/**`,
 `docs/RFP-*.md`, `docs/specs/**`, and `AGENTS.md`, without an allow rule
 silently overriding those protected paths.
 
-(verify: python3 -m pytest tests/test_doctor.py::test_init_consumer_olang_profile_protects_full_language_surface -q)
+Consumer initialization must also work from an installed public wheel without
+access to the source checkout. Canonical agent guidance, CI, hooks, devcontainer,
+profile docs, and requested manifests must ship as package resources. Build from
+those same source templates, not independently maintained copies. Missing required
+resources fail before creating consumer files; existing files and project-owned
+AGENTS sections stay preserved.
+
+(verify: python3 -m pytest tests/test_doctor.py::test_init_consumer_olang_profile_protects_full_language_surface tests/test_doctor.py::test_init_consumer_missing_resource_fails_before_writes tests/test_distribution.py::test_installed_wheel_initializes_complete_consumer -q)
 
 
 ## R12 Local SPEC bootstrap channel

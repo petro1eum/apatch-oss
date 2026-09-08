@@ -31,8 +31,10 @@ is `stale` (advisory). Never conflated.
 ## R4 Blocking vs advisory (A35-F)
 
 `blocking` fails on a red contract; `advisory` reports only. Stale alone never blocks.
+The CLI honors configured blocking without an extra flag, in both text and JSON.
+`--blocking` may strengthen advisory mode; a disabled gate remains a no-op.
 
-(verify: python3 -m pytest tests/test_conformance.py::test_gate_blocking_fails_only_on_live_red tests/test_conformance.py::test_gate_passes_with_only_stale_advisory -q)
+(verify: python3 -m pytest tests/test_conformance.py::test_gate_blocking_fails_only_on_live_red tests/test_conformance.py::test_gate_passes_with_only_stale_advisory tests/test_conformance.py::test_conformance_gate_cli_honors_configured_mode tests/test_conformance.py::test_conformance_gate_cli_disabled_remains_successful -q)
 
 ## R5 Baseline-aware live verify (A35-H)
 

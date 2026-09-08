@@ -19,7 +19,13 @@ def _checker():
 
 def test_selected_public_source_matches_recorded_manifest():
     manifest = json.loads((ROOT / "PUBLIC-SOURCE-MANIFEST.json").read_text())
-    assert manifest["runtime_files_unchanged"] == 237
+    assert manifest["runtime_files_total"] == 237
+    assert manifest["runtime_files_unchanged"] == 231
+    assert set(manifest["runtime_files_modified"]) == {
+        "apatch/agent_guidance.py", "apatch/cli.py", "apatch/cli_conformance.py",
+        "apatch/consumer_profiles.py", "apatch/doctor.py", "apatch/spec_ownership.py",
+    }
+    assert len(manifest["reviewed_source_commits"]) == 2
     assert manifest["private_git_history_included"] is False
     paths = [item["path"] for item in manifest["files"]]
     assert len(paths) == len(set(paths))

@@ -202,16 +202,27 @@ def _authorize_shared_maintenance(
             None,
             reason="The artifact_files partition must cover every and only needle target.",
         )
+    rejected = []
+    conflicts = []
     for row in owned:
         token = path_tokens.get(str(row["path"]))
         if not token or token.split("#", 1)[0] != str(row["spec"]):
-            return _rejection(
-                sorted({str(item["spec"]) for item in owned}),
-                owned,
-                created_by_tool,
-                None,
-                reason="A target partition is bound to the wrong SPEC owner.",
-            )
+            rejected.append(row)
+            conflicts.append({
+                "path": row["path"],
+                "expected_spec": row["spec"],
+                "actual_requirement": token,
+            })
+    if rejected:
+        result = _rejection(
+            sorted({str(row["spec"]) for row in rejected}),
+            rejected,
+            created_by_tool,
+            None,
+            reason="A target partition is bound to the wrong SPEC owner.",
+        )
+        result["partition_conflicts"] = conflicts
+        return result
 
     return {
         "ok": True,
@@ -238,6 +249,7 @@ def resolve_spec_owned_targets(
     root = os.path.abspath(target_dir)
     slugs = _known_contract_slugs(root)
     declarations, declaration_errors = _strict_ownership_declarations(root)
+    surfaces = {slug: _declared_slug_surface(root, slug) for slug in slugs}
     owned: List[Dict[str, str]] = []
     errors: List[Dict[str, str]] = list(declaration_errors)
 
@@ -265,8 +277,18 @@ def resolve_spec_owned_targets(
                 owned.extend({"path": rel, **row} for row in declared)
                 continue
 
-            for slug in _matched_contract_slugs(rel, slugs):
+            canonical = _matched_contract_slugs(rel, slugs)
+            explicit = [
+                slug for slug, (surface, _error) in surfaces.items()
+                if rel in surface
+            ]
+            path_owners = []
+            invalid = {slug for slug, (_surface, error) in surfaces.items() if error}
+            for slug in sorted(set(canonical) | set(explicit) | invalid):
                 spec_id, error = _spec_for_slug(root, slug)
+                error = error or surfaces[slug][1]
+                if spec_id and not error:
+                    path_owners.append(spec_id)
                 if error and recovery_spec and _is_contract_path(rel, slug):
                     owned.append(
                         {
@@ -288,6 +310,13 @@ def resolve_spec_owned_targets(
                         }
                     )
 
+            if len(set(path_owners)) > 1:
+                errors.append({
+                    "path": rel,
+                    "error": "slug surface ownership is ambiguous across "
+                    + ", ".join(sorted(set(path_owners))),
+                })
+
     if errors:
         return {
             "ok": False,
@@ -295,7 +324,8 @@ def resolve_spec_owned_targets(
             "error": "SPEC ownership is ambiguous or invalid; mutation denied.",
             "ownership_errors": errors,
             "recoverable": True,
-            "recommended_action": "Fix spec_generation.spec_id before mutation.",
+            "recommended_action": "Fix the SPEC owner or declared slug surface before mutation.",
+            "generation_started": False,
         }
 
     unique: Dict[Tuple[str, str, str], Dict[str, str]] = {}
@@ -515,12 +545,10 @@ def _known_contract_slugs(root: str) -> List[str]:
 
 
 def _matched_contract_slugs(rel: str, slugs: List[str]) -> List[str]:
-    """Return the most specific exact slug matches for a target path.
+    """Return the most specific bounded legacy category surface.
 
-    Slugs are token-delimited in paths, so both ``element_termostat`` and its
-    suffix ``termostat`` match ``atomic/element_termostat_query_hints.json``.
-    Ownership belongs to the longest matching slug; keeping the shorter suffix
-    invents a second owner and makes even ``spec_run_multi`` self-block.
+    Prefix collisions in atomic/test basenames use the longest slug. Explicit
+    YAML paths are resolved separately: length cannot erase a declared owner.
     """
 
     matched = [slug for slug in slugs if _path_matches_slug(rel, slug)]
@@ -530,11 +558,66 @@ def _matched_contract_slugs(rel: str, slugs: List[str]) -> List[str]:
     return [slug for slug in matched if len(slug) == longest]
 
 
-def _spec_for_slug(root: str, slug: str) -> Tuple[Optional[str], Optional[str]]:
-    from apatch.spec_contract_resolver import _load_contract_yaml, _resolve_spec_id
+def _load_slug_contract(root: str, slug: str) -> Tuple[Dict[str, Any], Optional[str]]:
+    from apatch.spec_contract_resolver import _load_contract_yaml
 
-    path = os.path.join(root, "docs", "specs", "slug_contracts", f"{slug}.yaml")
-    data, parse_error = _load_contract_yaml(path)
+    base = os.path.join(root, "docs", "specs", "slug_contracts", slug)
+    paths = [base + suffix for suffix in (".yaml", ".yml")
+             if os.path.isfile(base + suffix)]
+    if len(paths) != 1:
+        return {}, "slug must have exactly one .yaml or .yml contract"
+    data, error = _load_contract_yaml(paths[0])
+    return data or {}, error
+
+
+def _declared_slug_surface(
+    root: str, slug: str,
+) -> Tuple[Set[str], Optional[str]]:
+    """Read category-owned fields, never shared dependencies or arbitrary prose."""
+    data, error = _load_slug_contract(root, slug)
+    if error:
+        return set(), error
+    fields = {
+        "runtime_pipeline": {
+            "category_preprocessor": False, "category_behavior": False,
+            "query_builder": False,
+        },
+        "atomics": {
+            "category_sources": True, "schema_sources": True,
+            "guardrail_sources": True,
+        },
+        "spec_generation": {"live_test_modules": True},
+    }
+    surface: Set[str] = set()
+    for section, names in fields.items():
+        mapping = data.get(section, {})
+        if not isinstance(mapping, dict):
+            return set(), f"{section} must be a mapping"
+        for name, multiple in names.items():
+            if name not in mapping:
+                continue
+            values = mapping[name]
+            if multiple:
+                if not isinstance(values, list):
+                    return set(), f"{section}.{name} must be a list of paths"
+            else:
+                values = [values]
+            for value in values:
+                if (
+                    not isinstance(value, str) or not value
+                    or value != value.strip() or "\\" in value
+                    or any(ch in value for ch in "*?[]:")
+                    or any(part in {"", ".", ".."} for part in value.split("/"))
+                ):
+                    return set(), f"{section}.{name} declares invalid path {value!r}"
+                surface.add(value)
+    return surface, None
+
+
+def _spec_for_slug(root: str, slug: str) -> Tuple[Optional[str], Optional[str]]:
+    from apatch.spec_contract_resolver import _resolve_spec_id
+
+    data, parse_error = _load_slug_contract(root, slug)
     if parse_error:
         return None, parse_error
     spec_id, _via, error = _resolve_spec_id(root, slug, None, data)
@@ -563,8 +646,20 @@ def _is_contract_path(rel: str, slug: str) -> bool:
 
 
 def _path_matches_slug(rel: str, slug: str) -> bool:
+    # Preserve legacy case-insensitive protection, but only in bounded surfaces.
+    rel, slug = rel.casefold(), slug.casefold()
+    if _is_contract_path(rel, slug) or rel.startswith(f"categories/{slug}/"):
+        return True
+    if rel in {
+        f"config/agent_schemas/{slug}.json",
+        f"config/categories/{slug}.yaml", f"config/categories/{slug}.yml",
+    }:
+        return True
     escaped = re.escape(slug)
-    return bool(re.search(rf"(^|[/_.-]){escaped}([/_.-]|$)", rel, re.IGNORECASE))
+    return bool(
+        re.fullmatch(rf"atomic/{escaped}(?:[_.-][^/]+)", rel)
+        or re.fullmatch(rf"tests/(?:[^/]+/)*test_{escaped}(?:[_.-][^/]+)", rel)
+    )
 
 
 def _needle_paths(needle: Any) -> Iterable[Tuple[str, str]]:

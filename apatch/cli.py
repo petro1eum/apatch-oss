@@ -1109,18 +1109,21 @@ def init_consumer_cmd(
     refresh_agents,
 ):
     """Scaffold manifests/README and .gitignore entry for a consumer project."""
-    created = init_consumer(
-        target_dir,
-        profile=profile,
-        with_ci=with_ci,
-        with_arch_rules=with_arch_rules,
-        with_enforcement=with_enforcement,
-        governed_mode=governed_mode if with_enforcement else "off",
-        with_sandbox=with_sandbox,
-        with_devcontainer=with_devcontainer,
-        with_mcp=with_mcp,
-        refresh_agents=refresh_agents,
-    )
+    try:
+        created = init_consumer(
+            target_dir,
+            profile=profile,
+            with_ci=with_ci,
+            with_arch_rules=with_arch_rules,
+            with_enforcement=with_enforcement,
+            governed_mode=governed_mode if with_enforcement else "off",
+            with_sandbox=with_sandbox,
+            with_devcontainer=with_devcontainer,
+            with_mcp=with_mcp,
+            refresh_agents=refresh_agents,
+        )
+    except FileNotFoundError as exc:
+        raise click.ClickException(str(exc)) from exc
     if created:
         for p in created:
             console.print(f"[green]✓[/green] {p}")

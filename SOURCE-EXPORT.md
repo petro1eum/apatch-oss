@@ -5,7 +5,9 @@ already-developed APatch runtime. It has not been uploaded to PyPI and no
 public GitHub destination has been assigned by this preparation step.
 
 **Publication status: HOLD.** The source boundary is prepared, but clean-public
-integration qualification and wheel-installed scaffold templates have open issues.
+integration qualification still has open issues. The installed-resource and native
+gate-exit fixes passed their targeted checks in this revision; the full public-only
+suite still has 40 optional Avatar integration failures.
 See [the readiness record](docs/public-release-readiness.md); do not describe this
 candidate as a fully qualified release.
 
@@ -14,8 +16,9 @@ The MIT license is unchanged and identical to TrustChain OSS.
 
 ## Included
 
-- The APatch CLI/MCP runtime and compatibility package: all 237 selected module/schema files,
-  byte-identical to the reviewed source baseline.
+- The APatch CLI/MCP runtime and compatibility package: 237 selected module/schema files;
+  231 remain byte-identical to the baseline and six match the reviewed fixes recorded
+  in the source manifest (ownership, consumer resources, and blocking CLI exits).
 - Executable requirements, regression tests, frozen verification records and selected
   engineering guides, examples and tutorials.
 - Local Avatar/HC adapters, factual time-accounting, WorkAssets and optional service
@@ -42,7 +45,7 @@ It is an inventory, not a cryptographic owner attestation or a security certific
 The sole frozen-test portability amendment is documented in
 [the amendment record](docs/public-source-amendment.md). Historical freeze records
 and all original assertions are retained; the frozen RFP bytes keep their exact
-SHA-256. Runtime modules and the other frozen judge assets remain unchanged.
+SHA-256. The other frozen judge assets remain unchanged.
 
 No private commit history is required to run the public tests. No old signing key
 or production ledger may be copied in to make a check appear verified.

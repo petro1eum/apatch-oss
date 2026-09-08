@@ -6,7 +6,9 @@ No remote repository or package was published by this preparation.
 
 ## Verified boundaries
 
-- OSS runtime and compatibility modules are byte-identical to the reviewed baseline.
+- Of 237 runtime/compatibility files, 231 match the original baseline; six match
+  the separately reviewed fixes recorded in the source manifest. No private
+  commit history was imported.
 - MIT is unchanged and matches TrustChain OSS.
 - The selected source tree has no imported private Git history, Pro implementation,
   production signing identity, operational ledger or unrelated third-party dataset.
@@ -19,12 +21,34 @@ No remote repository or package was published by this preparation.
 These checks do not certify absence of every possible secret or prove acceptance
 by an external service.
 
-## Open qualification issues
+## Current revision
+
+This revision includes the reviewed ownership fix and the installed-resource /
+native conformance-exit fixes. The dev change passed 82 targeted checks, including
+wheel execution outside the checkout, user-file preservation, and missing-resource
+failure before writes. Wheel and sdist contain the same 20 canonical resource inputs.
+Fresh qualification of this exported revision on Python 3.14 completed with
+**1921 passed, 40 failed, 6 skipped**. The failed test identities are exactly the
+same 40 optional Avatar integration tests as in the preceding revision; no new
+failures were introduced. A task-local workspace registry isolated test MCP
+processes from the operator's real projects. An earlier misconfigured run had
+nine additional permission-related startup failures; that run is not the baseline
+used for this result. No access guard was disabled.
+
+All 22 focused checks from the unpacked source distribution passed, including
+source boundaries, documentation links, frozen-test portability and consumer
+initialization using code extracted from the wheel outside the source checkout.
+This wheel execution check is not a claim of a new package installation into the
+operator's environment. Archive inventory, license, metadata and resource-byte
+parity checks passed. Other Python versions and a remote CI run were not remeasured.
+
+## Remaining qualification and historical observations
 
 ### PUB-QA-1: optional Avatar integration is not a public-only test profile
 
-A full run in a fresh Python 3.14 environment using only public dependencies
-completed with **1882 passed, 40 failed, 6 skipped**. All 40 failures exercise
+The preceding revision completed with **1882 passed, 40 failed, 6 skipped** in a
+public-only environment. The current revision retains those same 40 failures.
+All 40 failures exercise
 Avatar/HC integration paths requiring the separately distributed `avatar-contract`.
 The affected files are `test_avatar_delivery.py`, `test_avatar_evidence.py`,
 `test_avatar_runtime_config.py`, `test_episode.py`,
@@ -37,33 +61,41 @@ Tests and assertions were not disabled or rewritten to manufacture a green run.
 The public CI workflow therefore remains a qualification gate, not a claim that
 the whole suite already passes with public-only inputs.
 
-Fresh live conformance checked 91 enrolled specifications: 85 conformant,
-3 drifted, 2 broken, 1 unproven. The semantic verdict was `gate: failed` and
-`contract_holds: false`, despite the CLI process returning zero. Public CI
-explicitly validates the JSON verdict using `scripts/check_public_conformance.py`;
-it must not infer success from that exit status. The baseline CLI itself is unchanged.
+Fresh live conformance checked all 91 enrolled specifications: 85 conformant,
+3 drifted, 2 broken, 1 unproven. The semantic verdict remains `gate: failed` and
+`contract_holds: false`. The corrected native CLI returned **exit 1** in configured
+blocking mode without an extra `--blocking` flag. The previous revision incorrectly
+returned zero for that verdict. Public CI retains the additional JSON check in
+`scripts/check_public_conformance.py`.
+
+The non-green specifications remain Avatar evidence, episodes, governed-work
+compatibility, contribution timesheets, edge lockstep and the shared Avatar
+contract. Absent peer tests and verification commands targeting a sibling checkout
+are not standalone OSS acceptance. No enrollment was removed to change this result.
 
 Before release, explicitly define and test the standalone OSS and optional-peer
 verification profiles, retaining separate integration acceptance. Alternatively,
 qualify an owner-approved public distribution of the peer. Do not bundle private
 peer code, invent a replacement contract, or restore a direct URL dependency.
 
-### PUB-QA-2: installed-wheel scaffold templates are incomplete
+### PUB-QA-2: installed-wheel scaffold template defect closed locally
 
-An actual wheel installation was checked outside the source tree. The command
+In the preceding revision, a wheel installation was checked outside the source tree. The command
 `init-consumer --with-ci --with-sandbox --with-enforcement --no-with-mcp`
 returned success and created policy files, but did not create the CI workflow,
 consumer `AGENTS.md` or Cursor hook configuration.
 
-The current runtime reads those templates from repository-relative `docs/` and
+The preceding runtime read those templates from repository-relative `docs/` and
 `scripts/` paths that are absent from the installed wheel. The source distribution
 contains them; that does not fix wheel installation. Policy JSON alone does not
 establish the missing editor or CI enforcement.
 
-Before release, bundle the required runtime templates as package resources,
-use an installation-safe resource loader, and add wheel-installed end-to-end
-checks. Do not silently accept a missing requested template. This source snapshot
-preserves runtime bytes and does not claim that this functional fix is implemented.
+The current revision builds canonical templates into package resources and loads
+them from the installed wheel. It fails before consumer writes when a required
+resource is missing. Regression checks cover CI, AGENTS, editor and commit hooks,
+devcontainer, profile docs, manifests, user-file preservation, and corrupted inputs.
+The exported wheel and source archive passed the targeted regression checks above.
+This closes the missing-resource defect, not PUB-QA-1 or external release acceptance.
 
 ## Publication steps after qualification
 

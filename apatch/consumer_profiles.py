@@ -34,6 +34,10 @@ with empty `reopen_reasons`, preserve the runtime implementation: evidence debt 
 reported separately and is not permission to rebuild the category. For a
 runtime-complete slug, unavailable feedback replay is yellow/unknown bookkeeping,
 not red runtime failure; fresh feedback and explicit runtime defects still reopen it.
+Installed-wheel initialization includes the canonical consumer guidance and hooks;
+missing resources are an installation error, not a successful partial setup.
+Conformance CLI honors configured blocking mode in text and JSON without an extra
+flag; --blocking can strengthen advisory mode but does not enable a disabled gate.
 """
 
 PROFILES: Dict[str, Dict[str, Any]] = {

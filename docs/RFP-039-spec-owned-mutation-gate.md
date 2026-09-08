@@ -41,7 +41,39 @@ authoritative target list instead of guessing from prose.
 
 Consumer profiles MAY provide exact sandbox protected/allow globs. The OLang
 profile SHALL protect the complete language surface, governance contracts, and
-agent contract when initialized with sandbox and enforcement.
+agent contract when initialized with sandbox and enforcement. Installed-wheel
+initialization must provide the same canonical templates and protection hooks as
+source-checkout initialization, without relying on repository-relative files.
+Missing required resources must fail before any consumer files are created.
+
+### Bounded legacy slug surface
+
+A slug word anywhere in a filename SHALL NOT confer ownership. With an existing
+slug contract, compatibility coverage is limited to its exact contract file,
+`categories/<slug>/**`, top-level `atomic/<slug>[_.-]*` files,
+`config/agent_schemas/<slug>.json`, `config/categories/<slug>.yaml` or
+`.yml`, and `test_<slug>[_.-]*` files beneath `tests/`. Legacy matching
+remains case-insensitive. Overlapping legacy basename prefixes use the longest
+slug; this rule SHALL NOT hide an explicitly declared owner.
+
+Additional exact repository-relative files are read only from these existing
+category-surface fields:
+
+- `runtime_pipeline.category_preprocessor`, `category_behavior`, `query_builder`;
+- `atomics.category_sources`, `schema_sources`, `guardrail_sources`;
+- `spec_generation.live_test_modules`.
+
+`shared_services`, `global_sources`, arbitrary prose, and requirement text
+describe dependencies or behavior, not ownership. Surface entries are exact
+paths, not globs. Malformed declarations and conflicting SPEC owners fail closed.
+A slug may have one `.yaml` or `.yml` contract, never both. Strict `owns:`
+declarations take precedence. The existing fix-forward exception is limited to
+repairing the malformed contract itself.
+
+Shared maintenance remains atomic: every target must appear in exactly one signed
+partition. On an owner mismatch, `rejected_targets` SHALL contain only conflicting
+targets and `partition_conflicts` SHALL identify each path, expected SPEC, and
+actual requirement. No patch JSONL is generated for any part of the rejected batch.
 
 ## Acceptance
 

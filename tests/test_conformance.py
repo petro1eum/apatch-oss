@@ -412,6 +412,59 @@ def test_live_verify_red_surfaces_command_output_details(tmp_path, monkeypatch):
 
 # --- A35-F: gate modes ---------------------------------------------------------
 
+
+@pytest.mark.parametrize("mode", ["blocking", "advisory"])
+@pytest.mark.parametrize("force_blocking", [False, True])
+@pytest.mark.parametrize("as_json", [False, True])
+@pytest.mark.parametrize("verify_exit", [0, 1])
+def test_conformance_gate_cli_honors_configured_mode(
+    tmp_path, mode, force_blocking, as_json, verify_exit,
+):
+    from click.testing import CliRunner
+    from apatch.cli_conformance import conformance_group
+
+    specs = tmp_path / "docs/specs"
+    specs.mkdir(parents=True)
+    (specs / "SPEC-CLI-EXIT-1.md").write_text(
+        "# SPEC-CLI-EXIT-1 -- Exit status\n\n"
+        "> **apatch artifact:** `spec:SPEC-CLI-EXIT-1`\n\n"
+        "## R1 Check\n\n"
+        f'(verify: python3 -c "import sys; sys.exit({verify_exit})")\n',
+        encoding="utf-8",
+    )
+    _write_cfg(tmp_path, enabled=True, mode=mode,
+               contract={"specs": ["SPEC-CLI-EXIT-1"]})
+    args = ["gate", "--live", "--target-dir", str(tmp_path)]
+    if force_blocking:
+        args.append("--blocking")
+    if as_json:
+        args.append("--json")
+    result = CliRunner().invoke(conformance_group, args)
+    expected = int(verify_exit != 0 and (mode == "blocking" or force_blocking))
+    assert result.exit_code == expected, result.output
+    if as_json:
+        payload = json.loads(result.output)
+        assert payload["contract_holds"] is (verify_exit == 0)
+        assert payload["gate"] == (
+            "passed" if verify_exit == 0 else
+            "failed" if mode == "blocking" else "advisory"
+        )
+
+
+@pytest.mark.parametrize("as_json", [False, True])
+def test_conformance_gate_cli_disabled_remains_successful(tmp_path, as_json):
+    from click.testing import CliRunner
+    from apatch.cli_conformance import conformance_group
+
+    args = ["gate", "--blocking", "--target-dir", str(tmp_path)]
+    if as_json:
+        args.append("--json")
+    result = CliRunner().invoke(conformance_group, args)
+    assert result.exit_code == 0, result.output
+    if as_json:
+        assert json.loads(result.output)["gate"] == "skipped"
+
+
 def test_gate_blocking_fails_only_on_live_red(tmp_path, monkeypatch):
     _write_cfg(tmp_path, enabled=True, mode="blocking", live_verify=True, contract={"specs": ["SPEC-B"]})
     monkeypatch.setattr("apatch.spec.spec_status_workspace", _status(**{

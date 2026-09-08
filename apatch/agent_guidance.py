@@ -258,16 +258,17 @@ def protocol_contract() -> Dict[str, Any]:
             ),
             "what_is_owned": (
                 "Ownership is opt-in and is never implied by a SPEC merely describing a "
-                "file. A SPEC.md is owned by itself and a slug contract owns its declared "
-                "surface; an implementation file is owned only when its SPEC declares "
-                "'> **ownership mode:** strict' and the requirement carries one 'owns:' "
-                "line naming exact paths or 'dir/**' prefixes. An undeclared file is "
-                "unowned: any governed session may write it and no SPEC_WORKFLOW_REQUIRED "
-                "is raised. Do not read a green gate as protection you never declared."
+                "file. A SPEC.md owns itself. An existing slug contract protects bounded "
+                "legacy category paths and its explicitly declared category surface, "
+                "not shared_services, global_sources, or a slug word in a shared filename. "
+                "Strict '> **ownership mode:** strict' with an 'owns:' line names exact "
+                "paths or 'dir/**' prefixes and takes precedence over slug ownership. "
+                "A file outside these surfaces is unowned: any governed session may "
+                "write it, subject to the remaining sandbox and signature checks."
             ),
             "authority": (
                 "resolve_spec_owned_targets decides ownership; prose in a SPEC, an RFP or "
-                "a filename never does."
+                "a shared filename never does; bounded legacy conventions are explicit compatibility rules."
             ),
             "enforcement": "pre-generation hard fail",
             "failure": (

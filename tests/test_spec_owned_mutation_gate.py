@@ -67,6 +67,241 @@ def test_exact_slug_ownership_resolution(tmp_path):
     ]
 
 
+
+def _surface_contract(root, slug="filter", **surface):
+    import json
+
+    contracts = root / "docs/specs/slug_contracts"
+    contracts.mkdir(parents=True, exist_ok=True)
+    data = {"spec_generation": {"spec_id": f"SPEC-{slug.upper()}-1"}}
+    data.update(surface)
+    (contracts / f"{slug}.yaml").write_text(json.dumps(data), encoding="utf-8")
+    spec_id = data["spec_generation"]["spec_id"]
+    (root / "docs/specs" / f"{spec_id}.md").write_text(
+        f"# {spec_id} -- Test surface\n\n"
+        f"> **apatch artifact:** `spec:{spec_id}`\n\n"
+        "## R1 Contract\n\n(verify: true)\n", encoding="utf-8",
+    )
+
+
+def test_shared_filename_does_not_create_slug_ownership(tmp_path):
+    _surface_contract(tmp_path, runtime_pipeline={
+        "shared_services": ["categories/base/filter_helpers.py"],
+    }, atomics={"global_sources": ["atomic/shared_filter_values.json"]})
+    paths = [
+        "categories/base/filter_helpers.py", "services/filter_helpers.py",
+        "docs/filter-notes.md", "atomic/shared_filter_values.json",
+        "categories/prefilter/query.py",
+    ]
+    result = resolve_spec_owned_targets(
+        str(tmp_path), [{"target_file": path} for path in paths]
+    )
+    assert result == {"ok": True, "owned": []}
+
+
+def test_canonical_slug_surfaces_remain_protected(tmp_path):
+    _surface_contract(tmp_path)
+    paths = [
+        "categories/filter/query.py", "categories/filter/nested/query.py",
+        "categories/Filter/query.py",
+        "atomic/filter_query_hints.json", "atomic/filter.json",
+        "config/agent_schemas/filter.json", "config/categories/filter.yaml",
+        "tests/live/test_filter_slug_reality.py", "tests/test_filter.py",
+        "docs/specs/slug_contracts/filter.yaml",
+    ]
+    result = resolve_spec_owned_targets(
+        str(tmp_path), [{"target_file": path} for path in paths]
+    )
+    assert result["ok"] is True
+    assert {row["path"] for row in result["owned"]} == set(paths)
+    assert {row["spec"] for row in result["owned"]} == {"SPEC-FILTER-1"}
+    denied = authorize_spec_owned_needles(
+        str(tmp_path), [{"target_file": path} for path in paths]
+    )
+    assert denied["ok"] is False
+    assert denied["generation_started"] is False
+
+
+def test_declared_slug_surface_is_exact_and_not_shared_dependencies(tmp_path):
+    paths = [
+        "adapters/preprocess.py", "adapters/behavior.py", "adapters/build.py",
+        "data/category.json", "schemas/category.json", "checks/category.py",
+        "checks/reality.py",
+    ]
+    _surface_contract(
+        tmp_path,
+        runtime_pipeline={
+            "category_preprocessor": paths[0], "category_behavior": paths[1],
+            "query_builder": paths[2], "shared_services": ["services/common.py"],
+        },
+        atomics={
+            "category_sources": [paths[3]], "schema_sources": [paths[4]],
+            "guardrail_sources": [paths[5]], "global_sources": ["data/global.json"],
+        },
+        spec_generation={
+            "spec_id": "SPEC-FILTER-1", "live_test_modules": [paths[6]],
+        },
+    )
+    result = resolve_spec_owned_targets(str(tmp_path), [
+        {"target_file": path}
+        for path in paths + ["services/common.py", "data/global.json",
+                             "adapters/preprocess.py.bak"]
+    ])
+    assert result["ok"] is True
+    assert {row["path"] for row in result["owned"]} == set(paths)
+    assert {row["spec"] for row in result["owned"]} == {"SPEC-FILTER-1"}
+
+
+def test_declared_slug_surface_conflict_is_not_hidden_by_longest_slug(tmp_path):
+    _surface_contract(tmp_path, atomics={"category_sources": ["data/common.json"]})
+    _surface_contract(tmp_path, slug="long_filter",
+                      atomics={"category_sources": ["data/common.json"]})
+    result = resolve_spec_owned_targets(
+        str(tmp_path), [{"target_file": "data/common.json"}]
+    )
+    assert result["ok"] is False
+    assert result["error_type"] == ERROR_SPEC_OWNERSHIP_UNRESOLVED
+    assert result["ownership_errors"][0]["path"] == "data/common.json"
+
+
+def test_strict_owner_precedes_slug_surface_for_shared_file(tmp_path):
+    _surface_contract(tmp_path, runtime_pipeline={
+        "category_behavior": "categories/base/filter_helpers.py",
+    })
+    spec = tmp_path / "docs/specs/SPEC-SHARED-1.md"
+    spec.write_text(
+        "# SPEC-SHARED-1 -- Shared\n\n"
+        "> **apatch artifact:** `spec:SPEC-SHARED-1`\n"
+        "> **ownership mode:** strict\n\n"
+        "## R1 Shared\n\nowns: `categories/base/filter_helpers.py`\n\n"
+        "(verify: true)\n", encoding="utf-8",
+    )
+    result = resolve_spec_owned_targets(
+        str(tmp_path), [{"target_file": "categories/base/filter_helpers.py"}]
+    )
+    assert result["ok"] is True
+    assert {row["spec"] for row in result["owned"]} == {"SPEC-SHARED-1"}
+    assert {row["via"] for row in result["owned"]} == {"strict_requirement"}
+
+
+def test_malformed_declared_slug_surface_fails_closed(tmp_path):
+    for value in ["../outside.py", "/outside.py", "data/*.json",
+                  "data/../outside.py", "data\\outside.py", "", 42]:
+        _surface_contract(tmp_path, atomics={"category_sources": [value]})
+        result = resolve_spec_owned_targets(
+            str(tmp_path), [{"target_file": "categories/filter/query.py"}]
+        )
+        assert result["ok"] is False, value
+        assert result["error_type"] == ERROR_SPEC_OWNERSHIP_UNRESOLVED
+
+
+def test_yml_slug_contract_uses_its_explicit_spec_id(tmp_path):
+    _surface_contract(tmp_path, spec_generation={"spec_id": "SPEC-CUSTOM-1"})
+    contract = tmp_path / "docs/specs/slug_contracts/filter.yaml"
+    contract.rename(contract.with_suffix(".yml"))
+    result = resolve_spec_owned_targets(
+        str(tmp_path), [{"target_file": "categories/filter/query.py"}]
+    )
+    assert result["ok"] is True
+    assert {row["spec"] for row in result["owned"]} == {"SPEC-CUSTOM-1"}
+
+
+def test_slug_ownership_checks_both_rename_paths(tmp_path):
+    _surface_contract(tmp_path)
+    for source, target in [
+        ("categories/filter/query.py", "services/query.py"),
+        ("services/query.py", "categories/filter/query.py"),
+    ]:
+        result = authorize_spec_owned_needles(str(tmp_path), [{
+            "action": "rename", "source_file": source, "target_file": target,
+        }])
+        assert result["ok"] is False
+        assert result["generation_started"] is False
+        assert result["required_specs"] == ["SPEC-FILTER-1"]
+
+
+def test_shared_partition_reports_only_conflicting_targets(tmp_path):
+    _surface_contract(tmp_path)
+    _surface_contract(tmp_path, slug="other")
+    good = "categories/other/query.py"
+    bad = "categories/filter/query.py"
+    save_session_state(str(tmp_path), {
+        "session_id": "session-shared", "intent": "diagnose exact partition",
+        "artifacts": [
+            {"kind": "spec", "id": "SPEC-FILTER-1#R1"},
+            {"kind": "spec", "id": "SPEC-OTHER-1#R1"},
+        ],
+        "artifact_files": {
+            "spec:SPEC-FILTER-1#R1": ["services/shared.py"],
+            "spec:SPEC-OTHER-1#R1": [good, bad],
+        },
+        "ended_at": None,
+    }, force=True)
+    result = authorize_spec_owned_needles(
+        str(tmp_path),
+        [{"target_file": path} for path in [good, bad, "services/shared.py"]],
+        created_by_tool="apatch_spec_run_multi:shared_maintenance",
+    )
+    assert result["ok"] is False
+    assert result["generation_started"] is False
+    assert result["error_type"] == ERROR_SPEC_WORKFLOW_REQUIRED
+    assert [row["path"] for row in result["rejected_targets"]] == [bad]
+    assert result["partition_conflicts"] == [{
+        "path": bad, "expected_spec": "SPEC-FILTER-1",
+        "actual_requirement": "SPEC-OTHER-1#R1",
+    }]
+
+
+
+def test_invalid_surface_cannot_hide_other_declared_paths(tmp_path):
+    _surface_contract(tmp_path, atomics={
+        "category_sources": ["adapters/owned.py", "../escape.py"],
+    })
+    result = resolve_spec_owned_targets(
+        str(tmp_path), [{"target_file": "adapters/owned.py"}]
+    )
+    assert result["ok"] is False
+    assert result["generation_started"] is False
+    assert result["error_type"] == ERROR_SPEC_OWNERSHIP_UNRESOLVED
+
+
+def test_duplicate_yaml_and_yml_contracts_fail_closed(tmp_path):
+    _surface_contract(tmp_path)
+    contract = tmp_path / "docs/specs/slug_contracts/filter.yaml"
+    contract.with_suffix(".yml").write_bytes(contract.read_bytes())
+    result = resolve_spec_owned_targets(
+        str(tmp_path), [{"target_file": "categories/filter/query.py"}]
+    )
+    assert result["ok"] is False
+    assert result["error_type"] == ERROR_SPEC_OWNERSHIP_UNRESOLVED
+
+
+def test_shared_helper_partition_is_not_reassigned_by_its_filename(tmp_path):
+    _surface_contract(tmp_path)
+    _surface_contract(tmp_path, slug="other")
+    category = "categories/filter/query.py"
+    shared = "categories/base/filter_helpers.py"
+    save_session_state(str(tmp_path), {
+        "session_id": "session-shared", "intent": "shared helper maintenance",
+        "artifacts": [
+            {"kind": "spec", "id": "SPEC-FILTER-1#R1"},
+            {"kind": "spec", "id": "SPEC-OTHER-1#R1"},
+        ],
+        "artifact_files": {
+            "spec:SPEC-FILTER-1#R1": [category],
+            "spec:SPEC-OTHER-1#R1": [shared],
+        },
+        "ended_at": None,
+    }, force=True)
+    result = authorize_spec_owned_needles(
+        str(tmp_path), [{"target_file": path} for path in [category, shared]],
+        created_by_tool="apatch_spec_run_multi:shared_maintenance",
+    )
+    assert result["ok"] is True
+    assert result["authorization"] == "partitioned_multi_spec_requirements"
+    assert {row["path"] for row in result["owned"]} == {category}
+
+
 def test_unbound_owned_mutation_is_rejected_before_generation(tmp_path):
     needle = _workspace(tmp_path)
     out_path = tmp_path / ".apatch" / "remote" / "patches.jsonl"
@@ -422,6 +657,8 @@ def test_agent_guidance_exposes_hard_spec_gate():
     assert "opt-in" in owned
     assert "ownership mode:** strict" in owned and "owns:" in owned
     assert "unowned" in owned
+    assert "bounded" in owned and "shared_services" in owned
+    assert "global_sources" in owned and "shared filename" in owned
     assert "resolve_spec_owned_targets" in gate["authority"]
     assert "ownership mode:** strict" in text and "owns:" in text
 
@@ -685,4 +922,3 @@ def test_bootstrap_binding_does_not_unlock_existing_or_foreign_specs(tmp_path):
     )
     assert denied_plain["ok"] is False
     assert denied_plain["error_type"] == ERROR_SPEC_WORKFLOW_REQUIRED
-

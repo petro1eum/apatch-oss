@@ -115,6 +115,11 @@ def test_wheel_and_sdist_publish_mit_without_private_inputs(tmp_path: Path) -> N
 
     with zipfile.ZipFile(wheels[0]) as archive:
         wheel_names = set(archive.namelist())
+        consumer_assets = {
+            name.removeprefix("apatch/_consumer_assets/"): archive.read(name)
+            for name in wheel_names if name.startswith("apatch/_consumer_assets/")
+        }
+        assert len(consumer_assets) == 20
         metadata_name = next(name for name in wheel_names if name.endswith(".dist-info/METADATA"))
         metadata = archive.read(metadata_name).decode("utf-8")
         embedded_license = next(
@@ -146,6 +151,11 @@ def test_wheel_and_sdist_publish_mit_without_private_inputs(tmp_path: Path) -> N
         extracted = archive.extractfile(license_name)
         assert extracted is not None
         assert extracted.read() == (ROOT / "LICENSE").read_bytes()
+        prefix = license_name.removesuffix("LICENSE")
+        for relative, content in consumer_assets.items():
+            member = archive.extractfile(prefix + relative)
+            assert member is not None, relative
+            assert member.read() == content == (ROOT / relative).read_bytes()
 
     assert "License-Expression: MIT" in metadata
     assert "Classifier: License :: OSI Approved :: MIT License" not in metadata
@@ -162,3 +172,105 @@ def test_wheel_and_sdist_publish_mit_without_private_inputs(tmp_path: Path) -> N
 
     _assert_distribution_members(wheel_names)
     _assert_distribution_members(sdist_names)
+
+
+def test_installed_wheel_initializes_complete_consumer(tmp_path: Path) -> None:
+    """Exercise wheel bytes in an isolated install layout, not the source tree."""
+    source = _copy_source(tmp_path)
+    out_dir = tmp_path / "dist"
+    built = subprocess.run(
+        [sys.executable, "-m", "build", "--no-isolation", "--wheel",
+         "--outdir", str(out_dir)],
+        cwd=source, capture_output=True, text=True, timeout=180,
+    )
+    assert built.returncode == 0, built.stdout + built.stderr
+    wheel = next(out_dir.glob("*.whl"))
+    installed = tmp_path / "installed" / "site-packages"
+    with zipfile.ZipFile(wheel) as archive:
+        names = set(archive.namelist())
+        _assert_distribution_members(names)
+        # APatch is a purelib wheel: no relocation scheme or generated launcher
+        # is needed to exercise its registered CLI callable in this test layout.
+        assert not any(".data/" in name for name in names)
+        assert all(not name.startswith("/") and ".." not in Path(name).parts
+                   for name in names)
+        archive.extractall(installed)
+    assert not (installed / "docs").exists()
+    assert not (installed / "scripts").exists()
+
+    bootstrap = (
+        "import sys,pathlib;"
+        "sys.path.insert(0,sys.argv.pop(1));"
+        "import apatch;"
+        "assert pathlib.Path(apatch.__file__).resolve().is_relative_to("
+        "pathlib.Path(sys.path[0]).resolve());"
+        "from apatch.cli import cli;cli()"
+    )
+    base = [sys.executable, "-I", "-c", bootstrap, str(installed),
+            "init-consumer", "--no-with-mcp", "--with-ci",
+            "--with-sandbox", "--with-enforcement", "--with-devcontainer",
+            "--with-arch-rules", "--profile", "frontend"]
+    consumer = tmp_path / "consumer"
+    result = subprocess.run(
+        base + ["--target-dir", str(consumer)],
+        cwd=tmp_path, capture_output=True, text=True, timeout=60,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    resources = {
+        "AGENTS.md": "docs/AGENTS.template.md",
+        ".github/workflows/apatch.yml": "docs/ci/github-action-apatch.yml",
+        "scripts/ci/apatch-sandbox-gate.sh": "scripts/ci/apatch-sandbox-gate.sh",
+        "scripts/hooks/pre-commit-trustchain.sh": "scripts/hooks/pre-commit-trustchain.sh",
+        ".cursor/hooks/apatch-deny-direct-edit.sh": "scripts/cursor-hooks/apatch-deny-direct-edit.sh",
+        ".cursor/hooks/apatch-deny-shell-mutate.sh": "scripts/cursor-hooks/apatch-deny-shell-mutate.sh",
+        ".cursor/hooks/apatch-deny-mcp-mutate.sh": "scripts/cursor-hooks/apatch-deny-mcp-mutate.sh",
+        ".cursor/hooks.json": "scripts/cursor-hooks/hooks.json",
+        ".devcontainer/devcontainer.json": "docs/devcontainer/devcontainer.json",
+        "manifests/arch-rules.yaml": "docs/manifests/arch-rules.example.yaml",
+        "manifests/semantic-verify.yaml": "docs/manifests/semantic-verify.example.yaml",
+        "manifests/engineering-pipeline.example.json": "docs/manifests/engineering-pipeline.example.json",
+        "manifests/PROFILE.frontend.md": "docs/profiles/frontend.md",
+        "docs/design-partner-playbook.md": "docs/design-partner-playbook.md",
+    }
+    for destination, origin in resources.items():
+        target = consumer / destination
+        assert target.is_file(), destination
+        asset = installed / "apatch/_consumer_assets" / origin
+        assert asset.read_bytes() == (ROOT / origin).read_bytes(), origin
+        if destination != "AGENTS.md":
+            assert target.read_bytes() == asset.read_bytes(), destination
+        if target.suffix == ".sh":
+            assert target.stat().st_mode & 0o111, destination
+    for path in [".apatch/sandbox.json", ".apatch/enforcement.json"]:
+        assert (consumer / path).is_file(), path
+
+    # Unrelated adjacent docs must never shadow an installed package resource.
+    decoy = installed / "docs/AGENTS.template.md"
+    decoy.parent.mkdir()
+    decoy.write_text("UNRELATED_ADJACENT_DOC\n")
+    agents = consumer / "AGENTS.md"
+    project_marker = "<!-- apatch:project:start -->"
+    assert project_marker in agents.read_text()
+    agents.write_text(agents.read_text().replace(
+        project_marker, project_marker + "\nKEEP_PROJECT_CONTEXT\n",
+    ))
+    ci = consumer / ".github/workflows/apatch.yml"
+    ci.write_text(ci.read_text() + "\n# KEEP_USER_CI\n")
+    refreshed = subprocess.run(
+        base + ["--target-dir", str(consumer), "--refresh-agents"],
+        cwd=tmp_path, capture_output=True, text=True, timeout=60,
+    )
+    assert refreshed.returncode == 0, refreshed.stdout + refreshed.stderr
+    assert "KEEP_PROJECT_CONTEXT" in agents.read_text()
+    assert "UNRELATED_ADJACENT_DOC" not in agents.read_text()
+    assert ci.read_text().endswith("# KEEP_USER_CI\n")
+
+    (installed / "apatch/_consumer_assets/docs/AGENTS.template.md").unlink()
+    untouched = tmp_path / "must-not-be-created"
+    failed = subprocess.run(
+        base + ["--target-dir", str(untouched)],
+        cwd=tmp_path, capture_output=True, text=True, timeout=60,
+    )
+    assert failed.returncode != 0
+    assert "consumer resources" in failed.stdout + failed.stderr
+    assert not untouched.exists()

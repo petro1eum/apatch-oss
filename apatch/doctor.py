@@ -523,8 +523,59 @@ def _merge_npm_scripts(package_json_path: str) -> bool:
     return changed
 
 
-def _agents_template_path() -> Path:
-    return Path(__file__).resolve().parent.parent / "docs" / "AGENTS.template.md"
+def _consumer_resource_path(relative: str) -> Any:
+    """Return the canonical checkout asset or its wheel-bundled Traversable."""
+    from importlib.resources import files
+
+    checkout = Path(__file__).resolve().parent.parent
+    bundled = files("apatch").joinpath("_consumer_assets")
+    if not bundled.is_dir() and (checkout / "pyproject.toml").is_file():
+        return checkout / relative
+    resource = bundled
+    for part in relative.split("/"):
+        resource = resource.joinpath(part)
+    return resource
+
+
+def _require_consumer_resources(
+    pack: Dict[str, Any], *, with_ci: bool, with_arch_rules: bool,
+    with_enforcement: bool, with_sandbox: bool, with_devcontainer: bool,
+    profile: str,
+) -> None:
+    """Reject incomplete installations before creating any consumer files."""
+    required = [_agents_template_path(), _design_partner_playbook_source()]
+    profile_doc = pack.get("profile_doc")
+    if profile_doc:
+        required.append(_consumer_resource_path(profile_doc))
+    if with_ci:
+        required.extend([
+            _ci_template_path(),
+            _consumer_resource_path("scripts/ci/apatch-sandbox-gate.sh"),
+        ])
+    if with_arch_rules:
+        required.extend(_docs_manifest_path(source) for source, _ in _ARCH_RULES_PACK)
+    if profile == "frontend":
+        required.append(_docs_manifest_path("semantic-verify.example.yaml"))
+    if with_enforcement:
+        required.append(_consumer_resource_path("scripts/hooks/pre-commit-trustchain.sh"))
+    if with_sandbox:
+        required.extend(_consumer_resource_path("scripts/cursor-hooks/" + name)
+                        for name in (
+                            "apatch-deny-direct-edit.sh", "apatch-deny-shell-mutate.sh",
+                            "apatch-deny-mcp-mutate.sh", "hooks.json",
+                        ))
+    if with_devcontainer:
+        required.append(_devcontainer_template_path())
+    missing = [str(path) for path in required if not path.is_file()]
+    if missing:
+        raise FileNotFoundError(
+            "APatch installation is missing required consumer resources: "
+            + ", ".join(missing)
+        )
+
+
+def _agents_template_path() -> Any:
+    return _consumer_resource_path("docs/AGENTS.template.md")
 
 
 _APATCH_STACK_START = "<!-- apatch:stack:start -->"
@@ -568,24 +619,24 @@ def compose_agents_md(
     return _replace_marked_block(body, _APATCH_STACK_START, _APATCH_STACK_END, stack_block)
 
 
-def _ci_template_path() -> Path:
-    return Path(__file__).resolve().parent.parent / "docs" / "ci" / "github-action-apatch.yml"
+def _ci_template_path() -> Any:
+    return _consumer_resource_path("docs/ci/github-action-apatch.yml")
 
 
-def _devcontainer_template_path() -> Path:
-    return Path(__file__).resolve().parent.parent / "docs" / "devcontainer" / "devcontainer.json"
+def _devcontainer_template_path() -> Any:
+    return _consumer_resource_path("docs/devcontainer/devcontainer.json")
 
 
-def _docs_manifest_path(name: str) -> Path:
-    return Path(__file__).resolve().parent.parent / "docs" / "manifests" / name
+def _docs_manifest_path(name: str) -> Any:
+    return _consumer_resource_path("docs/manifests/" + name)
 
 
-def _profile_doc_source(pack: Dict[str, Any]) -> Optional[Path]:
+def _profile_doc_source(pack: Dict[str, Any]) -> Optional[Any]:
     """Resolve apatch repo profile markdown for copying into consumer manifests/."""
     rel = pack.get("profile_doc") or ""
     if not rel.startswith("docs/"):
         return None
-    path = Path(__file__).resolve().parent.parent / rel
+    path = _consumer_resource_path(rel)
     return path if path.is_file() else None
 
 
@@ -642,8 +693,8 @@ def _ensure_apatch_gitignore(path: str, *, track_policy: bool) -> bool:
     return True
 
 
-def _design_partner_playbook_source() -> Path:
-    return Path(__file__).resolve().parent.parent / "docs" / "design-partner-playbook.md"
+def _design_partner_playbook_source() -> Any:
+    return _consumer_resource_path("docs/design-partner-playbook.md")
 
 
 def _copy_design_partner_playbook(root: str) -> Optional[str]:
@@ -652,7 +703,7 @@ def _copy_design_partner_playbook(root: str) -> Optional[str]:
     if not src.is_file() or os.path.exists(dst):
         return None
     os.makedirs(os.path.dirname(dst), exist_ok=True)
-    shutil.copy2(src, dst)
+    Path(dst).write_bytes(src.read_bytes())
     return dst
 
 def _copy_docs_manifest(manifests_dir: str, src_name: str, dst_name: str) -> Optional[str]:
@@ -660,8 +711,7 @@ def _copy_docs_manifest(manifests_dir: str, src_name: str, dst_name: str) -> Opt
     dst = os.path.join(manifests_dir, dst_name)
     if not src.is_file() or os.path.exists(dst):
         return None
-    with open(src, encoding="utf-8") as f:
-        body = f.read()
+    body = src.read_text(encoding="utf-8")
     with open(dst, "w", encoding="utf-8") as f:
         f.write(body)
     return dst
@@ -712,9 +762,14 @@ def init_consumer(
 ) -> List[str]:
     """Write starter templates; returns paths created or updated."""
     root = os.path.abspath(target_dir)
+    pack = get_profile(profile)
+    _require_consumer_resources(
+        pack, profile=profile, with_ci=with_ci, with_arch_rules=with_arch_rules,
+        with_enforcement=with_enforcement, with_sandbox=with_sandbox,
+        with_devcontainer=with_devcontainer,
+    )
     os.makedirs(root, exist_ok=True)
     created: List[str] = []
-    pack = get_profile(profile)
     agents_md = os.path.join(root, "AGENTS.md")
     template = _agents_template_path()
     stack_section = pack.get("agents_section") or ""
@@ -789,15 +844,13 @@ def init_consumer(
         os.makedirs(gh_dir, exist_ok=True)
         ci_dst = os.path.join(gh_dir, "apatch.yml")
         if ci_src.is_file() and not os.path.exists(ci_dst):
-            with open(ci_src, "r", encoding="utf-8") as src:
-                with open(ci_dst, "w", encoding="utf-8") as dst:
-                    dst.write(src.read())
+            Path(ci_dst).write_text(ci_src.read_text(encoding="utf-8"), encoding="utf-8")
             created.append(ci_dst)
-        ci_gate_src = Path(__file__).resolve().parent.parent / "scripts" / "ci" / "apatch-sandbox-gate.sh"
+        ci_gate_src = _consumer_resource_path("scripts/ci/apatch-sandbox-gate.sh")
         ci_gate_dst = os.path.join(root, "scripts", "ci", "apatch-sandbox-gate.sh")
         if ci_gate_src.is_file() and not os.path.exists(ci_gate_dst):
             os.makedirs(os.path.dirname(ci_gate_dst), exist_ok=True)
-            shutil.copy2(ci_gate_src, ci_gate_dst)
+            Path(ci_gate_dst).write_bytes(ci_gate_src.read_bytes())
             os.chmod(ci_gate_dst, 0o755)
             created.append(ci_gate_dst)
     if profile == "frontend":
@@ -816,10 +869,10 @@ def init_consumer(
         created.append(write_enforcement_config(root, governed_mode=gm))
         hooks_dir = os.path.join(root, "scripts", "hooks")
         os.makedirs(hooks_dir, exist_ok=True)
-        hook_src = Path(__file__).resolve().parent.parent / "scripts" / "hooks" / "pre-commit-trustchain.sh"
+        hook_src = _consumer_resource_path("scripts/hooks/pre-commit-trustchain.sh")
         hook_dst = os.path.join(hooks_dir, "pre-commit-trustchain.sh")
         if hook_src.is_file() and not os.path.exists(hook_dst):
-            shutil.copy2(hook_src, hook_dst)
+            Path(hook_dst).write_bytes(hook_src.read_bytes())
             os.chmod(hook_dst, 0o755)
             created.append(hook_dst)
         enforce_readme = os.path.join(manifests, "ENFORCEMENT.md")
@@ -862,22 +915,22 @@ def init_consumer(
         )
         cursor_dir = os.path.join(root, ".cursor", "hooks")
         os.makedirs(cursor_dir, exist_ok=True)
-        hooks_src = Path(__file__).resolve().parent.parent / "scripts" / "cursor-hooks"
+        hooks_src = _consumer_resource_path("scripts/cursor-hooks")
         for name in (
             "apatch-deny-direct-edit.sh",
             "apatch-deny-shell-mutate.sh",
             "apatch-deny-mcp-mutate.sh",
         ):
-            src = hooks_src / name
+            src = hooks_src.joinpath(name)
             dst = os.path.join(cursor_dir, name)
             if src.is_file() and not os.path.exists(dst):
-                shutil.copy2(src, dst)
+                Path(dst).write_bytes(src.read_bytes())
                 os.chmod(dst, 0o755)
                 created.append(dst)
         hooks_json_dst = os.path.join(root, ".cursor", "hooks.json")
-        hooks_json_src = hooks_src / "hooks.json"
+        hooks_json_src = hooks_src.joinpath("hooks.json")
         if hooks_json_src.is_file() and not os.path.exists(hooks_json_dst):
-            shutil.copy2(hooks_json_src, hooks_json_dst)
+            Path(hooks_json_dst).write_bytes(hooks_json_src.read_bytes())
             created.append(hooks_json_dst)
         sandbox_readme = os.path.join(manifests, "SANDBOX.md")
         if not os.path.exists(sandbox_readme):
@@ -906,7 +959,7 @@ def init_consumer(
         os.makedirs(dc_dir, exist_ok=True)
         dc_dst = os.path.join(dc_dir, "devcontainer.json")
         if dc_src.is_file() and not os.path.exists(dc_dst):
-            shutil.copy2(dc_src, dc_dst)
+            Path(dc_dst).write_bytes(dc_src.read_bytes())
             created.append(dc_dst)
     if with_mcp:
         from apatch.mcp_health import sync_mcp_configs

@@ -58,7 +58,7 @@ escalation (`fix_forward` vs `rollback`), async verify, parallel lanes (English)
 
 0. **Вся спека** → `apatch_spec_run` (RFP-009), не N× §3I и не hand-staged jsonl.
 0b. **≥2 спеки с interference** → `apatch_spec_run_multi` (§3L Phase 3), не N× ручной `spec_run` между спеками.
-0c. **SPEC-owned files** → только `spec_run/execute_next` с точным `SPEC#Rk`; generic `generate_batch/remote_task` получает `SPEC_WORKFLOW_REQUIRED` до создания JSONL. Собственность — явная: сам файл `SPEC.md` и контракт slug принадлежат себе сразу, а файл реализации — только после `> **ownership mode:** strict` в спеке и строки `owns:` у требования. Без этого файл не принадлежит никому и пишется любой управляемой сессией — шлагбаума не будет.
+0c. **SPEC-owned files** require `spec_run/execute_next` with the exact `SPEC#Rk`; generic `generate_batch/remote_task` receives `SPEC_WORKFLOW_REQUIRED` before JSONL generation. Ownership is opt-in: a SPEC file owns itself; an existing slug contract protects bounded legacy category paths and explicitly declared category files (RFP-039), not shared dependencies or a slug word in a filename. Strict `> **ownership mode:** strict` plus an `owns:` line declares exact files or bounded prefixes and takes precedence. Files outside these surfaces are unowned, but still require the normal governed, sandboxed, signed workflow.
 0d. **Независимое массовое обслуживание нескольких SPEC** → `spec_run_multi(execution_mode="shared_maintenance")`: один физический apply, точные native verify каждого Rk параллельно и одна attestation с подписанным `SPEC#Rk → files`. Каждый файл принадлежит ровно одному Rk; shared target блокируется до мутации.
 1. **Одно Rk** → `apatch_execute_next(needles=[…])` или §3I вручную.
 2. Цикл §3I на Rk: `spec_next` → `session_start(requirement)` → **`apatch_generate_batch`** → `simulate` → `apply_session` → **`verify_run` (из спеки)** → `attest` → `session_end`.
@@ -522,6 +522,10 @@ apatch scip impact --since HEAD   # MCP: apatch_scip(action='impact') — как
 
 Отчитывай отдельно: (1) декларации, (2) фактический enrollment, (3) live buckets `conformant|drifted|broken|stale|unproven`, (4) доменную evidence qualification. `apatch conformance status --spec SPEC-X --no-live --json` подтверждает bounded enrollment/state без рекурсии; `apatch conformance gate --live` измеряет текущее выполнение. По умолчанию блокирует только `drifted`; `stale` — долг переаттестации, не runtime-регрессия.
 
+The CLI honors configured `mode: blocking` without an extra flag, for both text
+and JSON output. `--blocking` strengthens advisory mode; it does not enable an
+unconfigured gate.
+
 После `apatch_resume_session` используй только свежую `session_capability` из его ответа: она заменяет token от `session_start`. `apatch_remote_task_run` 0.8.11+ переносит её автоматически.
 
 ## 4. Failure taxonomy
@@ -854,3 +858,8 @@ CLI = то же имя без префикса `apatch_` / `apatch ` (`apatch --
 Stderr → `.apatch/mcp_stderr.log`. Env: `PYTHONIOENCODING=utf-8`, `PYTHONUTF8=1`.
 
 Обновить этот playbook из apatch: `apatch init-consumer --refresh-agents` (сохранит §10 project-блок).
+
+Installed wheels include the same canonical consumer templates, profile docs,
+CI and protection hooks as source checkouts. Initialization needs no source
+repository. Missing required resources are an installation error, not a successful
+partial setup; existing consumer files remain untouched unless refresh is explicit.

@@ -101,7 +101,9 @@ apatch conformance status --jobs 4 --timeout 30 --spec-budget-sec 45
 - `--ci-safe` — block only on **self-contained pure-pytest** verifies; skip
   env-dependent ones (sibling repos, ledger calls, shell chains). Lets a fresh CI
   checkout block on real regressions **without the local ledger** and without false reds.
-- `--blocking` — exit non-zero on a red contract (gate a merge).
+- `--blocking` — force a non-zero exit on a red contract even in advisory mode.
+  Configured `mode: blocking` already exits non-zero without this flag. Text and
+  `--json` output use the same exit status; a disabled gate remains a no-op.
 - `--jobs N` — run up to `N` specs in parallel during live conformance.
 - `--timeout SEC` — per-requirement live verify timeout. Timeout is `broken`, not
   `drifted`.

@@ -84,6 +84,31 @@ def test_doctor_human_includes_hygiene(tmp_path):
     assert "Lane" in result.output
 
 
+
+def test_init_consumer_missing_resource_fails_before_writes(tmp_path, monkeypatch):
+    import pytest
+    import apatch.doctor as doctor
+
+    missing = tmp_path / "missing-distribution" / "AGENTS.template.md"
+    monkeypatch.setattr(doctor, "_agents_template_path", lambda: missing)
+    target = tmp_path / "consumer"
+    with pytest.raises(FileNotFoundError, match="consumer resources"):
+        init_consumer(str(target), with_ci=True, with_sandbox=True,
+                      with_enforcement=True, with_mcp=False)
+    assert not target.exists()
+
+    from click.testing import CliRunner
+    from apatch.cli import cli
+
+    result = CliRunner().invoke(
+        cli, ["init-consumer", "--target-dir", str(target), "--no-with-mcp"],
+    )
+    assert result.exit_code != 0
+    assert "consumer resources" in result.output
+    assert "Traceback" not in result.output
+    assert not target.exists()
+
+
 def test_init_consumer(tmp_path):
     created = init_consumer(str(tmp_path))
     assert any("apatch.example.json" in p for p in created)
