@@ -37,6 +37,12 @@ Tests and assertions were not disabled or rewritten to manufacture a green run.
 The public CI workflow therefore remains a qualification gate, not a claim that
 the whole suite already passes with public-only inputs.
 
+Fresh live conformance checked 91 enrolled specifications: 85 conformant,
+3 drifted, 2 broken, 1 unproven. The semantic verdict was `gate: failed` and
+`contract_holds: false`, despite the CLI process returning zero. Public CI
+explicitly validates the JSON verdict using `scripts/check_public_conformance.py`;
+it must not infer success from that exit status. The baseline CLI itself is unchanged.
+
 Before release, explicitly define and test the standalone OSS and optional-peer
 verification profiles, retaining separate integration acceptance. Alternatively,
 qualify an owner-approved public distribution of the peer. Do not bundle private

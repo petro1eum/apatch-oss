@@ -99,8 +99,8 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "120e408cb5147dfa5718c806772f5cbcf17416be0b1ee58d2b33c3f277684dd1",
-      "bytes": 1597,
+      "sha256": "d203a8ab23e496340628f20fd6b268066718902c09e229facd484e4cd0790af6",
+      "bytes": 1768,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -2598,8 +2598,8 @@
     },
     {
       "path": "docs/public-release-readiness.md",
-      "sha256": "20e72a3c4929a672b273ea04b532cf25afb19d760d431f1691f080fa4a7c7407",
-      "bytes": 3738,
+      "sha256": "389b392c9a52df00952fd34a42c357af98d922982ccf7ec9d812b0711862a54e",
+      "bytes": 4135,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -3524,6 +3524,13 @@
       "path": "requirements.txt",
       "sha256": "801adbaa324c25b03933de4e27d784a454d8d03793febde6395eb7acde35d4e8",
       "bytes": 379,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
+      "path": "scripts/check_public_conformance.py",
+      "sha256": "c235c63ad4aa4b6edde9e2a11ef0a0b098ca683db5c7a03cc2b3d99db1ab3bd8",
+      "bytes": 1103,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -6366,6 +6373,13 @@
       "path": "tests/test_project_status_compact.py",
       "sha256": "e7464f4ae6629479f557f0bb03a2254bfab3625286a59602aafbea815c80f30b",
       "bytes": 2083,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
+      "path": "tests/test_public_ci_result.py",
+      "sha256": "9ddb023193e92ca73e8db8f33a643fc83f08e98eb69fdff19908d2e6d7ce370e",
+      "bytes": 1368,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },

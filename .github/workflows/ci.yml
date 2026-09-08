@@ -30,7 +30,9 @@ jobs:
       - name: Check public documentation and source boundary
         run: python -m pytest tests/test_public_source_boundary.py tests/test_public_freeze_portability.py -q
       - name: Verify complete contract before test-generated runtime caches
-        run: apatch conformance gate --live --ci-safe --jobs 2 --requirement-jobs 1 --json
+        run: |
+          python -m apatch.cli conformance gate --live --ci-safe --jobs 2 --requirement-jobs 1 --json > "${{ runner.temp }}/apatch-conformance.json"
+          python scripts/check_public_conformance.py "${{ runner.temp }}/apatch-conformance.json"
       - name: Run regression suite
         run: python -m pytest tests/ -q
       - name: Build source distribution and wheel
