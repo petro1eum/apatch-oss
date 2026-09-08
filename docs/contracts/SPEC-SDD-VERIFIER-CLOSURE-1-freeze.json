@@ -1,0 +1,82 @@
+{
+  "schema": "apatch.sdd.verifier-closure-freeze.v1",
+  "contract_id": "apsddvc_core_rfp045_v1",
+  "status": "frozen",
+  "frozen_at": "2026-09-01T18:52:00.000000Z",
+  "authority": {
+    "kind": "local_owner",
+    "id": "APatch owner"
+  },
+  "repository": {
+    "product": "APatch Core",
+    "base_commit": "c7bdbe571188773f84aab5812b03a682e99a2683",
+    "runtime_version": "0.8.40",
+    "branch": "codex/sdd-integrity-rfp012"
+  },
+  "source_mutation_count_at_freeze": 0,
+  "artifacts": [
+    {
+      "path": "docs/RFP-045-sdd-verifier-closure.md",
+      "hash": "sha256:d5f6eeda000855d8ef727e266612dfb3ac99b59966dcd3619f82d975e7fb635b"
+    },
+    {
+      "path": "docs/specs/SPEC-SDD-VERIFIER-CLOSURE-1.md",
+      "hash": "sha256:8063ea924703e8c6b53cd57f9ace81dd8932dd8350471d042c4f25aa8644bec2"
+    },
+    {
+      "path": "tests/test_sdd_verifier_closure.py",
+      "hash": "sha256:9e53c38c9d1713d1ada391db05819c1fa6df9d4f4f45098bfe181cacfe59304b"
+    }
+  ],
+  "observed_red_baseline": {
+    "command": [
+      "python3",
+      "-m",
+      "pytest",
+      "tests/test_sdd_verifier_closure.py",
+      "-q",
+      "--tb=short"
+    ],
+    "collected": 10,
+    "passed": 1,
+    "failed": 9,
+    "failure_classes": [
+      "missing exact session verification contract",
+      "missing fixed-purpose verifier",
+      "missing execute_next routing",
+      "missing MCP surface"
+    ]
+  },
+  "protected_paths": [
+    "docs/RFP-045-sdd-verifier-closure.md",
+    "docs/specs/SPEC-SDD-VERIFIER-CLOSURE-1.md",
+    "docs/contracts/SPEC-SDD-VERIFIER-CLOSURE-1-freeze.json",
+    "tests/test_sdd_verifier_closure.py"
+  ],
+  "amendment_required": true,
+  "implementation_actor_may_modify": false,
+  "release_commands": [
+    [
+      "python3",
+      "-m",
+      "pytest",
+      "tests/test_sdd_verifier_closure.py",
+      "-q"
+    ],
+    [
+      "python3",
+      "-m",
+      "pytest",
+      "tests/test_sdd_integrity.py",
+      "tests/test_sdd_mandatory_profile.py",
+      "tests/test_sdd_runtime_integration.py",
+      "-q"
+    ],
+    [
+      "python3",
+      "-m",
+      "pytest",
+      "-q"
+    ]
+  ]
+}

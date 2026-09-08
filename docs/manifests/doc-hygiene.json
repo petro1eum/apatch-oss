@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "kind": "doc-hygiene",
+  "description": "Replacement rules for scripts/doc_hygiene.sh (apatch generate → apply)",
+  "runner": "scripts/doc_hygiene.sh",
+  "replacements": [
+    {
+      "find": "когда доступны R44–R46",
+      "replace": "при оркестрации (R44–R46)",
+      "note": "superseded — prefer manual AGENTS.template wording"
+    },
+    {
+      "find": "(спецификация R41–R43)",
+      "replace": "(справочник)"
+    },
+    {
+      "find": "## Рефакторинг с базой данных (R41–R43, спецификация)",
+      "replace": "## Рефакторинг с базой данных"
+    },
+    {
+      "find": "# R45: Dependency Impact Graph — спецификация",
+      "replace": "# R45: Dependency Impact Graph — справочник"
+    },
+    {
+      "find": "# R44: Architecture Drift Check — спецификация",
+      "replace": "# R44: Architecture Drift Check — справочник"
+    },
+    {
+      "find": "../PHASE_CHECKLIST.md",
+      "replace": "./PHASE_CHECKLIST.md"
+    },
+    {
+      "find": "MCP (51 tools)",
+      "replace": "MCP (53 tools)",
+      "note": "active docs only; skip archive/"
+    },
+    {
+      "find": "MCP tools (51)",
+      "replace": "MCP tools (52)",
+      "note": "AGENTS.md header"
+    },
+    {
+      "find": "MCP tools (51)",
+      "replace": "MCP tools (52)",
+      "note": "AGENTS.template.md header"
+    },
+    {
+      "find": "**51 MCP tools**",
+      "replace": "**53 MCP tools**",
+      "note": "mcp_setup.md"
+    },
+    {
+      "find": "MCP (53 tools)",
+      "replace": "MCP (74 tools)",
+      "note": "README.md, cookbook — post RFP-007"
+    },
+    {
+      "find": "**53 MCP tools**",
+      "replace": "**56 MCP tools**",
+      "note": "mcp_setup.md, docs/README.md"
+    },
+    {
+      "find": "MCP tools — полный справочник (53)",
+      "replace": "MCP tools — полный справочник (56)",
+      "note": "AGENTS.template.md §8"
+    },
+    {
+      "find": "MCP tools (53)",
+      "replace": "MCP tools (56)",
+      "note": "AGENTS.md header"
+    }
+  ],
+  "link_migrations": [
+    { "find": "orchestration_roadmap.md", "replace": "orchestration.md" },
+    { "find": "db_tools.md", "replace": "orchestration.md" },
+    { "find": "arch_tools.md", "replace": "orchestration.md" },
+    { "find": "impact_tools.md", "replace": "orchestration.md" }
+  ],
+  "usage": "./scripts/doc_hygiene.sh          # template replacements\n./scripts/doc_hygiene.sh --apply\n# link migrations: apatch generate per link_migrations entry"
+}

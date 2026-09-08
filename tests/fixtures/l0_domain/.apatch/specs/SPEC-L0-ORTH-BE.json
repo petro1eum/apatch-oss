@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "SPEC-L0-ORTH-BE",
+  "source_path": "docs/specs/SPEC-L0-ORTH-BE.md",
+  "tags": [
+    "domain:backend",
+    "layer:L3",
+    "product:sales_pipeline"
+  ],
+  "requirements": {
+    "R1": {
+      "needles": [
+        {
+          "target_file": "backend_only.py",
+          "find_text": "API_ROUTE = \"/api/deals\"",
+          "replace_text": "API_ROUTE = \"/api/v2/deals\"",
+          "match_mode": "literal"
+        }
+      ]
+    }
+  }
+}

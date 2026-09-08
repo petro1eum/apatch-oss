@@ -1,0 +1,116 @@
+# Copy to consumer repo: .github/workflows/apatch.yml
+# Or: apatch init-consumer --with-ci
+name: apatch
+
+on:
+  workflow_dispatch:
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install apatch
+        # In the apatch repo itself, install the local checkout; a consumer repo
+        # (no apatch pyproject) pulls the published package from PyPI.
+        run: |
+          if [ -f pyproject.toml ] && grep -q '^name = "apatch"' pyproject.toml; then
+            pip install -e ".[mcp,languages]"
+          else
+            pip install "apatch[mcp,languages]"
+          fi
+      - name: Doctor
+        run: apatch doctor --json
+      - name: Plan patches (if patches.jsonl exists)
+        if: hashFiles('patches.jsonl') != ''
+        run: |
+          apatch plan --logs patches.jsonl --target-dir . --json > plan.json
+          python3 -c "
+          import json, sys
+          data = json.load(open('plan.json'))
+          failed = [e for e in data.get('entries', data) if not e.get('would_apply', True)]
+          if failed:
+              print('apatch plan: some steps would not apply', file=sys.stderr)
+              sys.exit(1)
+          "
+      - name: Strip dry-run (if manifests changed)
+        if: hashFiles('manifests/**') != ''
+        run: |
+          echo "Add project-specific strip -n commands for changed manifests"
+
+  sandbox-gate:
+    # A fresh CI checkout cannot verify the local write lease or ignored ledger:
+    # both are intentionally ephemeral. Validate the committed enforcement
+    # control plane, then verify external Merkle inclusion whenever a portable
+    # manifest is intentionally tracked. Never claim local lease provenance here.
+    runs-on: ubuntu-latest
+    # apatch's own source repo uses the dedicated conformance and transparency jobs.
+    if: github.repository != 'petro1eum/apatch'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install apatch
+        # Consumer repos pull the published package; see the plan job for the
+        # local-checkout fallback when this template is copied into apatch itself.
+        run: pip install "apatch[mcp]"
+      - name: Governance policy + portable proof gate
+        run: |
+          DOCTOR="$(mktemp)"
+          apatch doctor --target-dir . --json >"$DOCTOR"
+          python3 -c "
+          import json, sys
+          d = json.load(open(sys.argv[1]))
+          sandbox = d.get('sandbox') or {}
+          enforcement = d.get('enforcement') or {}
+          cfg = enforcement.get('config') or {}
+          configured = bool(sandbox.get('enabled') or enforcement.get('active'))
+          if not configured:
+              print('governance control plane: not configured (skipped)')
+              sys.exit(0)
+          errors = []
+          if sandbox.get('enabled') and sandbox.get('mode') != 'enforce':
+              errors.append('configured sandbox must remain in enforce mode')
+          if enforcement.get('active') and cfg.get('mode') != 'strict':
+              errors.append('configured enforcement must remain in strict mode')
+          if enforcement.get('active') and not cfg.get('block_commit_without_proof'):
+              errors.append('block_commit_without_proof must remain enabled')
+          if errors:
+              print('; '.join(errors), file=sys.stderr)
+              sys.exit(1)
+          print('governance control plane: valid')
+          " "$DOCTOR"
+
+          PORTABLE="manifests/apatch-inclusion.jsonl"
+          if git ls-files --error-unmatch "$PORTABLE" >/dev/null 2>&1; then
+            PROOF_ROOT="$(mktemp -d)"
+            mkdir -p "$PROOF_ROOT/.apatch"
+            cp "$PORTABLE" "$PROOF_ROOT/.apatch/inclusion.jsonl"
+            PROOF="$(mktemp)"
+            if ! apatch trustchain verify-inclusion --target-dir "$PROOF_ROOT" \
+              --platform-url https://trust-chain.ai --json >"$PROOF"; then
+              cat "$PROOF"
+              exit 1
+            fi
+            python3 -c "
+            import json, sys
+            d = json.load(open(sys.argv[1]))
+            if (
+                not d.get('ok')
+                or d.get('degraded')
+                or not d.get('checked')
+                or d.get('missing')
+                or d.get('inconsistent')
+                or d.get('errors')
+            ):
+                print('portable inclusion proof is unavailable or incomplete', file=sys.stderr)
+                sys.exit(1)
+            print('portable inclusion proof: verified')
+            " "$PROOF"
+          else
+            echo "::notice::Lease/ledger are local-only; no tracked portable inclusion manifest"
+          fi

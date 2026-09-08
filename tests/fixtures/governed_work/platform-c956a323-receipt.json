@@ -1,0 +1,26 @@
+{
+  "authority_public_key": "A6EHv_POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg",
+  "canonical_contract_sha256": "f2a237c4241c364be85733a22162d5193849abdf4738bf5263690506eedc797e",
+  "platform_commit": "c956a3237177f294f0d8a86e50949d1f69681638",
+  "receipt": {
+    "accepted_at": "2026-08-30T20:00:00Z",
+    "command": "evidence_admission",
+    "project_group_id": "tcpg_22222222222222222222222222222222",
+    "projection_cursor": 7,
+    "receipt_id": "tcgwar_11111111111111111111111111111111",
+    "request_hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+    "resource_hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+    "resource_id": "apweb_44444444444444444444444444444444",
+    "schema": "trustchain.governed-work-admission-receipt.v1",
+    "signature": {
+      "algorithm": "Ed25519",
+      "key_id": "platform-governed-work",
+      "value": "G3Tyhj8ElJllKiVwZ4ifYSN4c_M5NvIX2X6sQ1KJpUL2J61-LlDB6J2nj4uvyQRxk_vgLyctRMNVlWeBPJRUCQ"
+    },
+    "tenant_id": "tenant-a"
+  },
+  "receipt_signing_purpose": "governed_work.evidence.admit",
+  "router_sha256": "bb03badc12b0c1bca62d8e8ce536479e5cd3b0c5f964f121e44345d953be0561",
+  "schema": "apatch.trustchain-platform-contract-fixture.v1",
+  "service_sha256": "efc0c013becef29700d74d336ca7b345d536b543f64daec38839260ed7026a6d"
+}

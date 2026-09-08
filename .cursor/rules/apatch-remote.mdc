@@ -1,0 +1,44 @@
+---
+description: apatch remote work over SSH — writing to a remote host (RFP-029/030)
+alwaysApply: false
+---
+
+# apatch remote work (write to a remote host over SSH)
+
+Use `apatch_remote_task_run` for governed remote **writes**. The host/path/credentials
+are local broker policy — never ask for them, never raw `ssh`/`scp`/`rsync`/`git clone`.
+
+## The dry-run trap — read this first
+
+`apatch_remote_task_run` **defaults to `dry_run=true`**, which SIMULATES the whole
+ceremony (`doctor → … → apply → attest → session_end`) against a **fake transport**: it
+returns `attest` / `phase=complete` but makes **no SSH connection and writes nothing**.
+
+- A simulated attest is **NOT** a real apply. Do not report success.
+- The response tells you the truth: **`applied: false`**, `transport: "fake"`.
+
+## To actually write
+
+```
+apatch_remote_task_run(
+  remote_target="<alias>", intent="...",
+  plan={"needles": [ <the edit as mutation dicts> ]},   # (1) the edit MUST be here
+  verify="<remote test>",
+  dry_run=false                                          # (2) or it's a simulation
+)
+```
+
+1. The edit goes in `plan.needles` (or `patches`/`logs_path`). **No needles → the apply
+   step is skipped → nothing is written** (response: `applied: false`).
+2. `dry_run=false`.
+
+**Confirm:** `result["applied"] is true` (a real `apatch_apply_session` step ran). The
+exec channel (`apatch_remote_service_action … exec`) is **read-only** and cannot write.
+
+## Never
+
+- Treat a `dry_run=true` / `applied: false` result as a real apply.
+- `git clone` / `scp` / `rsync` / `tar | ssh` on the remote to move source — use
+  `apatch_remote_source_handoff(alias=…, execute=true)`.
+- Disclose SSH host, remote path, jump host, or credential location in visible plans.
+- If a remote tool is missing: stop and ask for an MCP reload — do not fall back to raw shell.

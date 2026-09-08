@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "phase": "idle",
+  "checkpoint": null,
+  "last_tool": "apatch_spec_interference",
+  "budget_remaining": null,
+  "trustchain": false,
+  "risk_level": "low",
+  "next_action": "apatch_session_start(intent='<ADR or task>')",
+  "failure": null,
+  "updated_at": "2026-06-10T18:05:08.453528+00:00"
+}

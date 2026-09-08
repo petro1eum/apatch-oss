@@ -1,0 +1,1 @@
+rebind SPEC-SESSION-LIFECYCLE-1 R2 — noop after recovery drift

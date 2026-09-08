@@ -1,0 +1,72 @@
+{
+  "schema": "apatch.sdd.verification-contract-amendment.v1",
+  "amendment_id": "SPEC-SDD-INTEGRITY-1-A2",
+  "status": "frozen",
+  "approved_at": "2026-09-01T14:58:00.000000Z",
+  "authority": {
+    "id": "APatch owner",
+    "kind": "local_owner",
+    "direction": "A sealed task envelope must be immutable, and an immutable APatch runtime must not be shadowed in verification children."
+  },
+  "reason": "Studio integration exposed two fail-open edges after 0.8.39: validate_task_envelope silently resealed a modified sealed document, and verify subprocesses could inherit a foreign APatch checkout through PYTHONPATH.",
+  "supersedes": {
+    "amendment_id": "SPEC-SDD-INTEGRITY-1-A1",
+    "implementation_commit": "5432d43"
+  },
+  "invalidated_requirement_ids": [
+    "R5",
+    "R11"
+  ],
+  "preserved_requirement_ids": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R6",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R12",
+    "R13"
+  ],
+  "judge_lock": {
+    "implementation_actor_may_modify": false,
+    "amendment_required": true,
+    "assets": [
+      {
+        "path": "tests/test_sdd_integrity_amendment_a2.py",
+        "hash": "sha256:be3b257423df4fe45e724e677d63267352ba5056432b3474f1ef67474d96a268"
+      }
+    ]
+  },
+  "observed_red_baseline": {
+    "command": "python3 -m pytest tests/test_sdd_integrity_amendment_a2.py -q --tb=short",
+    "collected": 2,
+    "passed": 0,
+    "failed": 2,
+    "failure_ids": [
+      "test_hash_bound_task_envelope_rejects_content_tampering",
+      "test_verify_child_drops_only_foreign_apatch_pythonpath"
+    ]
+  },
+  "required_perspectives": [
+    "positive",
+    "negative",
+    "boundary",
+    "regression"
+  ],
+  "implementation_plan": [
+    "Verify an existing task-envelope document_hash before normalization or resealing.",
+    "Remove only PYTHONPATH entries that expose a foreign APatch package while preserving unrelated user entries and the running APatch package root.",
+    "Keep launcher isolation and ordinary workspace verification behavior unchanged."
+  ],
+  "verify_commands": [
+    "python3 -m pytest tests/test_sdd_integrity_amendment_a2.py -q",
+    "python3 -m pytest tests/test_sdd_integrity.py tests/test_sdd_mandatory_profile.py tests/test_workspace_launcher.py tests/test_tool_paths.py -q",
+    "python3 -m pytest tests/ -q --tb=short"
+  ],
+  "source_mutation_authorized_after_freeze": true,
+  "new_source_mutation_count_at_freeze": 0
+}

@@ -1,0 +1,35 @@
+{
+  "schema": "apatch.sdd.owner-rfp-freeze.v1",
+  "freeze_id": "apsddrfp_91db60981684ce65fb102838fec58d0b",
+  "rfp_id": "RFP-044",
+  "source_path": "docs/RFP-044-sdd-integrity-adoption.md",
+  "source_commit": "381f9acb402af188636db631e9a8e4d701f208ca",
+  "source_hash": "sha256:deb673de57fef35d0f2369581641164c11645bc8d9a8232dab3abf172ce743ae",
+  "upstream": {
+    "rfp_id": "RFP-012",
+    "source_commit": "cb18e4a13e29ea4cad49ac67fa5e1101c35712a3",
+    "source_hash": "sha256:cdfad4871f81abb6c26d762ab23cf4350aa07eed7d3d69f7a0a230538913ea1d",
+    "studio_test_contract_commit": "12c1f5d937f8cfc8d26a81212b16fa578154b7f1"
+  },
+  "accepted_at": "2026-09-01T12:44:55.978636Z",
+  "authority": {
+    "kind": "local_owner",
+    "id": "APatch owner"
+  },
+  "acceptance_ids": [
+    "CORE-SDD-1",
+    "CORE-SDD-2",
+    "CORE-SDD-3",
+    "CORE-SDD-4",
+    "CORE-SDD-5",
+    "CORE-SDD-6",
+    "CORE-SDD-7",
+    "CORE-SDD-8",
+    "CORE-SDD-9",
+    "CORE-SDD-10",
+    "CORE-SDD-11"
+  ],
+  "authorization": "executable_specification_authoring",
+  "source_implementation_allowed": false,
+  "note": "Implementation remains forbidden until the final verification-contract manifest pins this SPEC and exact red-baseline tests."
+}

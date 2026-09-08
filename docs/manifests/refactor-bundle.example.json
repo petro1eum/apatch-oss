@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "kind": "refactor-bundle",
+  "operation": "rename_symbol",
+  "symbol": "CustomerDTO",
+  "to": "AccountDTO",
+  "scope": {
+    "globs": ["**/*.{py,ts,tsx}"],
+    "exclude": ["**/node_modules/**", "**/.venv/**"]
+  },
+  "phases": [
+    { "action": "impact", "target": "CustomerDTO" },
+    { "action": "generate", "match_mode": "literal", "replace_all": true },
+    { "action": "plan" },
+    { "action": "apply", "verify_deferred": true },
+    { "action": "verify", "command": "pytest tests/ -q" },
+    { "action": "arch_check" }
+  ],
+  "change_budget": {
+    "max_files": 30,
+    "max_insertions": 800,
+    "max_deletions": 400
+  },
+  "notes": [
+    "apatch refactor run --manifest <this file>",
+    "Для rename в сложном коде попробуйте match_mode whitespace"
+  ]
+}

@@ -1,0 +1,288 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apatch.dev/schemas/ux-audit.schema.json",
+  "title": "UX Audit Artifact (SPEC-UX-SPECIALIST-1)",
+  "spec_ref": "SPEC-UX-SPECIALIST-1",
+  "description": "Machine-readable output of a five-layer UX/UI audit. See docs/methodology/ux-specialist/ and RFP-015.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "product_id",
+    "audited_at",
+    "layers",
+    "tags"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "product_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "audited_at": {
+      "type": "string",
+      "format": "date"
+    },
+    "tags": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "string",
+        "pattern": "^(domain|layer|role|product):[a-z0-9._-]+$"
+      },
+      "contains": {
+        "const": "domain:ux"
+      }
+    },
+    "layers": {
+      "type": "object",
+      "required": ["L1", "L2", "L3", "L4", "L5"],
+      "additionalProperties": false,
+      "properties": {
+        "L1": { "$ref": "#/$defs/layer_l1" },
+        "L2": { "$ref": "#/$defs/layer_l2" },
+        "L3": { "$ref": "#/$defs/layer_l3" },
+        "L4": { "$ref": "#/$defs/layer_l4" },
+        "L5": { "$ref": "#/$defs/layer_l5" }
+      }
+    }
+  },
+  "$defs": {
+    "role_code": {
+      "type": "string",
+      "enum": [
+        "sales_director",
+        "account_executive",
+        "solutions_architect",
+        "other"
+      ]
+    },
+    "layer_l1": {
+      "type": "object",
+      "required": ["ux_clarity_index", "roles", "tasks", "nav_item_count"],
+      "additionalProperties": false,
+      "properties": {
+        "ux_clarity_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "nav_item_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "roles": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["code", "label", "primary_domain"],
+            "additionalProperties": false,
+            "properties": {
+              "code": { "$ref": "#/$defs/role_code" },
+              "label": { "type": "string", "minLength": 1 },
+              "primary_domain": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "tasks": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "object",
+            "required": ["id", "label", "roles", "frequency"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "pattern": "^T[0-9]+$" },
+              "label": { "type": "string", "minLength": 1 },
+              "roles": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "$ref": "#/$defs/role_code" }
+              },
+              "frequency": {
+                "type": "string",
+                "enum": ["daily", "weekly", "monthly", "rare"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "layer_l2": {
+      "type": "object",
+      "required": [
+        "canonical_object",
+        "context_container",
+        "projection_coherence_score",
+        "intent_distance_excessive_pct",
+        "context_switch_violations"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "canonical_object": { "type": "string", "minLength": 1 },
+        "context_container": { "type": "string", "minLength": 1 },
+        "projection_coherence_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "intent_distance_excessive_pct": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "context_switch_violations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["flow", "csc"],
+            "additionalProperties": false,
+            "properties": {
+              "flow": { "type": "string", "minLength": 1 },
+              "csc": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "layer_l3": {
+      "type": "object",
+      "required": [
+        "cognitive_unit",
+        "dimensions",
+        "ui_organization",
+        "methodology_organization",
+        "conflict_diagnosis"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "cognitive_unit": { "type": "string", "minLength": 1 },
+        "dimensions": {
+          "type": "array",
+          "minItems": 3,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "ui_organization": {
+          "type": "string",
+          "enum": ["feature_modules", "object_workspace", "hybrid", "other"]
+        },
+        "methodology_organization": { "type": "string", "minLength": 1 },
+        "conflict_diagnosis": { "type": "string", "minLength": 20 }
+      }
+    },
+    "layer_l4": {
+      "type": "object",
+      "required": ["role_focal_objects", "dual_root"],
+      "additionalProperties": false,
+      "properties": {
+        "dual_root": { "type": "boolean" },
+        "role_focal_objects": {
+          "type": "object",
+          "minProperties": 2,
+          "additionalProperties": {
+            "type": "object",
+            "required": ["entry", "primary_workspace", "drill_down"],
+            "additionalProperties": false,
+            "properties": {
+              "entry": { "type": "string", "minLength": 1 },
+              "primary_workspace": { "type": "string", "minLength": 1 },
+              "drill_down": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "layer_l5": {
+      "type": "object",
+      "required": [
+        "signals",
+        "bridge_cost_distribution",
+        "patterns",
+        "ranked_fixes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "signals": {
+          "type": "array",
+          "minItems": 5,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "source",
+              "target",
+              "bridge_cost",
+              "urgency"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "pattern": "^S[0-9]+$" },
+              "source": { "type": "string", "minLength": 1 },
+              "target": { "type": "string", "minLength": 1 },
+              "bridge_cost": {
+                "oneOf": [
+                  { "type": "integer", "minimum": 1 },
+                  { "type": "string", "const": "infinity" }
+                ]
+              },
+              "urgency": {
+                "type": "string",
+                "enum": ["immediate", "today", "this_week", "strategic"]
+              }
+            }
+          }
+        },
+        "bridge_cost_distribution": {
+          "type": "object",
+          "required": ["direct_pct", "broken_pct", "dead_end_pct"],
+          "additionalProperties": false,
+          "properties": {
+            "direct_pct": { "type": "integer", "minimum": 0, "maximum": 100 },
+            "broken_pct": { "type": "integer", "minimum": 0, "maximum": 100 },
+            "dead_end_pct": { "type": "integer", "minimum": 0, "maximum": 100 }
+          }
+        },
+        "patterns": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "string",
+            "enum": [
+              "actionable_signals",
+              "contextual_surfacing",
+              "intent_router"
+            ]
+          }
+        },
+        "ranked_fixes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["rank", "title", "signals_repaired", "effort"],
+            "additionalProperties": false,
+            "properties": {
+              "rank": { "type": "integer", "minimum": 1 },
+              "title": { "type": "string", "minLength": 1 },
+              "signals_repaired": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "string", "pattern": "^S[0-9]+$" }
+              },
+              "effort": {
+                "type": "string",
+                "enum": ["low", "medium", "high"]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

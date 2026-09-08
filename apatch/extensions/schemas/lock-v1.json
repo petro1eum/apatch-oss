@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apatch.dev/schemas/apatch-extensions-lock-v1.schema.json",
+  "title": "APatch explicit extensions lock v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "extensions"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "extensions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "source",
+          "manifest_path",
+          "manifest_sha256",
+          "package_sha256",
+          "license",
+          "enabled",
+          "grants"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 253,
+            "pattern": "^(?!apatch\\.)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.){2,}[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+          },
+          "source": {
+            "enum": [
+              "workspace",
+              "bundled",
+              "personal"
+            ]
+          },
+          "manifest_path": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"
+          },
+          "manifest_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "package_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "license": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 192
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "grants": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9]*(?:[._:-][A-Za-z0-9_*-]+)*$"
+            },
+            "uniqueItems": true
+          }
+        }
+      }
+    }
+  }
+}

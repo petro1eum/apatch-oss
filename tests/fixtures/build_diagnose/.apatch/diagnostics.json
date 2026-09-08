@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-06-10T20:17:59.533909+00:00",
+  "diagnostic_count": 1,
+  "diagnostics": [
+    {
+      "file": "apple/cpp_core/src/omega/omega_sensor.cpp",
+      "line": 134,
+      "severity": "error",
+      "message": "no member named 'get_concept_name' in 'omega_core::SparseOmega'",
+      "raw": "apple/cpp_core/src/omega/omega_sensor.cpp:134:45: error: no member named 'get_concept_name' in 'omega_core::SparseOmega'",
+      "error_type": "missing_member",
+      "member": "get_concept_name",
+      "type": "omega_core::SparseOmega",
+      "type_definition": {
+        "file": "sparse_omega.h",
+        "members": [
+          "add_node",
+          "lookup",
+          "node_count"
+        ]
+      },
+      "suggestions": [
+        {
+          "strategy": "restore_api",
+          "confidence": 0.85,
+          "detail": "Add `get_concept_name` to `SparseOmega` in sparse_omega.h",
+          "type": "omega_core::SparseOmega",
+          "member": "get_concept_name"
+        }
+      ]
+    }
+  ]
+}

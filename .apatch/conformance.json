@@ -1,0 +1,9 @@
+{
+  "enabled": true,
+  "mode": "blocking",
+  "live_verify": true,
+  "ci_safe": true,
+  "block_on": ["drifted"],
+  "contract": {},
+  "note": "RFP-035 standing contract-gate. Every lever is the project's choice: enabled (on/off); mode (advisory reports | blocking gates merges); live_verify (re-run verify vs trust attestation); ci_safe (block only on self-contained pure-pytest verifies, safe in CI without the ledger); block_on (which buckets fail the gate: drifted | stale | unproven | in_progress); contract (which specs — specs:[...] or spec_glob). apatch ships the instrument; the project decides what to enforce."
+}

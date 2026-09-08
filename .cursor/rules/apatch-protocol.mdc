@@ -1,0 +1,29 @@
+---
+description: apatch governed protocol — spec_run (RFP-009), no manual jsonl staging
+alwaysApply: true
+---
+
+# apatch protocol (MCP only)
+
+**First tool:** `apatch_doctor` → read `protocol_contract`, `spec_run`, `spec_execution`.
+
+## Executable spec tasks
+
+| User intent | Tool |
+|-------------|------|
+| Implement / continue **whole** SPEC-X | `apatch_spec_run` — inline `requirements` (compact) or `manifest_path` (large) |
+| One requirement / hotfix | `apatch_execute_next(needles=[mutation dicts])` |
+| Inspection / dogfood one Rk | §3I: `spec_next` → `session_start(requirement)` → `generate_batch` → `apply_session` → verify from spec → `attest` |
+
+## Never
+
+- Hand-staged `patches.jsonl` for SPEC workflows
+- Ephemeral `manifests/*.run.json` each run — use committed `manifest_path` or inline `requirements`
+- Python driver scripts (`manifests/*-spec.py`) calling `spec_run_enriched()` to bypass MCP
+- `apatch_generate` → jsonl → `plan_batch` as primary spec path
+- `Write`/`StrReplace` on protected paths (`apatch/**`, `src/**`, `e2e/**`, `server/**`, `scripts/**`, `docs/specs/**`, …)
+- “Quick fix” bypass; sandbox default `watcher: revert` auto-reverts unleased writes
+- N× `execute_next` when `spec_run` can batch the spec
+- Rebind shared-file stale Rk by mutating the shared file again on lower R numbers — use noop marker fixtures; attested last = Rk with final mutation on that file
+
+RFP-009 capability is in MCP `spec_run` field — not a consumer file path.

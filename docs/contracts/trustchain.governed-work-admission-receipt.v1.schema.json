@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apatch.dev/contracts/trustchain.governed-work-admission-receipt.v1.schema.json",
+  "title": "TrustChain Governed Work Admission Receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "receipt_id",
+    "tenant_id",
+    "project_group_id",
+    "request_hash",
+    "command",
+    "resource_id",
+    "resource_hash",
+    "projection_cursor",
+    "accepted_at",
+    "signature"
+  ],
+  "properties": {
+    "schema": {"const": "trustchain.governed-work-admission-receipt.v1"},
+    "receipt_id": {
+      "type": "string",
+      "pattern": "^tcgwar_[0-9a-f]{32}$"
+    },
+    "tenant_id": {"type": "string", "minLength": 1},
+    "project_group_id": {
+      "type": "string",
+      "pattern": "^tcpg_[0-9a-f]{32}$"
+    },
+    "request_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "command": {"const": "evidence_admission"},
+    "resource_id": {
+      "type": "string",
+      "pattern": "^apweb_[0-9a-f]{32}$"
+    },
+    "resource_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "projection_cursor": {"type": "integer", "minimum": 0},
+    "accepted_at": {"type": "string", "format": "date-time"},
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "key_id", "value"],
+      "properties": {
+        "algorithm": {"const": "Ed25519"},
+        "key_id": {"type": "string", "minLength": 1},
+        "value": {"type": "string", "pattern": "^[A-Za-z0-9_-]{86}$"}
+      }
+    }
+  }
+}

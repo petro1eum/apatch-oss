@@ -1,0 +1,1 @@
+SPEC-CONTRIB-TIMESHEET-1 R7 multi-user, privacy-bounded — per-key_id aggregation; events carry no code/secrets (apatch/timesheet.py).

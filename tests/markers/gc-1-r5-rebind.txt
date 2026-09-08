@@ -1,0 +1,1 @@
+rebind SPEC-GC-1 R5 — noop after commit drift (HygieneCriticalError + runtime gate)

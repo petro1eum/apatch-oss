@@ -1,0 +1,1 @@
+SPEC-CONTRIB-TIMESHEET-1 R8 active-effort — idle_gap_split splits session span at op gaps (apatch/timesheet.py).

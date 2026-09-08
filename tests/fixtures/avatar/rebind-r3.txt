@@ -1,0 +1,1 @@
+SPEC-AVATAR-FOUNDATION-1 R3 marker — economic boundary: asset_summary carries no PI/GPI/clearing (R1).

@@ -1,0 +1,1 @@
+SPEC-CONFORMANCE-GATE-1 R2 all buckets at once (A35-B/D)

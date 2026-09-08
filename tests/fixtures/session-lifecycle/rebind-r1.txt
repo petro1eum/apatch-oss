@@ -1,0 +1,1 @@
+rebind SPEC-SESSION-LIFECYCLE-1 R1 — noop after artifact_governance drift

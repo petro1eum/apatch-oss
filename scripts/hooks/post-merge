@@ -1,0 +1,6 @@
+#!/bin/sh
+# apatch: regenerate the per-machine MCP config after pull/checkout.
+# The IDE stubs + .apatch/mcp.json carry an absolute interpreter path, so they
+# are generated locally (never committed). Best-effort, never blocks the op.
+command -v apatch >/dev/null 2>&1 && apatch mcp sync >/dev/null 2>&1
+exit 0

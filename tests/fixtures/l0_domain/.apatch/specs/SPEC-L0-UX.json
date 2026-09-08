@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "SPEC-L0-UX",
+  "source_path": "docs/specs/SPEC-L0-UX.md",
+  "tags": [
+    "domain:ux",
+    "layer:L2",
+    "product:sales_pipeline"
+  ],
+  "requirements": {
+    "R1": {
+      "needles": [
+        {
+          "target_file": "shared/deal_surface.py",
+          "find_text": "STATUS = \"pending\"",
+          "replace_text": "STATUS = \"visible-pending\"",
+          "match_mode": "literal"
+        }
+      ]
+    }
+  }
+}

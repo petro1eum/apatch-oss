@@ -1,0 +1,91 @@
+{
+  "schema": "apatch.sdd.verification-contract-amendment.v1",
+  "amendment_id": "SPEC-SDD-INTEGRITY-1-A1",
+  "status": "frozen",
+  "approved_at": "2026-09-01T14:00:00.000000Z",
+  "authority": {
+    "id": "APatch owner",
+    "kind": "local_owner",
+    "direction": "Strict mode must retain the agent exclusively inside the approved task and cannot be bypassed."
+  },
+  "reason": "The first implementation exposed an opt-in bypass: a workspace manifest enabled status reporting, but an unbound legacy session still admitted effects and the MCP surface could not bind the frozen contract.",
+  "supersedes": {
+    "contract_id": "apsddvc_core_rfp044_v1",
+    "contract_file_hash": "sha256:0e3485957f1af8d1124cc6c0eb7f6e1f90468406bbdaab26ca360105cb5e4335",
+    "implementation_commit": "7432f029bd398365f73482571e5aba2b5e164874"
+  },
+  "new_requirements": [
+    "R12",
+    "R13"
+  ],
+  "invalidated_requirement_ids": [
+    "R4",
+    "R5",
+    "R6",
+    "R11"
+  ],
+  "preserved_requirement_ids": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R7",
+    "R8",
+    "R9",
+    "R10"
+  ],
+  "judge_lock": {
+    "implementation_actor_may_modify": false,
+    "amendment_required": true,
+    "assets": [
+      {
+        "path": "tests/test_sdd_mandatory_profile.py",
+        "hash": "sha256:6c4ff6da1c7848e1197d0e8637b88b767b71fc8ba7cada86f087d02a7f0b43cb"
+      },
+      {
+        "path": "tests/test_sdd_integrity.py",
+        "hash": "sha256:095c3d203d305051edffc8dee85e82a92eaeb45799caa50523bc5d671f700729"
+      },
+      {
+        "path": "tests/test_sdd_integrity_contract.py",
+        "hash": "sha256:880a5b8874d0ba089b1a47d033441de8524dbc92627066f145455d7750713b41"
+      },
+      {
+        "path": "docs/specs/SPEC-SDD-INTEGRITY-1.md",
+        "hash": "sha256:e3215dd47aa7d00d6f763254e73e69eb57d0ffb928020c8ac52f07cbb03b921f"
+      }
+    ]
+  },
+  "observed_red_baseline": {
+    "command": "python3 -m pytest tests/test_sdd_mandatory_profile.py tests/test_sdd_integrity.py -q --tb=short",
+    "collected": 16,
+    "passed": 12,
+    "failed": 4,
+    "failure_ids": [
+      "test_profile_manifest_requires_exact_binding_before_session_creation",
+      "test_existing_legacy_session_is_denied_after_profile_activation",
+      "test_task_envelope_must_bind_the_exact_frozen_contract",
+      "test_mcp_start_exposes_only_fixed_implementation_binding"
+    ]
+  },
+  "required_perspectives": [
+    "positive",
+    "negative",
+    "boundary",
+    "regression"
+  ],
+  "implementation_plan": [
+    "Load and validate the canonical workspace profile manifest before creating a governed session.",
+    "Require exact manifest/contract hash equality and exact envelope.contract_hash equality.",
+    "Deny an already-open unbound legacy session before its next mediated effect after profile activation.",
+    "Expose sdd_contract, task_envelope and actor_id on MCP session start while fixing role=implementation.",
+    "Preserve legacy behavior when no profile manifest exists."
+  ],
+  "verify_commands": [
+    "python3 -m pytest tests/test_sdd_mandatory_profile.py -q",
+    "python3 -m pytest tests/test_sdd_integrity.py tests/test_sdd_integrity_contract.py -q",
+    "python3 -m pytest tests/ -q --tb=short"
+  ],
+  "source_mutation_authorized_after_freeze": true,
+  "new_source_mutation_count_at_freeze": 0
+}

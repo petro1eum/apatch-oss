@@ -1,0 +1,373 @@
+{
+  "schema_version": 1,
+  "product_id": "sales-pipeline-jason",
+  "audited_at": "2026-06-10",
+  "tags": [
+    "domain:ux",
+    "layer:L1",
+    "layer:L2",
+    "layer:L3",
+    "layer:L4",
+    "layer:L5",
+    "role:sales_director",
+    "role:account_executive",
+    "role:solutions_architect",
+    "product:jason"
+  ],
+  "layers": {
+    "L1": {
+      "ux_clarity_index": 42,
+      "nav_item_count": 12,
+      "roles": [
+        {
+          "code": "sales_director",
+          "label": "Sales Director",
+          "primary_domain": "pipeline oversight"
+        },
+        {
+          "code": "account_executive",
+          "label": "Account Executive",
+          "primary_domain": "deal execution"
+        },
+        {
+          "code": "solutions_architect",
+          "label": "Solutions Architect",
+          "primary_domain": "technical validation"
+        }
+      ],
+      "tasks": [
+        {
+          "id": "T1",
+          "label": "Review pipeline health",
+          "roles": [
+            "sales_director"
+          ],
+          "frequency": "daily"
+        },
+        {
+          "id": "T2",
+          "label": "Advance active deal",
+          "roles": [
+            "account_executive"
+          ],
+          "frequency": "daily"
+        },
+        {
+          "id": "T3",
+          "label": "Attach solution design",
+          "roles": [
+            "solutions_architect"
+          ],
+          "frequency": "weekly"
+        },
+        {
+          "id": "T4",
+          "label": "Forecast commit",
+          "roles": [
+            "sales_director",
+            "account_executive"
+          ],
+          "frequency": "weekly"
+        }
+      ]
+    },
+    "L2": {
+      "canonical_object": "Deal",
+      "context_container": "Sales Pipeline workspace",
+      "projection_coherence_score": 4.2,
+      "intent_distance_excessive_pct": 38,
+      "context_switch_violations": [
+        {
+          "flow": "Dashboard → Deal → Quote",
+          "csc": 2
+        },
+        {
+          "flow": "Pipeline → Forecast → Deal",
+          "csc": 3
+        }
+      ]
+    },
+    "L3": {
+      "cognitive_unit": "Engagement",
+      "dimensions": [
+        "role accountability",
+        "deal stage",
+        "signal urgency"
+      ],
+      "ui_organization": "feature_modules",
+      "methodology_organization": "object_workspace",
+      "conflict_diagnosis": "Feature-module nav splits Deal context across 4 surfaces; methodology expects single Deal workspace."
+    },
+    "L4": {
+      "dual_root": true,
+      "role_focal_objects": {
+        "sales_director": {
+          "entry": "Pipeline dashboard",
+          "primary_workspace": "Forecast + team pipeline",
+          "drill_down": "Deal risk signals"
+        },
+        "account_executive": {
+          "entry": "My deals list",
+          "primary_workspace": "Deal detail workspace",
+          "drill_down": "Activity + next step"
+        },
+        "solutions_architect": {
+          "entry": "Technical queue",
+          "primary_workspace": "Solution design on Deal",
+          "drill_down": "Requirements checklist"
+        }
+      }
+    },
+    "L5": {
+      "signals": [
+        {
+          "id": "S1",
+          "source": "Deal detail",
+          "target": "Pipeline board",
+          "bridge_cost": 3,
+          "urgency": "immediate"
+        },
+        {
+          "id": "S2",
+          "source": "Pipeline board",
+          "target": "Deal detail",
+          "bridge_cost": 3,
+          "urgency": "today"
+        },
+        {
+          "id": "S3",
+          "source": "Activity feed",
+          "target": "Deal detail",
+          "bridge_cost": 2,
+          "urgency": "this_week"
+        },
+        {
+          "id": "S4",
+          "source": "Dashboard KPI",
+          "target": "Pipeline board",
+          "bridge_cost": 1,
+          "urgency": "strategic"
+        },
+        {
+          "id": "S5",
+          "source": "Email alert",
+          "target": "Deal detail",
+          "bridge_cost": 3,
+          "urgency": "immediate"
+        },
+        {
+          "id": "S6",
+          "source": "Calendar",
+          "target": "Activity feed",
+          "bridge_cost": 2,
+          "urgency": "today"
+        },
+        {
+          "id": "S7",
+          "source": "Forecast view",
+          "target": "Deal detail",
+          "bridge_cost": 3,
+          "urgency": "this_week"
+        },
+        {
+          "id": "S8",
+          "source": "Team roster",
+          "target": "Deal detail",
+          "bridge_cost": 1,
+          "urgency": "strategic"
+        },
+        {
+          "id": "S9",
+          "source": "Quote builder",
+          "target": "Deal detail",
+          "bridge_cost": 2,
+          "urgency": "immediate"
+        },
+        {
+          "id": "S10",
+          "source": "Competitive intel",
+          "target": "Deal detail",
+          "bridge_cost": 3,
+          "urgency": "today"
+        },
+        {
+          "id": "S11",
+          "source": "Deal detail",
+          "target": "Pipeline board",
+          "bridge_cost": 3,
+          "urgency": "this_week"
+        },
+        {
+          "id": "S12",
+          "source": "Pipeline board",
+          "target": "Deal detail",
+          "bridge_cost": 1,
+          "urgency": "strategic"
+        },
+        {
+          "id": "S13",
+          "source": "Activity feed",
+          "target": "Deal detail",
+          "bridge_cost": 3,
+          "urgency": "immediate"
+        },
+        {
+          "id": "S14",
+          "source": "Dashboard KPI",
+          "target": "Pipeline board",
+          "bridge_cost": 3,
+          "urgency": "today"
+        },
+        {
+          "id": "S15",
+          "source": "Email alert",
+          "target": "Deal detail",
+          "bridge_cost": 2,
+          "urgency": "this_week"
+        },
+        {
+          "id": "S16",
+          "source": "Calendar",
+          "target": "Activity feed",
+          "bridge_cost": 1,
+          "urgency": "strategic"
+        },
+        {
+          "id": "S17",
+          "source": "Forecast view",
+          "target": "Deal detail",
+          "bridge_cost": 3,
+          "urgency": "immediate"
+        },
+        {
+          "id": "S18",
+          "source": "Team roster",
+          "target": "Deal detail",
+          "bridge_cost": 2,
+          "urgency": "today"
+        },
+        {
+          "id": "S19",
+          "source": "Quote builder",
+          "target": "Deal detail",
+          "bridge_cost": 3,
+          "urgency": "this_week"
+        },
+        {
+          "id": "S20",
+          "source": "Competitive intel",
+          "target": "Deal detail",
+          "bridge_cost": 1,
+          "urgency": "strategic"
+        },
+        {
+          "id": "S21",
+          "source": "Deal detail",
+          "target": "Pipeline board",
+          "bridge_cost": 2,
+          "urgency": "immediate"
+        },
+        {
+          "id": "S22",
+          "source": "Pipeline board",
+          "target": "Deal detail",
+          "bridge_cost": 3,
+          "urgency": "today"
+        },
+        {
+          "id": "S23",
+          "source": "Activity feed",
+          "target": "Deal detail",
+          "bridge_cost": 3,
+          "urgency": "this_week"
+        },
+        {
+          "id": "S24",
+          "source": "Dashboard KPI",
+          "target": "Pipeline board",
+          "bridge_cost": 1,
+          "urgency": "strategic"
+        },
+        {
+          "id": "S25",
+          "source": "Email alert",
+          "target": "Deal detail",
+          "bridge_cost": 3,
+          "urgency": "immediate"
+        },
+        {
+          "id": "S26",
+          "source": "Calendar",
+          "target": "Activity feed",
+          "bridge_cost": 3,
+          "urgency": "today"
+        },
+        {
+          "id": "S27",
+          "source": "Forecast view",
+          "target": "Deal detail",
+          "bridge_cost": 2,
+          "urgency": "this_week"
+        },
+        {
+          "id": "S28",
+          "source": "Team roster",
+          "target": "Deal detail",
+          "bridge_cost": 1,
+          "urgency": "strategic"
+        },
+        {
+          "id": "S29",
+          "source": "Quote builder",
+          "target": "Deal detail",
+          "bridge_cost": 3,
+          "urgency": "immediate"
+        },
+        {
+          "id": "S30",
+          "source": "Competitive intel",
+          "target": "Deal detail",
+          "bridge_cost": 2,
+          "urgency": "today"
+        },
+        {
+          "id": "S31",
+          "source": "Deal detail",
+          "target": "Pipeline board",
+          "bridge_cost": 3,
+          "urgency": "this_week"
+        }
+      ],
+      "bridge_cost_distribution": {
+        "direct_pct": 23,
+        "broken_pct": 26,
+        "dead_end_pct": 16
+      },
+      "patterns": [
+        "actionable_signals",
+        "contextual_surfacing",
+        "intent_router"
+      ],
+      "ranked_fixes": [
+        {
+          "rank": 1,
+          "title": "Surface deal risk on pipeline card",
+          "signals_repaired": [
+            "S1",
+            "S4"
+          ],
+          "effort": "low"
+        },
+        {
+          "rank": 2,
+          "title": "Unify activity feed entry point",
+          "signals_repaired": [
+            "S3",
+            "S6"
+          ],
+          "effort": "medium"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,1 @@
+SPEC-CONFORMANCE-GATE-1 R6 ci-safe ledger-free blocking (A35-E)

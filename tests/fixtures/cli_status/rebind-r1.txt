@@ -1,0 +1,1 @@
+rebind SPEC-CLI-STATUS-1#R1

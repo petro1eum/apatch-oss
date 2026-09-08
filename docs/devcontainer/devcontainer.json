@@ -1,0 +1,19 @@
+{
+  "name": "apatch consumer",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "postCreateCommand": "pip install 'apatch[mcp,languages] @ git+https://github.com/petro1eum/apatch.git' && apatch doctor --json",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python"
+      ]
+    }
+  },
+  "remoteEnv": {
+    "APATCH_SANDBOX_HINT": "Use apatch_apply_session for protected paths; run apatch sandbox status"
+  },
+  "postAttachCommand": "apatch sandbox status 2>/dev/null || true"
+}

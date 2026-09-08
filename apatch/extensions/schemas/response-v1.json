@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apatch.dev/schemas/apatch-extension-response-v1.schema.json",
+  "title": "APatch extension process response v1",
+  "type": "object",
+  "required": [
+    "protocol",
+    "request_id",
+    "ok"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "protocol": {
+      "const": "apatch.extension.v1"
+    },
+    "request_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$"
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "result": {},
+    "proposed_needles": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object"
+      }
+    },
+    "error": {}
+  },
+  "x-apatch-reserved-fields-forbidden-recursively": [
+    "session_token",
+    "session_capability",
+    "governed_session_id",
+    "attestation",
+    "checkpoint",
+    "trustchain",
+    "apply",
+    "applied"
+  ],
+  "x-apatch-authority": "proposed_needles are data only; core owns every mutation lifecycle"
+}

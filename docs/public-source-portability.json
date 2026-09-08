@@ -1,0 +1,20 @@
+{
+  "schema": "apatch.public-source-portability.v1",
+  "approved_on": "2026-09-08",
+  "authority": "explicit APatch owner conversation approval; not a cryptographic signature",
+  "scope": "public snapshot only; historical freeze records preserved",
+  "test": "tests/test_sdd_integrity_contract.py",
+  "old_test_sha256": "880a5b8874d0ba089b1a47d033441de8524dbc92627066f145455d7750713b41",
+  "new_test_sha256": "d3fbca034fa250624369501eff8a3acccebf3f6d0868f339e6f5f3b90825e060",
+  "original_assertions_preserved": 13,
+  "frozen_rfp_sha256": "deb673de57fef35d0f2369581641164c11645bc8d9a8232dab3abf172ce743ae",
+  "fixture": "tests/fixtures/public_contracts/RFP-044-owner-frozen.md",
+  "other_frozen_files_unchanged": [
+    "docs/RFP-044-sdd-integrity-adoption.md",
+    "docs/RFP-045-sdd-verifier-closure.md",
+    "docs/specs/SPEC-SDD-INTEGRITY-1.md",
+    "docs/specs/SPEC-SDD-VERIFIER-CLOSURE-1.md",
+    "tests/test_sdd_integrity.py",
+    "tests/test_sdd_verifier_closure.py"
+  ]
+}

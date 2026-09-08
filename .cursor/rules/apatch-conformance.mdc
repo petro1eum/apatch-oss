@@ -1,0 +1,41 @@
+---
+description: apatch continuous conformance — the standing contract-gate (RFP-035)
+alwaysApply: false
+---
+
+# apatch conformance (does the whole contract still hold)
+
+Opt-in: inert unless `.apatch/conformance.json` has `enabled: true`. apatch gives the
+lever; the **project** decides what to enforce — never turn on blocking yourself.
+
+## When to use
+
+| Intent | Command |
+|--------|---------|
+| Is the contract still holding? | `apatch conformance status` (add `--json`) |
+| Truthful check (run verifies now) | `apatch conformance status --live` |
+| Gate a change | `apatch conformance gate --live --base <ref>` |
+| CI gate (no local ledger) | `apatch conformance gate --live --ci-safe --base <ref>` |
+
+## The four buckets — never conflate stale and drifted
+
+- `conformant` — attested + verify green now.
+- **`drifted`** — verify **red now** → real regression → blocks (default).
+- `stale` — attested, attestation stale, verify still **green** → advisory; fix with
+  the MCP tool `apatch_rebind_stale(spec='SPEC-X')`, do **not** treat as a bug.
+- `unproven` — no real `verify` → a visible hole.
+
+A stale attestation with a green verify is **bookkeeping, not a regression**. Only a
+live red verify is blocking. Treating stale as drifted = the gate cries wolf.
+
+## Levers (config — the project's choice, not yours)
+
+`mode` (advisory|blocking) · `live_verify` · `ci_safe` (block only on self-contained
+pytest) · `block_on` (which buckets block; default `["drifted"]`) · `contract` (scope).
+`--base REF` makes live verify baseline-aware (only re-run changed specs).
+
+## Never
+
+- Flip `mode: blocking` or add buckets to `block_on` on your own — that's the owner's call.
+- Re-attest a `stale` spec to hide a `drifted` one — run the verify, see which it is.
+- Run a full live gate on a large contract without `--base` (it re-runs everything).

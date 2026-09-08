@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "kind": "db-refactor",
+  "profile": "sqlalchemy",
+  "description": "Пример: массовая правка моделей + проверка + напоминание о миграции",
+  "model_globs": [
+    "**/db_models.py",
+    "**/models.py"
+  ],
+  "migration_globs": [
+    "**/alembic/versions/*.py"
+  ],
+  "patches_jsonl": "patches/db_refactor.jsonl",
+  "phases": [
+    {
+      "name": "apply_model_patches",
+      "action": "apply",
+      "verify": "python3 -m pytest tests/ -q",
+      "verify_deferred": true
+    },
+    {
+      "name": "check_migration_needed",
+      "action": "db_check"
+    },
+    {
+      "name": "create_revision_draft",
+      "action": "db_revision",
+      "message": "apatch auto revision",
+      "optional": true,
+      "skip_if": "db_check.ok"
+    },
+    {
+      "name": "final_verify",
+      "action": "shell",
+      "command": "alembic upgrade head"
+    }
+  ],
+  "require_migration": true,
+  "auto_revision": false,
+  "notes": [
+    "auto_revision=false: агент вызывает apatch_db_revision вручную после ревью db_check",
+    "После revision допиши data migration в созданный файл versions/*.py",
+    "apatch не откатывает файлы миграций при verify fail на final_verify"
+  ]
+}

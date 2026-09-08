@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-06-10T20:17:59.533707+00:00",
+  "build_ok": false,
+  "verify": null,
+  "log_text": "apple/cpp_core/src/omega/omega_sensor.cpp:134:45: error: no member named 'get_concept_name' in 'omega_core::SparseOmega'\n1 error generated.\n"
+}

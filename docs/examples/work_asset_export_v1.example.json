@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "contract_id": "apatch.work_asset_export.v1",
+  "contract_version": 1,
+  "kind": "work_asset_export",
+  "content_safe": true,
+  "redaction": {
+    "exports_code": false,
+    "exports_private_prompts": false,
+    "exports_credentials": false,
+    "exports_ssh_topology": false,
+    "raw_logs": false
+  },
+  "privacy_boundary": {
+    "policy_version": 1,
+    "scope": "metadata_proof_summary",
+    "raw_work_exported": false,
+    "source_code_exported": false,
+    "private_prompts_exported": false,
+    "credentials_exported": false,
+    "ssh_topology_exported": false,
+    "raw_logs_exported": false,
+    "customer_data_exported": false
+  },
+  "data_access": {
+    "policy_version": 1,
+    "raw_workspace": "not_exported",
+    "ledger_detail": "workspace_owner",
+    "export_bundle": "explicit_export_only",
+    "avatar_summary": "consumer_content_safe",
+    "commercial_lens": "consumer_policy_only",
+    "external_training": "not_allowed_without_separate_consent"
+  },
+  "consent_retention": {
+    "policy_version": 1,
+    "export_requires_explicit_action": true,
+    "external_training_allowed": false,
+    "consumer_cache_owner": "consumer_workspace",
+    "retention": "consumer_policy",
+    "revocation": "remove_exports_and_consumer_caches_keep_local_audit_hashes"
+  },
+  "identity": {
+    "key_id": "example-key",
+    "cert_fingerprint": "sha256:example",
+    "agent_id": "apatch-example",
+    "ca": "platform"
+  },
+  "source_summary": {
+    "asset_summary_kind": "asset_summary",
+    "artifact_count": 1,
+    "spec_count": 1,
+    "attested_requirement_count": 1
+  },
+  "asset_count": 1,
+  "assets": [
+    {
+      "schema_version": 1,
+      "kind": "work_asset",
+      "asset_id": "wa_example_contract_0000000000",
+      "asset_kind": "spec_bundle",
+      "title": "Example content-safe WorkAsset",
+      "owner": {
+        "key_id": "example-key",
+        "cert_fingerprint": "sha256:example",
+        "agent_id": "apatch-example",
+        "ca": "platform",
+        "trust_level": "attested"
+      },
+      "problem_signature": {
+        "label": "Example content-safe WorkAsset",
+        "tags": ["example", "contract"],
+        "spec_family": "SPEC-WORK-ASSET-EXPORT"
+      },
+      "applicability": {
+        "scope": "governed apatch workflow",
+        "signals": ["example", "contract"],
+        "required_context": ["apatch ledger", "spec requirement coverage", "verification command"]
+      },
+      "trigger_signals": ["example", "contract"],
+      "outputs": [
+        {"type": "spec_requirements", "count": 1},
+        {"type": "attestations", "count": 1}
+      ],
+      "spec_refs": ["spec:SPEC-WORK-ASSET-EXPORT-1#R1"],
+      "rfp_refs": ["rfp:RFP-031"],
+      "proof_refs": [{"ledger": "trustchain", "op_ids": ["op_example"]}],
+      "verification_refs": ["python3 -m pytest tests/test_work_asset_export_contract.py -q"],
+      "source_evidence": {
+        "metadata_only": true,
+        "spec_path": "docs/specs/SPEC-WORK-ASSET-EXPORT-1.md",
+        "artifact_keys": ["spec:SPEC-WORK-ASSET-EXPORT-1#R1"],
+        "mutation_count": 1,
+        "attestation_count": 1
+      },
+      "confidentiality_class": "metadata_only",
+      "reuse": {"count": 0, "last_used_at": null},
+      "portability_policy": {
+        "content_safe": true,
+        "exports_code": false,
+        "exports_private_prompts": false,
+        "exports_credentials": false,
+        "exports_ssh_topology": false,
+        "raw_logs": false,
+        "portability_class": "portable_method_review_required",
+        "rights_claim": "evidence_record_not_ownership_transfer",
+        "employer_review": "required_when_private_context_or_contract_applies",
+        "redaction": "strict"
+      },
+      "dependency_lens": {
+        "human_method": 1.0,
+        "project_specific_context": 0.0,
+        "vendor_specific_context": 0.0,
+        "requires_private_data": false
+      },
+      "lifecycle": "candidate"
+    }
+  ]
+}

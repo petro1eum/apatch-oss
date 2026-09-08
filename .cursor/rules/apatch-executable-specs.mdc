@@ -1,0 +1,24 @@
+---
+description: Executable specifications (RFP-007) — format and MCP workflow for apatch agents
+globs: docs/specs/**/*.md
+alwaysApply: false
+---
+
+# Executable specs (apatch dogfood)
+
+**Discover requirements:** `apatch_doctor` → `spec_authoring`, `spec_execution`, `spec_run`.
+Every `apatch_spec_*` MCP tool echoes `spec_authoring` in its response.
+
+## Authoring (`apatch_spec_lint`)
+
+- H1: `# SPEC-<ID> — Title`
+- `> **apatch artifact:** \`spec:SPEC-<ID>\`` — same id as H1
+- `## R1 <title>` + `(verify: <cmd>)` per requirement
+
+## Workflows
+
+- §3I: manual `spec_next` loop
+- §3J: `apatch_execute_next(needles=[mutation dicts])`
+- §3K: `apatch_spec_run(requirements={Rk: {needles}})`
+
+Needles = mutation dicts, not prose. `verify_deferred=true` on mutate (default).

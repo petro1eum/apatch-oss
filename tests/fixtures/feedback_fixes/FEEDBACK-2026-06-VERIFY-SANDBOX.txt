@@ -1,0 +1,5 @@
+Feedback fixes attested in session apatch_sess_1781199036:
+- baseline-aware verify (capture/compare + allowed_failures)
+- sandbox shell hook allows discard redirects to /dev/null
+- verify accepts argv list (no shell quoting pitfalls)
+- MCP apatch_generate_batch accepts needles_path JSON file

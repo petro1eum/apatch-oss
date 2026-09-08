@@ -1,0 +1,60 @@
+---
+description: apatch probe + reality — is the gate real, and is observed reality covered (RFP-005)
+alwaysApply: false
+---
+
+# apatch probe — perturb and watch the delta
+
+A green `verify` proves nothing until you know it *can* go red and *still* goes red where it
+must. `apatch probe` is one primitive (`differential_probe`: perturb → re-measure → judge the
+delta against a polarity) with three drivers. CLI (`apatch probe`) and MCP (`apatch_probe(mode=…, verify=…, files=…)`).
+
+## When to use
+
+| Intent | Command | Pass / fail |
+|--------|---------|-------------|
+| Does this gate actually test what it guards? | `apatch probe falsify --verify "<cmd>" --files a.py,b.py` | `real` / `false` |
+| No NEW failures vs a recorded corpus? | `apatch probe regress --verify "<cmd>" [--baseline-failures …] [--allow …]` | `stable` / `regressed` |
+| Is an attested gate still green now? | `apatch probe ratify --verify "<cmd>"` | `ratified` / `stale` |
+
+All take `--target-dir` and `--json` (machine output + exit 0/1 for CI). `--verify` is any shell
+command, so this is domain-agnostic. Full doc: [docs/probe.md](../../docs/probe.md).
+
+## The two polarities
+
+- **must_diverge** (falsify) — the perturbation MUST break the gate. A gate that stays green when
+  you corrupt the files it guards is a **FALSE gate** — it does not test what it guards. Fix the
+  test, don't ship the gate.
+- **must_hold** (regress, ratify) — the signal MUST stay healthy. A new failure vs the corpus is a
+  regression; an attested gate that is now red is a **STALE attestation**. `_degraded()` is
+  baseline-aware, so pre-existing failures never count.
+
+## probe ratify vs conformance stale
+
+Same phenomenon (was green, now red) at different scale. `apatch conformance status --live` sweeps
+the **whole** contract; `apatch probe ratify` asks about **one** gate. Use ratify before you lean
+on an old signature; use conformance as the standing gate. See [apatch-conformance](./apatch-conformance.mdc).
+
+# apatch reality — observed reality is the source of truth
+
+Reality stands **above** the spec: an append-only ledger of observed facts the project must close;
+requirements **discharge** records. Coverage = how much observed reality is closed by a green gate,
+not prose completeness. CLI (`apatch reality`) and MCP (`apatch_reality(action='add'|'status', …)`).
+Full doc: [docs/reality.md](../../docs/reality.md).
+
+| Intent | Command |
+|--------|---------|
+| A bug/incident/feedback/finding lands | `apatch reality add --summary "…" --source <tracker> --kind bug` |
+| What reality is covered vs owed? | `apatch reality status` (add `--json`; exit 1 if any debt) |
+
+A requirement claims a record with a `discharges:` line:
+`## R1 … (verify: pytest …) (discharges: REC-…)`. Status trajectory: `uncovered` (debt, nobody
+claims it) → `pending` (claimed, gate not attested) → `covered` (discharged by an attested green
+gate). `source`/`kind` are free-form strings — domain-agnostic.
+
+## Never
+
+- Don't "fix" a `false` gate by deleting the falsify check — fix the test so it tests the requirement.
+- Don't hand-label reality coverage — `uncovered` is derived (observed ∧ not discharged by an
+  attested gate). Add the record, write the discharging requirement, attest its gate.
+- Don't treat `reality` as a replacement for the spec — internal invariants still live in the spec.

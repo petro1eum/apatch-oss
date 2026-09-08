@@ -1,0 +1,1 @@
+SPEC-CONTRIB-TIMESHEET-1 R6 verifiable timesheet — verify_events re-derives volume from ledger, flags drift/unsigned (apatch/timesheet.py).

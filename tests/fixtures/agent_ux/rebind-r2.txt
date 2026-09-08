@@ -1,0 +1,1 @@
+SPEC-AGENT-UX-1 R2 marker — recommended_action='resume_session' (errors.py) now backed by a real MutationRuntime.resume_session + MCP apatch_resume_session (R1).

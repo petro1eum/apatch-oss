@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "SPEC-CV-SOURCE",
+  "source_path": "docs/specs/SPEC-CV-SOURCE.md",
+  "requirements": {
+    "R1": {
+      "needles": [
+        {
+          "target_file": "shared/module.py",
+          "find_text": "ORIGINAL",
+          "replace_text": "RENAMED",
+          "match_mode": "literal"
+        }
+      ]
+    }
+  }
+}

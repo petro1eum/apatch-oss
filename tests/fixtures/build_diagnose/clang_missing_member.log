@@ -1,0 +1,2 @@
+apple/cpp_core/src/omega/omega_sensor.cpp:134:45: error: no member named 'get_concept_name' in 'omega_core::SparseOmega'
+1 error generated.

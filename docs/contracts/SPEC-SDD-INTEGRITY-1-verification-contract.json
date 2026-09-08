@@ -1,0 +1,158 @@
+{
+  "artifacts": [
+    {
+      "hash": "sha256:deb673de57fef35d0f2369581641164c11645bc8d9a8232dab3abf172ce743ae",
+      "path": "docs/RFP-044-sdd-integrity-adoption.md"
+    },
+    {
+      "hash": "sha256:d3422d299af8f220b1dec733a8d14e3d21ac7f922b2c2baa7ac753eedfbdf347",
+      "path": "docs/contracts/RFP-044-owner-freeze.json"
+    },
+    {
+      "hash": "sha256:9e1044bf7d3c68dc50540756d7e722664284f0df6a0a172b8d49330bd5a3e76f",
+      "path": "docs/specs/SPEC-SDD-INTEGRITY-1.md"
+    },
+    {
+      "hash": "sha256:a7cc72a23da956f58bf34c7c8d8654a8225f811b87dc4e356fb6e2b0012e2144",
+      "path": "tests/test_sdd_integrity_contract.py"
+    },
+    {
+      "hash": "sha256:6f1892d36e762e6ec22b229fbe8aaacee4ed3fc9b55ce8711c0e0ad12fc27e3e",
+      "path": "tests/test_sdd_integrity.py"
+    }
+  ],
+  "authority": {
+    "id": "APatch owner",
+    "kind": "local_owner"
+  },
+  "contract_id": "apsddvc_core_rfp044_v1",
+  "cross_repository_pin": {
+    "product": "APatch Studio",
+    "rfp_hash": "sha256:cdfad4871f81abb6c26d762ab23cf4350aa07eed7d3d69f7a0a230538913ea1d",
+    "rfp_id": "RFP-012",
+    "test_contract_commit": "12c1f5d937f8cfc8d26a81212b16fa578154b7f1"
+  },
+  "frozen_at": "2026-09-01T13:08:00.000000Z",
+  "implementation_order": [
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11"
+  ],
+  "judge_lock": {
+    "amendment_required": true,
+    "implementation_actor_may_modify": false,
+    "protected_paths": [
+      "docs/RFP-044-sdd-integrity-adoption.md",
+      "docs/contracts/RFP-044-owner-freeze.json",
+      "docs/contracts/SPEC-SDD-INTEGRITY-1-verification-contract.json",
+      "docs/specs/SPEC-SDD-INTEGRITY-1.md",
+      "tests/test_sdd_integrity_contract.py",
+      "tests/test_sdd_integrity.py"
+    ]
+  },
+  "material_gate_policy": {
+    "all_skipped_rejected": true,
+    "mutating_verifier_rejected": true,
+    "observed_red_required": true,
+    "reversible_falsification_required": true,
+    "zero_collected_rejected": true
+  },
+  "observed_red_baseline": {
+    "collected": 11,
+    "command": "python3 -m pytest tests/test_sdd_integrity.py -q --tb=short",
+    "elapsed_seconds": 0.14,
+    "expected_failure": "ModuleNotFoundError: No module named 'apatch.sdd_integrity'",
+    "failed": 11,
+    "passed": 0
+  },
+  "repository": {
+    "base_commit": "35ba9dd5da84b01853945780540ff5cd1a778798",
+    "product": "APatch Core",
+    "rfp_commit": "381f9acb402af188636db631e9a8e4d701f208ca",
+    "runtime_version": "0.8.38",
+    "test_contract_commit": "1249c4ea19503744e4b73ad7bbf70e5c39fddace"
+  },
+  "required_perspectives": [
+    "positive",
+    "negative",
+    "boundary",
+    "regression"
+  ],
+  "requirements": [
+    {
+      "id": "R0",
+      "title": "RFP traceability gate (meta)"
+    },
+    {
+      "id": "R1",
+      "title": "Compatibility with the implemented baseline"
+    },
+    {
+      "id": "R2",
+      "title": "Canonical SDD documents"
+    },
+    {
+      "id": "R3",
+      "title": "Pre-mutation freeze admission"
+    },
+    {
+      "id": "R4",
+      "title": "Role-bound immutable judge"
+    },
+    {
+      "id": "R5",
+      "title": "Complete task envelope"
+    },
+    {
+      "id": "R6",
+      "title": "Unified effect admission"
+    },
+    {
+      "id": "R7",
+      "title": "Blocking adherence and isolated denial"
+    },
+    {
+      "id": "R8",
+      "title": "Meaningful verifier quality"
+    },
+    {
+      "id": "R9",
+      "title": "Exact attestation binding"
+    },
+    {
+      "id": "R10",
+      "title": "Amendment and selective invalidation"
+    },
+    {
+      "id": "R11",
+      "title": "Shared integrity floor and containment honesty"
+    }
+  ],
+  "schema": "apatch.sdd.verification-contract.v1",
+  "source_mutation_authorized_after_freeze": true,
+  "source_mutation_count_at_freeze": 0,
+  "status": "frozen",
+  "verify_commands": [
+    "python3 -m pytest tests/test_sdd_integrity_contract.py::test_rfp_044_owner_freeze_and_traceability_are_exact -q",
+    "python3 -m pytest tests/test_sdd_integrity.py::test_existing_runtime_remains_canonical_and_opt_in -q",
+    "python3 -m pytest tests/test_sdd_integrity.py::test_sdd_documents_are_canonical_content_safe_and_versioned -q",
+    "python3 -m pytest tests/test_sdd_integrity.py::test_contract_freeze_rejects_incomplete_or_post_mutation_judges -q",
+    "python3 -m pytest tests/test_sdd_integrity.py::test_capabilities_separate_implementation_verifier_and_authority -q",
+    "python3 -m pytest tests/test_sdd_integrity.py::test_task_envelope_is_exact_non_widening_and_hash_bound -q",
+    "python3 -m pytest tests/test_sdd_integrity.py::test_supported_effect_surfaces_use_one_fail_closed_admission -q",
+    "python3 -m pytest tests/test_sdd_integrity.py::test_plan_and_scope_denial_block_proof_without_foreign_mutation -q",
+    "python3 -m pytest tests/test_sdd_integrity.py::test_verifier_quality_rejects_false_green_results -q",
+    "python3 -m pytest tests/test_sdd_integrity.py::test_attestation_evidence_binds_the_complete_causal_contract -q",
+    "python3 -m pytest tests/test_sdd_integrity.py::test_amendment_preserves_history_and_invalidates_only_affected_work -q",
+    "python3 -m pytest tests/test_sdd_integrity.py::test_edition_floor_and_containment_claims_are_honest -q"
+  ]
+}
+

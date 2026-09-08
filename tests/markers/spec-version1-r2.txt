@@ -1,0 +1,1 @@
+SPEC-VERSION-1 R2 __version__ loader attested via apply_session

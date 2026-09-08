@@ -1,0 +1,1 @@
+noop attestation marker for R6 auto-link verify hook (enrich_verify_failure)

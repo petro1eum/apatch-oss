@@ -1,0 +1,18 @@
+{
+  "schema": "apatch.platform-service-request-fixture.v1",
+  "platform_commit": "ce5402347aad06cbafa22878d7f0d82ceee58ba3",
+  "private_seed_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+  "public_key": "A6EHv_POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg",
+  "document_key_id": "56475aa75463474c0285df5dbf2bcab7",
+  "service_request_key_id": "sha256:56475aa75463474c0285df5dbf2bcab73da651358839e9b77481b2eab107708c",
+  "method": "POST",
+  "path": "/api/internal/project-groups/tcpg_22222222222222222222222222222222/governed-work/source-bindings",
+  "raw_body": "{\"change\":{\"schema\":\"apatch.change.v1\"},\"idempotency_key\":\"source-binding:apchg_11111111111111111111111111111111\",\"subject\":\"apatch:test\",\"tenant_id\":\"tenant-a\"}",
+  "tenant_id": "tenant-a",
+  "subject": "apatch:test",
+  "issued_at": 1788100000,
+  "expires_at": 1788100020,
+  "nonce": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "body_sha256": "sha256:48923c89e82e61dbfe13749519402f316b93e340001ce8a285686f484e396bb0",
+  "signature": "M_dw867HxK662i0BULZBZ7wXEqFgV9VJGJnsAT3EdL-_LWYVIREJmIJfKo6_pQDCMi8-zQrA1Fcf5GReIdjuCQ"
+}

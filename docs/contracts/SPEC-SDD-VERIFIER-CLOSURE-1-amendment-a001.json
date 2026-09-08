@@ -1,0 +1,48 @@
+{
+  "schema": "apatch.sdd.verifier-closure-amendment.v1",
+  "amendment_id": "SPEC-SDD-VERIFIER-CLOSURE-1-A001",
+  "status": "approved",
+  "approved_at": "2026-09-01T19:01:00.000000Z",
+  "authority": {
+    "kind": "local_owner",
+    "id": "APatch owner"
+  },
+  "supersedes_freeze": "docs/contracts/SPEC-SDD-VERIFIER-CLOSURE-1-freeze.json",
+  "reason": "R9 referenced a test module that does not exist in the frozen APatch 0.8.40 baseline.",
+  "affected_requirements": [
+    "R9"
+  ],
+  "preserved_requirements": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8"
+  ],
+  "old_command": [
+    "python3",
+    "-m",
+    "pytest",
+    "tests/test_sdd_verifier_closure.py",
+    "tests/test_sdd_integrity.py",
+    "tests/test_sdd_mandatory_profile.py",
+    "tests/test_sdd_runtime_integration.py",
+    "-q"
+  ],
+  "new_command": [
+    "python3",
+    "-m",
+    "pytest",
+    "tests/test_sdd_verifier_closure.py",
+    "tests/test_sdd_integrity.py",
+    "tests/test_sdd_mandatory_profile.py",
+    "tests/test_runtime_rfp004.py",
+    "-q"
+  ],
+  "test_logic_changed": false,
+  "acceptance_changed": false
+}

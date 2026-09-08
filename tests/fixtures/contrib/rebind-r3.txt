@@ -1,0 +1,1 @@
+SPEC-CONTRIB-TIMESHEET-1 R3 attestation marker — identity-from-cert implemented in apatch/contribution.py:resolve_identity (created under R1).

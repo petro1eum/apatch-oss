@@ -1,0 +1,1 @@
+SPEC-AGENT-UX-2 R0 rebind — test_agent_ux_phase2.py drifted after R2 test-fix; coverage re-anchored. (noop-attest would do this cleanly post-MCP-restart.)

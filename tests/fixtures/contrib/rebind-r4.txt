@@ -1,0 +1,1 @@
+SPEC-CONTRIB-TIMESHEET-1 R4 attestation marker — cross-project aggregation implemented in apatch/timesheet.py (aggregate/load_events); tests/test_timesheet.py green.

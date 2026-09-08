@@ -1,0 +1,39 @@
+{
+  "schema": "apatch.sdd.verifier-closure-amendment.v1",
+  "amendment_id": "SPEC-SDD-VERIFIER-CLOSURE-1-A002",
+  "status": "approved",
+  "approved_at": "2026-09-01T19:12:19.000000Z",
+  "authority": {
+    "kind": "local_owner",
+    "id": "APatch owner"
+  },
+  "supersedes_spec_sha256": "dd2c60df7ce721a08681f5a420353d0ace09197374f934bd889a8c70f74b725c",
+  "reason": "The R9 acceptance requires the full APatch suite, while its command covered only the focused SDD suite. The full run also exposed two pre-existing distribution assertions for legacy license metadata although the baseline already emits PEP 639 SPDX metadata.",
+  "affected_requirements": [
+    "R9"
+  ],
+  "old_command": [
+    "python3",
+    "-m",
+    "pytest",
+    "tests/test_sdd_verifier_closure.py",
+    "tests/test_sdd_integrity.py",
+    "tests/test_sdd_mandatory_profile.py",
+    "tests/test_runtime_rfp004.py",
+    "-q"
+  ],
+  "new_command": [
+    "python3",
+    "-m",
+    "pytest",
+    "-q"
+  ],
+  "distribution_test_before_sha256": "e986f87e32d9c08433dd3fa20d6bdbe4edcf4b3e8267f6daeae2d1c6d32ebdf1",
+  "distribution_assertion_change": "Assert the existing MIT SPDX expression and License-Expression metadata instead of removed legacy License table/classifier metadata.",
+  "full_suite_follow_up": {
+    "observed": "1851 passed and one nondeterministic conflict classification failed under load.",
+    "resolution": "Both pre-existing-session and CAS-loss admission paths now return SESSION_CONFLICT; a deterministic regression covers the pre-existing-session path."
+  },
+  "implementation_acceptance_changed": false,
+  "license_changed": false
+}

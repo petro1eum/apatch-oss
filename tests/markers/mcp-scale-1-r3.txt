@@ -1,0 +1,1 @@
+noop attestation marker SPEC-MCP-SCALE-1 R3 apply_session lane

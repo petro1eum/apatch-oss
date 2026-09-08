@@ -1,0 +1,57 @@
+{
+  "allowed_hosts": [
+    "example-search-host"
+  ],
+  "allowed_roots": [
+    "/srv/example/search-workspace"
+  ],
+  "targets": {
+    "search-example": {
+      "host": "example-search-host",
+      "path": "/srv/example/search-workspace",
+      "display": "Example search workspace",
+      "redact": true,
+      "timeout_sec": 600,
+      "allowed_operations": [
+        "apatch_doctor",
+        "apatch_session_start",
+        "apatch_generate_batch",
+        "apatch_simulate",
+        "apatch_apply_session",
+        "apatch_verify_run",
+        "apatch_attest",
+        "apatch_session_end"
+      ],
+      "services": {
+        "api": {
+          "kind": "http",
+          "allowed": [
+            "healthcheck"
+          ],
+          "healthcheck": {
+            "url": "http://127.0.0.1:8080/health",
+            "timeout_sec": 60
+          }
+        },
+        "search": {
+          "kind": "command",
+          "allowed": [
+            "status",
+            "restart",
+            "logs",
+            "healthcheck"
+          ],
+          "healthcheck": {
+            "url": "http://127.0.0.1:8081/health",
+            "timeout_sec": 10
+          },
+          "commands": {
+            "status": "systemctl is-active example-search.service",
+            "restart": "systemctl restart example-search.service",
+            "logs": "journalctl -u example-search.service -n {lines} --no-pager"
+          }
+        }
+      }
+    }
+  }
+}

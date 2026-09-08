@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apatch.dev/contracts/apatch.work-evidence-bundle.v1.schema.json",
+  "title": "APatch Work Evidence Bundle v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "bundle_id",
+    "change_id",
+    "change_hash",
+    "project_source_binding_id",
+    "project_source_binding_hash",
+    "spec_id",
+    "spec_hash",
+    "requirement_refs",
+    "attestation_refs",
+    "contribution_event_refs",
+    "timesheet_ref",
+    "issued_at",
+    "signature"
+  ],
+  "properties": {
+    "schema": {"const": "apatch.work-evidence-bundle.v1"},
+    "bundle_id": {"type": "string", "pattern": "^apweb_[0-9a-f]{32}$"},
+    "change_id": {"type": "string", "pattern": "^apchg_[0-9a-f]{32}$"},
+    "change_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "project_source_binding_id": {
+      "type": "string",
+      "pattern": "^tcpsb_[0-9a-f]{32}$"
+    },
+    "project_source_binding_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "spec_id": {"type": "string", "minLength": 1},
+    "spec_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "requirement_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["requirement_id", "requirement_hash"],
+        "properties": {
+          "requirement_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._-]*[0-9]+$"
+          },
+          "requirement_hash": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{16}$"
+          }
+        }
+      }
+    },
+    "attestation_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "spec_id",
+          "requirement_id",
+          "attestation_id",
+          "attestation_hash",
+          "outcome"
+        ],
+        "properties": {
+          "spec_id": {"type": "string", "minLength": 1},
+          "requirement_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._-]*[0-9]+$"
+          },
+          "attestation_id": {"type": "string", "minLength": 1},
+          "attestation_hash": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "outcome": {"enum": ["passed", "rolled_back"]}
+        }
+      }
+    },
+    "contribution_event_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["event_id", "event_hash"],
+        "properties": {
+          "event_id": {"type": "string", "minLength": 1},
+          "event_hash": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "timesheet_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "timesheet_id",
+        "timesheet_hash",
+        "claimed_active_seconds"
+      ],
+      "properties": {
+        "timesheet_id": {
+          "type": "string",
+          "pattern": "^apts_[0-9a-f]{32}$"
+        },
+        "timesheet_hash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "claimed_active_seconds": {"type": "integer", "minimum": 0}
+      }
+    },
+    "issued_at": {"type": "string", "format": "date-time"},
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "key_id", "value"],
+      "properties": {
+        "algorithm": {"const": "Ed25519"},
+        "key_id": {"type": "string", "minLength": 1},
+        "value": {"type": "string", "pattern": "^[A-Za-z0-9_-]{86}$"}
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+include README.md README.pypi.md LICENSE CONTRIBUTING.md AGENTS.md SECURITY.md
+include CHANGELOG.md SOURCE-EXPORT.md PUBLIC-SOURCE-MANIFEST.json
+include pyproject.toml requirements.txt mkdocs.yml .gitignore RECOMMENDATIONS.md
+graft notebooks
+recursive-include docs *.md *.json *.yaml *.yml
+graft tests
+graft scripts
+graft manifests
+include .apatch/sandbox.json .apatch/enforcement.json .apatch/conformance.json
+recursive-include .cursor *.json *.sh *.mdc
+recursive-include .github *.yml
+prune .git
+prune .trustchain
+prune .claude
+prune .venv
+prune apatch_pro
+prune trustchain_pro
+prune avatar_contract
+prune docs/ct_ckba_036_2017
+global-exclude __pycache__ *.py[cod] .DS_Store .env .env.* *.key *.pem

@@ -1,0 +1,1 @@
+attested R4 write path coverage ok
