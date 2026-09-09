@@ -182,7 +182,12 @@ def test_rebind_selects_and_excludes_exact_requirements(monkeypatch):
         ],
         "summary": {"stale": 3},
     }
-    monkeypatch.setattr("apatch.spec_coverage.spec_status_with_coverage", lambda *a, **k: status)
+    final = dict(status, requirements=[
+        dict(row, state="attested", stale=False) if row["id"] == "R1" else row
+        for row in status["requirements"]
+    ])
+    statuses = iter([status, final])
+    monkeypatch.setattr("apatch.spec_coverage.spec_status_with_coverage", lambda *a, **k: next(statuses))
     monkeypatch.setattr("apatch.spec.resolve_requirement", _fake_resolve)
     monkeypatch.setattr("apatch.runtime.runtime.MutationRuntime", _FakeRuntime)
 

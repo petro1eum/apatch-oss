@@ -35,6 +35,11 @@ dependencies = [
     "tree-sitter-go>=0.21.0",
 ]
 
+[project.urls]
+Source = "https://github.com/petro1eum/apatch-oss"
+Documentation = "https://github.com/petro1eum/apatch-oss/blob/main/docs/README.md"
+Issues = "https://github.com/petro1eum/apatch-oss/issues"
+
 [project.optional-dependencies]
 # Signed cryptographic ledger commits. apatch auto-bootstraps a file-based
 # .trustchain/ without it, so this is strictly optional.

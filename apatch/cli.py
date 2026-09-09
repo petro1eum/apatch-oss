@@ -962,7 +962,9 @@ def mcp_hygiene_cmd(target_dir, sweep_leases, as_json):
     is_flag=True,
     help="Skip auto-detect of existing IDE MCP config files.",
 )
-def mcp_sync_cmd(target_dir, force, ide_paths, no_auto_ide):
+@click.option("--profile", type=click.Choice(["compact", "core", "spec", "full"]), default=None,
+              help="Explicit profile selection; omitted preserves the existing profile.")
+def mcp_sync_cmd(target_dir, force, ide_paths, no_auto_ide, profile):
     """Write ``.apatch/mcp.json`` + IDE stubs (auto-detect existing configs by default)."""
     from apatch.mcp_health import build_mcp_health, sync_mcp_configs
 
@@ -972,8 +974,9 @@ def mcp_sync_cmd(target_dir, force, ide_paths, no_auto_ide):
             overwrite=force,
             ide_paths=ide_paths if ide_paths else None,
             auto_ide=not no_auto_ide,
+            profile=profile,
         )
-    except FileExistsError as e:
+    except (FileExistsError, ValueError) as e:
         console.print(f"[bold red]{e}[/bold red]")
         console.print("Use --force to replace the apatch MCP server block.")
         sys.exit(1)
@@ -985,6 +988,25 @@ def mcp_sync_cmd(target_dir, force, ide_paths, no_auto_ide):
     else:
         for w in health.get("warnings") or []:
             console.print(f"[yellow]• {w}[/yellow]")
+        raise click.exceptions.Exit(1)
+
+
+@mcp_group.command("check")
+@click.option("--target-dir", default=".", type=click.Path())
+@click.option("--json", "as_json", is_flag=True)
+def mcp_check_cmd(target_dir, as_json):
+    """Check configured bootstrap/stdio without repairing user configuration."""
+    from apatch.mcp_health import build_mcp_health
+
+    health = build_mcp_health(target_dir)
+    if as_json:
+        click.echo(json.dumps(health, ensure_ascii=False))
+    else:
+        console.print("MCP health OK" if health.get("ok") else "MCP health FAILED")
+        for warning in health.get("warnings") or []:
+            console.print(warning)
+    if not health.get("ok"):
+        raise click.exceptions.Exit(1)
 
 
 @mcp_group.command("codex-approve")

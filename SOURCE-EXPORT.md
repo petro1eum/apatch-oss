@@ -1,24 +1,25 @@
 # Public OSS source boundary
 
-This is a clean **0.8.43 source candidate**, prepared on 2026-09-08 from the
-already-developed APatch runtime. It has not been uploaded to PyPI and no
-public GitHub destination has been assigned by this preparation step.
+This is a clean **0.8.43 source candidate**, updated on 2026-09-09 from the
+already-developed APatch runtime. The owner selected `petro1eum/apatch-oss` as
+the new public destination; this candidate has not yet been pushed or uploaded.
 
-**Publication status: HOLD.** The source boundary is prepared, but clean-public
-integration qualification still has open issues. The installed-resource and native
-gate-exit fixes passed their targeted checks in this revision; the full public-only
-suite still has 40 optional Avatar integration failures.
-See [the readiness record](docs/public-release-readiness.md); do not describe this
-candidate as a fully qualified release.
+**Release scope: standalone OSS, with separately qualified optional integrations.**
+The full public-only suite retains40 absent-Avatar failures; a passing standalone
+profile must not relabel those tests or the raw native contract as passing.
+Use [the verification guide](docs/oss-verification.md) and exact source hashes to
+produce fresh evidence. This inventory and [the historical readiness record](docs/public-release-readiness.md)
+are not themselves an acceptance certificate or proof of external integration.
 
-The current published package remains [APatch 0.8.42](https://pypi.org/project/apatch/0.8.42/).
+Published package versions are listed on [PyPI](https://pypi.org/project/apatch/).
 The MIT license is unchanged and identical to TrustChain OSS.
 
 ## Included
 
-- The APatch CLI/MCP runtime and compatibility package: 237 selected module/schema files;
-  231 remain byte-identical to the baseline and six match the reviewed fixes recorded
-  in the source manifest (ownership, consumer resources, and blocking CLI exits).
+- The APatch CLI/MCP runtime and compatibility package: 239 selected module/schema files;
+  224 remain byte-identical to the baseline and 15 match committed fixes recorded
+  in the source manifest (ownership, resources, blocking exits, runtime identity
+  and file-bound reverification). No private commit objects are imported.
 - Executable requirements, regression tests, frozen verification records and selected
   engineering guides, examples and tutorials.
 - Local Avatar/HC adapters, factual time-accounting, WorkAssets and optional service
@@ -59,10 +60,10 @@ across as separately reviewed patches with a declared file set and verification;
 do not merge, mirror-push or import the private history or its release tags.
 Pro code remains in its separately authorized development and distribution path.
 
-Repository creation/name selection, public remote URLs, private vulnerability
+Repository creation, public remote URLs, private vulnerability
 reporting and the final package upload are separate publication steps. Before
-publishing, verify the chosen documentation URL anonymously and replace the
-candidate wording with the exact released version and evidence.
+publishing, verify the chosen documentation URL anonymously and record the
+exact released version and evidence.
 
 The repository README uses offline-relative documentation links. The separate
 `README.pypi.md` has no relative hyperlinks: copying a README to PyPI must never

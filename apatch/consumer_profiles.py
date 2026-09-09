@@ -38,6 +38,12 @@ Installed-wheel initialization includes the canonical consumer guidance and hook
 missing resources are an installation error, not a successful partial setup.
 Conformance CLI honors configured blocking mode in text and JSON without an extra
 flag; --blocking can strengthen advisory mode but does not enable a disabled gate.
+Keep the exact venv interpreter in IDE and canonical MCP configs; a binary realpath
+does not identify a Python environment. Sync preserves existing env/profile unless
+--profile is explicitly selected. Doctor never repairs the config.
+Use apatch mcp check --target-dir . --json for isolated configured-command readiness.
+A running MCP doctor reports not_checked_in_stdio for that independent check;
+server readiness is not proof of host tool availability in a particular task.
 """
 
 PROFILES: Dict[str, Dict[str, Any]] = {

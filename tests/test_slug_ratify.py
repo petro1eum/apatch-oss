@@ -24,9 +24,12 @@ class _FakeRuntime:
 
     def __init__(self, target_dir):
         self.calls: list = []
+        self.target_dir = target_dir
+        self.artifacts = []
         _FakeRuntime.instances.append(self)
 
     def open_session(self, intent, artifacts=None):
+        self.artifacts = artifacts or []
         self.calls.append(("open", intent, tuple(artifacts or [])))
         return {"ok": True}
 
@@ -34,8 +37,9 @@ class _FakeRuntime:
         self.calls.append(("verify", verify))
         return {"ok": True}
 
-    def noop_attest(self, covered_by, message=None, evidence=None):
-        self.calls.append(("noop", tuple(covered_by or []), message, evidence))
+    def noop_attest(self, covered_by, message=None, evidence=None, reverification=None):
+        proof = reverification.payload(self.target_dir, self.artifacts) if reverification else None
+        self.calls.append(("noop", tuple(covered_by or []), message, evidence, proof))
         return {"ok": True, "committed": True}
 
     def close_session(self):
@@ -174,6 +178,9 @@ def test_ratify_happy_path_verify_runs_exactly_once(tmp_path, monkeypatch):
     assert noop[1] == ("R1",)
     assert noop[3]["kind"] == "slug_ratify_shared_verify"
     assert noop[3]["commands_run"] == 1
+    assert noop[4]["spec:SPEC-UGOL-1#R1"]["files"] == {
+        "marker.txt": hashlib.sha256((tmp_path / "marker.txt").read_bytes()).hexdigest()
+    }
     assert out["gate"]["verdict"] == "passed"
     assert out["files"]["contract"] is None
     assert out["files"]["triage"] is None
@@ -407,3 +414,31 @@ def test_mcp_slug_ratify_registered():
     tm = getattr(mcp_server.mcp, "_tool_manager", None)
     assert tm is not None
     assert "apatch_slug_ratify" in tm._tools
+
+
+def test_ratify_rejects_file_change_by_successful_verifier(tmp_path, monkeypatch):
+    _cmd, entries = _write_workspace(tmp_path)
+    counter = tmp_path / "counter.py"
+    counter.write_text(counter.read_text().replace(
+        "sys.exit(0)", "pathlib.Path('marker.txt').write_text('changed during verify')\nsys.exit(0)"
+    ))
+    _patch_ledger(monkeypatch, entries)
+    _patch_runtime(monkeypatch)
+    out = slug_ratify_workspace(str(tmp_path), "ugol")
+    assert not out["ok"]
+    assert (tmp_path / "counter.log").read_text() == "x"
+    assert all(call[0] != "noop" for rt in _FakeRuntime.instances for call in rt.calls)
+    assert any(call[0] == "close" for rt in _FakeRuntime.instances for call in rt.calls)
+
+
+def test_ratify_primary_in_progress_remains_declaration_not_file_proof(tmp_path, monkeypatch):
+    _cmd, entries = _write_workspace(tmp_path)
+    entries[:] = [entry for entry in entries if entry["tool_id"] != "apatch_attest"]
+    _patch_ledger(monkeypatch, entries)
+    _patch_runtime(monkeypatch)
+    slug_ratify_workspace(str(tmp_path), "ugol")
+    assert (tmp_path / "counter.log").read_text() == "x"
+    noops = [call for rt in _FakeRuntime.instances for call in rt.calls if call[0] == "noop"]
+    assert len(noops) == 1
+    assert noops[0][1] == ("R1", "R2")
+    assert noops[0][4] is None

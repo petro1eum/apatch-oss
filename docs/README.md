@@ -1,7 +1,7 @@
 # APatch documentation
 
-Package candidate: **0.8.43**. The current published package is [0.8.42 on PyPI](https://pypi.org/project/apatch/0.8.42/).
-This source snapshot prepares the next maintenance release; it is not an announcement that 0.8.43 has been uploaded.
+Source version: **0.8.43**. See [PyPI](https://pypi.org/project/apatch/) for published package versions
+and the [verification guide](oss-verification.md) for the evidence scope.
 
 APatch turns specification-driven and test-driven agent work into an executable contract:
 requirements, scoped authority, fixed verification and evidence belong to the same workflow.
@@ -9,10 +9,12 @@ requirements, scoped authority, fixed verification and evidence belong to the sa
 ## Start here
 
 - [Candidate readiness and open issues](public-release-readiness.md): what is verified and what still blocks release.
+- [OSS verification profiles](oss-verification.md): complete standalone/Avatar runs and honest scoped reports.
 - [Getting started](getting-started.md): installation, local projects and the first governed workflow.
 - [Product overview](../README.md): the contract-first model and its limits.
 - [Executable specifications](executable-specs.md) and [SPEC authoring](spec-authoring.md).
 - [MCP setup and CLI parity](mcp_setup.md), [agent onboarding](agent-onboarding.md) and [agent playbook](AGENTS.template.md).
+- [Runtime identity and configured-child checks](mcp_setup.md#runtime-identity-and-health): installed environment, running MCP and host tool availability are separate observations.
 - [Design Partner Playbook](design-partner-playbook.md): detailed setup and adoption checks.
 
 The entry pages are in English. Many detailed engineering references below remain in Russian.

@@ -28,6 +28,7 @@ def attest_verified_requirements(
     spec_path: Optional[str] = None,
     verify_results: Mapping[str, bool],
     evidence: Optional[Dict[str, Any]] = None,
+    reverification=None,
 ) -> Dict[str, Any]:
     """Attest every verified open Rk in one governed session.
 
@@ -122,6 +123,7 @@ def attest_verified_requirements(
                 "requirements attested without marker mutations"
             ).format(spec_id),
             evidence=evidence,
+            **({"reverification": reverification.verified(dict(verify_results))} if reverification is not None else {}),
         )
     except Exception as exc:  # pragma: no cover - runtime normally returns DTOs
         att = {"ok": False, "error": str(exc)}
@@ -167,8 +169,8 @@ def rebind_stale_requirements(
     reuses the result here). When provided, the per-Rk verify is NOT re-run — a
     requirement whose command was measured red lands in ``skipped_red``.
 
-    ``stale_reasons``: which staleness reasons to rebind; default keeps the
-    original ``("file_drift",)`` behaviour. Slug ratify widens it to include
+    ``stale_reasons``: which staleness reasons to rebind; default includes
+    ``file_drift`` and recoverable ``evidence_incomplete``. Slug ratify widens it to include
     ``spec_text_changed`` because it has just measured the requirement's verify
     green against the current spec text.
     """
@@ -212,7 +214,7 @@ def rebind_stale_requirements(
             "invalid_requirement_ids": invalid,
         }
 
-    reasons = tuple(stale_reasons) if stale_reasons is not None else ("file_drift",)
+    reasons = tuple(stale_reasons) if stale_reasons is not None else ("file_drift", "evidence_incomplete")
     targets = [
         r
         for r in (status.get("requirements") or [])
@@ -261,19 +263,38 @@ def rebind_stale_requirements(
             )
             continue
         try:
+            from apatch.spec_reverification import capture_reverification, ReverificationError
+            snapshot = None
             if verify_results is None and run_verify and verify_cmd:
+                snapshot = capture_reverification(target_dir, spec_id, [row])
                 vres = rt.verify_run(verify=verify_cmd, skip_transition_check=True)
+                if snapshot is not None:
+                    from apatch.spec_reverification import completed_verification
+                    vres = completed_verification(
+                        target_dir, vres, verify=verify_cmd,
+                        session_id=getattr(rt, "session_id", None),
+                    )
+                if snapshot is not None and (
+                    vres.get("verify_job_id") or vres.get("job_id")
+                    or vres.get("baseline") or vres.get("pre_existing_only")
+                    or vres.get("verify_command") != verify_cmd
+                ):
+                    raise ReverificationError("completed exact green verification required")
                 if not vres.get("ok"):
                     skipped_red.append({"requirement": req_id, "verify": verify_cmd})
                     continue
             att = rt.noop_attest(
                 [],
                 message=message,
+                **({"reverification": snapshot.verified({req_id: True})} if snapshot is not None else {}),
             )
             if att.get("ok"):
                 rebound.append(req_id)
             else:
                 errors.append({"requirement": req_id, "error": att})
+        except ReverificationError as exc:
+            errors.append({"requirement": req_id, "error_type": "REVERIFICATION_INVALID",
+                           "error": str(exc), "verify_job_id": getattr(exc, "verify_job_id", None)})
         finally:
             try:
                 rt.close_session()
@@ -281,8 +302,13 @@ def rebind_stale_requirements(
                 pass
 
     final = spec_status_with_coverage(target_dir, spec=spec, spec_path=spec_path)
+    final_rows = {r["id"]: r for r in final.get("requirements", [])}
+    for rid in list(rebound):
+        if rid in final_rows and final_rows[rid].get("state") != "attested":
+            rebound.remove(rid)
+            errors.append({"requirement": rid, "error_type": "REVERIFICATION_INCOMPLETE"})
     return {
-        "ok": True,
+        "ok": not errors,
         "spec": spec_id,
         "selected_requirement_ids": [str(row.get("id")) for row in targets],
         "excluded_requirement_ids": excluded,

@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import importlib.util
+from importlib import metadata
+from functools import lru_cache
+import sysconfig
 import json
 import os
 import shutil
@@ -18,17 +21,45 @@ def mcp_extra_installed() -> bool:
     return importlib.util.find_spec("mcp") is not None
 
 
+@lru_cache(maxsize=16)
+def _equivalent_base_python(candidate: str, prefix: str, purelib: str, platlib: str) -> bool:
+    """Binary aliases are safe only when the isolated Python environment agrees."""
+    code = (
+        "import json,os,sys,sysconfig; print(json.dumps(["
+        "sys.prefix == sys.base_prefix, os.path.realpath(sys.prefix),"
+        "os.path.realpath(sysconfig.get_path('purelib')),"
+        "os.path.realpath(sysconfig.get_path('platlib'))]))"
+    )
+    try:
+        proc = subprocess.run([candidate, "-I", "-c", code], capture_output=True,
+                              text=True, timeout=3, check=False)
+        return proc.returncode == 0 and json.loads(proc.stdout) == [True, prefix, purelib, platlib]
+    except (OSError, ValueError, subprocess.TimeoutExpired):
+        return False
+
+
+def _executable_path(command: str) -> str:
+    """Keep the final symlink: resolving it discards venv identity."""
+    selected = command if os.path.isabs(command) else (shutil.which(command) or command)
+    return os.path.abspath(selected)
+
+
 def _stable_mcp_python_command() -> str:
-    """Prefer Homebrew ``bin/pythonX.Y`` over Cellar versioned paths (survives brew upgrade)."""
-    exe_real = os.path.realpath(sys.executable)
+    """Preserve venv identity; normalize only proven equivalent base Python paths."""
+    executable = os.path.abspath(sys.executable)
+    if sys.prefix != sys.base_prefix or hasattr(sys, "real_prefix"):
+        return executable
+    exe_real = os.path.realpath(executable)
     base = os.path.basename(exe_real)
     if base.startswith("python"):
         for prefix in ("/opt/homebrew/bin", "/usr/local/bin"):
             candidate = os.path.join(prefix, base)
-            if os.path.isfile(candidate) and os.path.realpath(candidate) == exe_real:
+            if (os.path.isfile(candidate) and os.path.realpath(candidate) == exe_real
+                    and _equivalent_base_python(candidate, os.path.realpath(sys.prefix),
+                        os.path.realpath(sysconfig.get_path("purelib")),
+                        os.path.realpath(sysconfig.get_path("platlib")))):
                 return candidate
-    return exe_real
-
+    return executable
 
 def _pip_install_flags() -> str:
     if sys.platform == "darwin" and "/opt/homebrew/" in sys.executable:
@@ -285,20 +316,20 @@ def _config_command_matches(cfg: Dict[str, Any], workspace: Optional[str] = None
     command = cfg.get("command")
     if not command:
         return False
-    rec_real = os.path.realpath(rec["command"])
+    rec_real = _executable_path(rec["command"])
     try:
-        cmd_real = os.path.realpath(command)
+        cmd_real = _executable_path(command)
     except OSError:
         return False
     if cmd_real == rec_real:
         pass
     elif os.path.basename(str(command)) == "apatch-mcp" and os.path.isfile(command):
         shebang = _shebang_interpreter(command)
-        if not shebang or os.path.realpath(shebang) != rec_real:
+        if not shebang or _executable_path(shebang) != rec_real:
             return False
     else:
         return False
-    args = list(cfg.get("args") or [])
+    args = [arg for arg in (cfg.get("args") or []) if arg != "-I"]
     if args in _LAUNCHER_ARG_SETS:
         return True
     return args == rec["args"] or args == []
@@ -334,9 +365,10 @@ def discover_mcp_configs(workspace: str) -> List[Dict[str, Any]]:
                 "error": "missing — run: apatch mcp sync --target-dir .",
             }
         ]
-    data = _read_json(path)
-    if not data:
-        return [{"host": "apatch", "scope": "canonical", "path": path, "error": "invalid json"}]
+    try:
+        data = _config_for_update(path)
+    except ValueError as exc:
+        return [{"host": "apatch", "scope": "canonical", "path": path, "error": str(exc)}]
     apatch_cfg = (data.get("mcpServers") or {}).get("apatch")
     if not apatch_cfg:
         return [
@@ -377,7 +409,7 @@ def _discover_apatch_mcp_binaries() -> List[str]:
             continue
         candidate = os.path.join(d, "apatch-mcp")
         if os.path.isfile(candidate):
-            real = os.path.realpath(candidate)
+            real = _executable_path(candidate)
             if real not in seen:
                 seen.add(real)
                 out.append(real)
@@ -392,20 +424,27 @@ def clear_mcp_probe_cache() -> None:
     _PROBE_CACHE.clear()
 
 
-def _probe_interpreter(python_exe: str, *, timeout: float = 8.0) -> Dict[str, Any]:
-    real = os.path.realpath(python_exe)
-    cached = _PROBE_CACHE.get(real)
-    if cached is not None:
-        return dict(cached)
-
+def _probe_interpreter(python_exe: str, *, timeout: float = 8.0,
+                       env: Optional[Dict[str, str]] = None,
+                       cwd: Optional[str] = None) -> Dict[str, Any]:
+    # Fresh on every check: installed distributions may change without the Python
+    # executable changing. Never key package health by a shared binary realpath.
+    executable = _executable_path(python_exe)
     code = (
-        "import json,sys\n"
-        "out={'python':sys.version.split()[0],'ok':False}\n"
+        "import json,sys,os; from importlib import metadata\n"
+        "out={'python':sys.version.split()[0],'interpreter':sys.executable,"
+        "'prefix':sys.prefix,'base_prefix':sys.base_prefix,"
+        "'binary_realpath':os.path.realpath(sys.executable),'ok':False}\n"
         "try:\n"
         " import apatch\n"
         " out['apatch_version']=apatch.__version__\n"
         " out['apatch_path']=apatch.__file__\n"
+        " out['installed_version']=metadata.version('apatch')\n"
+        " if out['apatch_version'] != out['installed_version']:\n"
+        "  raise ValueError('loaded/installed APatch version mismatch')\n"
         " import apatch.mcp.server as s\n"
+        " from apatch.mcp.profiles import apply_tool_profile\n"
+        " apply_tool_profile(s.mcp)\n"
         " out['mcp_ok']=s.mcp is not None\n"
         " tm=getattr(s.mcp,'_tool_manager',None)\n"
         " tools=getattr(tm,'_tools',None) if tm else None\n"
@@ -416,34 +455,29 @@ def _probe_interpreter(python_exe: str, *, timeout: float = 8.0) -> Dict[str, An
         "print(json.dumps(out))\n"
     )
     try:
-        proc = subprocess.run(
-            [python_exe, "-c", code],
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            check=False,
-        )
+        proc = subprocess.run([executable, "-I", "-c", code], capture_output=True,
+                              text=True, timeout=timeout, check=False, env=env, cwd=cwd)
         if proc.returncode != 0:
-            return {
-                "python": python_exe,
-                "ok": False,
-                "error": (proc.stderr or proc.stdout or "probe failed").strip()[:500],
-            }
-        line = proc.stdout.strip().splitlines()[-1] if proc.stdout.strip() else "{}"
-        data = json.loads(line)
-        data["python"] = python_exe
-        _PROBE_CACHE[real] = dict(data)
+            return {"interpreter": executable, "ok": False,
+                    "error": "isolated interpreter probe exited {}".format(proc.returncode)}
+        data = json.loads(proc.stdout.strip().splitlines()[-1])
+        if not isinstance(data, dict) or not isinstance(data.get("ok"), bool):
+            raise ValueError("malformed interpreter probe")
+        data["selected_executable"] = executable
         return data
-    except (subprocess.TimeoutExpired, json.JSONDecodeError, OSError) as e:
-        out = {"python": python_exe, "ok": False, "error": str(e)}
-        _PROBE_CACHE[real] = dict(out)
-        return out
-
+    except subprocess.TimeoutExpired:
+        return {"interpreter": executable, "ok": False, "timed_out": True,
+                "error": "isolated interpreter probe timed out"}
+    except (ValueError, IndexError, OSError) as exc:
+        return {"interpreter": executable, "ok": False, "error": str(exc)}
 
 def _probe_current_interpreter() -> Dict[str, Any]:
     out: Dict[str, Any] = {
         "python": sys.version.split()[0],
-        "interpreter": os.path.realpath(sys.executable),
+        "interpreter": os.path.abspath(sys.executable),
+        "binary_realpath": os.path.realpath(sys.executable),
+        "prefix": sys.prefix,
+        "base_prefix": sys.base_prefix,
         "ok": False,
     }
     if not mcp_extra_installed():
@@ -456,6 +490,9 @@ def _probe_current_interpreter() -> Dict[str, Any]:
 
         out["apatch_version"] = __version__
         out["apatch_path"] = apatch_pkg.__file__
+        out["installed_version"] = metadata.version("apatch")
+        if out["installed_version"] != __version__:
+            raise ValueError("loaded/installed APatch version mismatch")
         out["mcp_ok"] = mcp_server.mcp is not None
         tool_manager = getattr(mcp_server.mcp, "_tool_manager", None)
         tools = getattr(tool_manager, "_tools", None) if tool_manager else None
@@ -505,7 +542,7 @@ def build_mcp_health(workspace: str) -> Dict[str, Any]:
     def add_candidate(label: str, python_exe: Optional[str], *, script: Optional[str] = None) -> None:
         if not python_exe:
             return
-        real = os.path.realpath(python_exe)
+        real = _executable_path(python_exe)
         if real in probed_paths:
             return
         probed_paths.add(real)
@@ -521,7 +558,7 @@ def build_mcp_health(workspace: str) -> Dict[str, Any]:
         inproc = dict(current)
         inproc["label"] = "doctor_interpreter"
         candidates.append(inproc)
-        probed_paths.add(os.path.realpath(sys.executable))
+        probed_paths.add(_executable_path(sys.executable))
     else:
         add_candidate("doctor_interpreter", sys.executable)
     if not current.get("ok"):
@@ -558,7 +595,7 @@ def build_mcp_health(workspace: str) -> Dict[str, Any]:
             warnings.append(msg)
 
     canonical = next((c for c in configs if c.get("scope") == "canonical"), None)
-    if canonical and canonical.get("matches_recommended"):
+    if canonical and not canonical.get("error"):
         configured_ok = True
     elif canonical and canonical.get("error"):
         warnings.append(f"{canonical['error']} ({canonical.get('path')})")
@@ -568,13 +605,28 @@ def build_mcp_health(workspace: str) -> Dict[str, Any]:
         configured_ok = False
 
     install_cmd = _recommended_install_command(workspace)
+    if is_mcp_stdio_mode():
+        configured_runtime = {
+            "ok": False, "status": "not_checked_in_stdio",
+            "canonical_config": canonical_mcp_config_path(workspace),
+            "scope": "current_process_only",
+        }
+        warnings.append(
+            "Configured-child readiness was not checked inside this running MCP. "
+            "Run 'apatch mcp check --target-dir <workspace>' for an isolated bootstrap check; "
+            "host tool availability is a separate client observation."
+        )
+    elif canonical and not canonical.get("error"):
+        from apatch.mcp.runtime_probe import probe_configured_server
+        configured_runtime = probe_configured_server(workspace)
+        if not configured_runtime.get("ok"):
+            warnings.append("Configured MCP child failed: " + str(
+                configured_runtime.get("error") or configured_runtime.get("status")))
+    else:
+        configured_runtime = {"ok": False, "status": "config_invalid",
+                              "canonical_config": canonical_mcp_config_path(workspace)}
 
-    ok = bool(
-        mcp_extra_installed()
-        and current.get("ok")
-        and configured_ok
-        and len(unique_apatch_paths) <= 1
-    )
+    ok = bool(configured_ok and configured_runtime.get("ok"))
 
     from apatch.path_leases import writer_protocol_status
 
@@ -584,6 +636,9 @@ def build_mcp_health(workspace: str) -> Dict[str, Any]:
         "ok": ok,
         "mcp_extra_installed": mcp_extra_installed(),
         "doctor_interpreter": current,
+        "configured_runtime": configured_runtime,
+        "health_scope": "configured_command_in_disposable_workspace",
+        "host_tool_availability": "not_observable",
         "recommended_mcp_config": recommended,
         "recommended_install": install_cmd,
         "mcp_command_path": resolve_mcp_command(),
@@ -593,7 +648,7 @@ def build_mcp_health(workspace: str) -> Dict[str, Any]:
         "warnings": warnings,
         "canonical_mcp_path": canonical_mcp_config_path(workspace),
         "recommended_ide_mcp_config": recommended_ide_mcp_server_block(),
-        "ide_setup_hint": "Point IDE MCP at args [--m, apatch.mcp.workspace_launcher (see recommended_ide_mcp_config)",
+        "ide_setup_hint": "Pin IDE Python and canonical .apatch/mcp.json; use [-I, -m, apatch.mcp.workspace_launcher].",
         "sync_command": "apatch mcp sync --target-dir .",
         "mcp_tool_catalog": mcp_tool_catalog(),
         "stored_mcp_fingerprint": stored_fingerprint,
@@ -602,39 +657,88 @@ def build_mcp_health(workspace: str) -> Dict[str, Any]:
     }
 
 
-def _write_mcp_config_at(path: str, *, overwrite: bool = False, workspace: Optional[str] = None) -> str:
-    if os.path.exists(path) and not overwrite:
-        existing = _read_json(path) or {}
-        servers = existing.get("mcpServers") or {}
-        if "apatch" in servers and _config_matches_recommended(servers["apatch"], workspace):
-            return path
-        if "apatch" in servers:
-            raise FileExistsError(
-                f"apatch entry already exists in {path}; use --force to replace"
-            )
-    existing = _read_json(path) if os.path.exists(path) else None
-    payload: Dict[str, Any]
-    if existing and isinstance(existing.get("mcpServers"), dict):
-        payload = dict(existing)
-        servers = dict(payload["mcpServers"])
-        servers["apatch"] = recommended_mcp_server_block(workspace)
-        payload["mcpServers"] = servers
-    else:
-        payload = recommended_cursor_mcp_json(workspace)
+def _config_for_update(path: str) -> Dict[str, Any]:
+    if not os.path.exists(path):
+        return {"mcpServers": {}}
+    return _validate_config(_read_json(path), path)
+
+
+def _validate_config(data: Any, path: str) -> Dict[str, Any]:
+    if not isinstance(data, dict) or not isinstance(data.get("mcpServers", {}), dict):
+        raise ValueError("Invalid MCP config; refusing to overwrite: {}".format(path))
+    servers = data.setdefault("mcpServers", {})
+    block = servers.get("apatch", {})
+    if not isinstance(block, dict) or not isinstance(block.get("env", {}), dict):
+        raise ValueError("Invalid apatch block; refusing to overwrite: {}".format(path))
+    if ("command" in block and not isinstance(block["command"], str)) or (
+            not isinstance(block.get("args", []), list)
+            or any(not isinstance(arg, str) for arg in block.get("args", []))):
+        raise ValueError("Invalid command/args; refusing to overwrite: {}".format(path))
+    profile = block.get("env", {}).get("APATCH_MCP_PROFILE")
+    if profile is not None and (not isinstance(profile, str) or profile not in {"compact", "core", "spec", "full"}):
+        raise ValueError("Invalid MCP profile; review the config: {}".format(path))
+    return data
+
+
+def _merged_server_block(existing: Dict[str, Any], recommended: Dict[str, Any],
+                         *, profile: Optional[str] = None) -> Dict[str, Any]:
+    updated = dict(existing)
+    updated["command"] = recommended["command"]
+    args = list(recommended["args"])
+    if "-I" in (existing.get("args") or []):
+        args.insert(0, "-I")
+    updated["args"] = args
+    updated["env"] = dict(recommended.get("env") or {}, **(existing.get("env") or {}))
+    if profile is not None:
+        if profile not in {"compact", "core", "spec", "full"}:
+            raise ValueError("Unknown MCP profile: {}".format(profile))
+        updated["env"]["APATCH_MCP_PROFILE"] = profile
+    return updated
+
+
+def _save_mcp_config(path: str, payload: Dict[str, Any]) -> str:
+    text = json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
+    if os.path.isfile(path) and Path(path).read_text(encoding="utf-8") == text:
+        return path
     parent = os.path.dirname(path)
     if parent:
         os.makedirs(parent, exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(payload, f, indent=2, ensure_ascii=False)
-        f.write("\n")
+    # Same-directory replace: readers see the old or the complete new config.
+    import tempfile
+    import stat
+    mode = stat.S_IMODE(os.stat(path).st_mode) if os.path.exists(path) else 0o600
+    fd, temp = tempfile.mkstemp(prefix=".apatch-mcp-", dir=parent or ".")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            stream.write(text)
+        os.chmod(temp, mode)
+        os.replace(temp, path)
+    finally:
+        if os.path.exists(temp):
+            os.unlink(temp)
     return path
 
 
-def write_project_mcp_config(target_dir: str, *, overwrite: bool = False) -> str:
+def _write_mcp_config_at(path: str, *, overwrite: bool = False,
+                         workspace: Optional[str] = None,
+                         profile: Optional[str] = None) -> str:
+    payload = _config_for_update(path)
+    existing = payload["mcpServers"].get("apatch", {})
+    if existing and not overwrite:
+        if _config_matches_recommended(existing, workspace) and (
+                profile is None or profile == existing.get("env", {}).get("APATCH_MCP_PROFILE")):
+            return path
+        raise FileExistsError("apatch entry already exists in {}; use --force to update".format(path))
+    payload["mcpServers"]["apatch"] = _merged_server_block(
+        existing, recommended_mcp_server_block(workspace), profile=profile)
+    return _save_mcp_config(path, payload)
+
+def write_project_mcp_config(target_dir: str, *, overwrite: bool = False,
+                             profile: Optional[str] = None) -> str:
     """Write ``.apatch/mcp.json`` with the canonical apatch server block."""
     root = os.path.abspath(target_dir)
     path = canonical_mcp_config_path(root)
-    written = _write_mcp_config_at(path, overwrite=overwrite, workspace=root)
+    written = _write_mcp_config_at(path, overwrite=overwrite, workspace=root, profile=profile)
     try:
         from apatch.artifact_governance import register_on_write
 
@@ -682,38 +786,24 @@ def _ide_stub_upgrade_needed(apatch_cfg: Dict[str, Any]) -> bool:
 
 
 def write_ide_mcp_stub(path: str, *, overwrite: bool = False, workspace: Optional[str] = None) -> str:
-    """Write minimal ``workspace_launcher`` block for an IDE-specific config file."""
-    if os.path.exists(path) and not overwrite:
-        existing = _read_json(path) or {}
-        servers = existing.get("mcpServers") or {}
-        stub = servers.get("apatch") or {}
-        if stub.get("args") == ["-m", "apatch.mcp.workspace_launcher"]:
-            want_ws = os.path.abspath(workspace) if workspace else None
-            have_ws = (stub.get("env") or {}).get("APATCH_WORKSPACE")
-            if want_ws and have_ws != want_ws:
-                overwrite = True
-            else:
+    """Update the runtime pointer, retaining user env and unrelated block fields."""
+    payload = _config_for_update(path)
+    existing = payload["mcpServers"].get("apatch", {})
+    recommended = recommended_ide_mcp_server_block(workspace)
+    normalized_args = [arg for arg in existing.get("args", []) if arg != "-I"]
+    if existing and not overwrite:
+        if normalized_args == ["-m", "apatch.mcp.workspace_launcher"]:
+            if (_executable_path(existing.get("command") or "") == _executable_path(recommended["command"])
+                    and (not workspace or existing.get("env", {}).get("APATCH_WORKSPACE") == os.path.abspath(workspace))):
                 return path
-        if "apatch" in servers and _ide_stub_upgrade_needed(stub):
-            overwrite = True
-        elif "apatch" in servers:
-            raise FileExistsError(f"apatch entry already exists in {path}; use --force")
-    existing = _read_json(path) if os.path.exists(path) else None
-    if existing and isinstance(existing.get("mcpServers"), dict):
-        payload = dict(existing)
-        servers = dict(payload["mcpServers"])
-        servers["apatch"] = recommended_ide_mcp_server_block(workspace)
-        payload["mcpServers"] = servers
-    else:
-        payload = {"mcpServers": {"apatch": recommended_ide_mcp_server_block(workspace)}}
-    parent = os.path.dirname(path)
-    if parent:
-        os.makedirs(parent, exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(payload, f, indent=2, ensure_ascii=False)
-        f.write("\n")
-    return path
-
+            raise FileExistsError("apatch IDE runtime differs in {}; use --force".format(path))
+        if normalized_args not in _LAUNCHER_ARG_SETS and normalized_args != []:
+            raise FileExistsError("apatch entry already exists in {}; use --force".format(path))
+    updated = _merged_server_block(existing, recommended)
+    if workspace:
+        updated["env"]["APATCH_WORKSPACE"] = os.path.abspath(workspace)
+    payload["mcpServers"]["apatch"] = updated
+    return _save_mcp_config(path, payload)
 
 def sync_mcp_configs(
     target_dir: str,
@@ -721,9 +811,10 @@ def sync_mcp_configs(
     overwrite: bool = False,
     ide_paths: Optional[Sequence[str]] = None,
     auto_ide: bool = True,
+    profile: Optional[str] = None,
 ) -> List[str]:
     """Write ``.apatch/mcp.json`` and merge IDE stubs (auto-detect when ``auto_ide``)."""
-    paths: List[str] = [write_project_mcp_config(target_dir, overwrite=overwrite)]
+    paths: List[str] = [write_project_mcp_config(target_dir, overwrite=overwrite, profile=profile)]
     stubs = (
         list(ide_paths)
         if ide_paths is not None
@@ -732,6 +823,11 @@ def sync_mcp_configs(
     root = os.path.abspath(target_dir)
     for raw in stubs:
         abs_path = os.path.abspath(os.path.expanduser(raw))
+        if ide_paths is None:
+            data = _config_for_update(abs_path)
+            bound = data["mcpServers"].get("apatch", {}).get("env", {}).get("APATCH_WORKSPACE")
+            if bound and os.path.realpath(os.path.expanduser(bound)) != os.path.realpath(root):
+                continue
         paths.append(write_ide_mcp_stub(abs_path, overwrite=overwrite, workspace=root))
     return paths
 
@@ -753,7 +849,7 @@ def repair_mcp_configs_if_needed(workspace: str) -> List[str]:
     workspace = os.path.abspath(workspace)
     if not mcp_extra_installed():
         return []
-    current = _probe_current_interpreter()
+    current = _probe_interpreter(sys.executable)
     if not current.get("ok"):
         return []
 

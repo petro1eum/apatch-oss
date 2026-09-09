@@ -244,8 +244,9 @@ Existing SPEC ownership and workspace policies still apply.
 The complete selected engineering documentation is included under `docs/` in
 this source tree and its source distribution. Start with the
 [English documentation index](docs/README.md) or [getting started](docs/getting-started.md).
-This is the **0.8.43 source candidate**; the currently published package is
-[0.8.42 on PyPI](https://pypi.org/project/apatch/0.8.42/).
+Source version: **0.8.43**. The [OSS verification guide](docs/oss-verification.md)
+explains standalone scope, raw contract results and separate integration acceptance.
+See [PyPI](https://pypi.org/project/apatch/) for published package versions.
 
 | Topic | Reference |
 |---|---|

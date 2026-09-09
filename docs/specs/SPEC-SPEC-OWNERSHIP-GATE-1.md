@@ -26,6 +26,7 @@ declare the target. Editable prose is never completion authority.
 | SO-I | R9 | covered |
 | SO-J | R10 | covered |
 | SO-K | R12 | covered |
+| SO-L | R14 | covered |
 | extension | R11 | attested Git handoff |
 
 ## R1 Exact slug ownership
@@ -181,6 +182,37 @@ scope; preserve unrelated dirty files. Remote orchestration routes the operation
 without opening a new mutation session.
 
 (verify: python3 -m pytest tests/test_commit_attested.py tests/test_cli_commit_attested.py tests/test_remote_worker_protocol.py tests/test_remote_mcp_routing.py tests/test_mcp.py -q)
+## R14 Environment-preserving MCP bootstrap and truthful health
+
+owns: `apatch/mcp_health.py`, `apatch/mcp/runtime_probe.py`, `apatch/doctor.py`, `apatch/path_leases.py`, `apatch/cli.py`, `apatch/consumer_profiles.py`, `tests/test_mcp_runtime_identity.py`, `tests/test_mcp_runtime_wheel.py`, `docs/mcp_setup.md`, `docs/AGENTS.template.md`, `docs/README.md`, `docs/agent-onboarding.md`
+
+Sync SHALL retain the selected virtual environment instead of identifying Python
+environments by executable realpath. Matching, probe candidates and diagnostics
+SHALL preserve environment identity and distinguish executable from binary target.
+Homebrew normalization is allowed only for equivalent non-venv environments.
+
+Explicit sync/repair SHALL preserve existing env, full/compact profile and unrelated
+config fields; a profile change requires explicit selection. Automatic IDE discovery
+SHALL NOT rebind a config already bound to another workspace. Doctor SHALL NOT repair
+configuration as a side effect.
+
+CLI health SHALL inspect the isolated configured child, its prefix/base_prefix,
+module and distribution versions, and perform real stdio initialize/tools/list
+through the workspace bootstrap with a bounded timeout. Missing, malformed,
+mismatched, changed-during-probe or non-serving configurations SHALL be red.
+Sync SHALL exit nonzero when that check fails. A running MCP doctor SHALL avoid
+recursive child probes and report configured-child readiness as unverified, not
+claim global health from current-process imports. Server readiness does not prove
+that the host exposed its tools to a particular task.
+
+Regression evidence SHALL include a real temporary venv sharing its binary
+realpath with base Python, different installed versions, hostile PYTHONPATH/cwd,
+a stale canonical config, profile preservation, idempotent repair, and a fresh
+installed wheel initialize/tools/list/doctor. Existing mismatch refusal, governed
+authorization, frozen tests, session/lease/ledger state and alias pins stay intact.
+
+(verify: python3 -m pytest tests/test_mcp_runtime_identity.py tests/test_mcp_runtime_wheel.py -q)
+
 ## Non-goals
 
 - Guessing the authorizing requirement.

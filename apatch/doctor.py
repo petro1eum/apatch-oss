@@ -221,12 +221,10 @@ def run_doctor(target_dir: str = ".") -> Dict[str, Any]:
             "POLICY SIGNATURE INVALID: .apatch/policy.lock.json failed verification "
             "(possible tampering). Investigate before trusting the monitor config."
         )
-    from apatch.mcp_health import build_mcp_health, repair_mcp_configs_if_needed
+    from apatch.mcp_health import build_mcp_health
 
-    mcp_repaired = repair_mcp_configs_if_needed(workspace)
+    # Diagnostics must not rewrite the selected runtime or user profile.
     mcp_health = build_mcp_health(workspace)
-    if mcp_repaired:
-        mcp_health["auto_repaired"] = mcp_repaired
     warnings.extend(mcp_health.get("warnings") or [])
 
     from apatch.avatar_delivery import avatar_runtime_compatibility
@@ -259,7 +257,10 @@ def run_doctor(target_dir: str = ".") -> Dict[str, Any]:
     result: Dict[str, Any] = {
         "version": __version__,
         "python": sys.version.split()[0],
-        "python_executable": os.path.realpath(sys.executable),
+        "python_executable": os.path.abspath(sys.executable),
+        "python_binary_realpath": os.path.realpath(sys.executable),
+        "python_prefix": sys.prefix,
+        "python_base_prefix": sys.base_prefix,
         "apatch_executable": apatch_bin,
         "mcp_command": mcp_health.get("mcp_command_path"),
         "mcp_health": mcp_health,

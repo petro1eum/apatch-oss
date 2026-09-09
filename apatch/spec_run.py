@@ -662,6 +662,24 @@ def _run_one_requirement(
     if verify_cmd:
         from apatch.tool_paths import run_shell_verify
 
+        snapshot = None
+        if not needles:
+            from apatch.spec_reverification import capture_reverification, ReverificationError
+            try:
+                snapshot = capture_reverification(root, spec_id, [req_row])
+                if snapshot is not None and verify_cmd != req_row.get("verify"):
+                    raise ReverificationError("exact requirement verification required")
+            except ReverificationError as exc:
+                rt = MutationRuntime(root)
+                bind_runtime_to_active_session(rt, root)
+                rt.close_session()
+                steps.append("session_end")
+                return _blocked_run(
+                    str(exc), error_type="REVERIFICATION_INVALID",
+                    recommended_action="restore_requirement_evidence",
+                    requirement_token=req_token, current_requirement=req_row,
+                    steps_completed=steps,
+                )
         v_ok, _ = run_shell_verify(verify_cmd, root)
         if not needles:
             rt = MutationRuntime(root)
@@ -681,15 +699,19 @@ def _run_one_requirement(
                 blocked["session_end"] = end
                 return blocked
 
-            noop = rt.noop_attest([req_id], message=f"verify-only {req_token}")
+            noop = rt.noop_attest(
+                [req_id], message=f"verify-only {req_token}",
+                **({"reverification": snapshot.verified({req_id: True})} if snapshot is not None else {}),
+            )
             steps.append("verify_precheck_passed")
             steps.append("noop_attest")
+            end = rt.close_session()
+            steps.append("session_end")
             if not noop.get("ok"):
                 noop["steps_completed"] = steps
                 noop["requirement_token"] = req_token
+                noop["session_end"] = end
                 return noop
-            end = rt.close_session()
-            steps.append("session_end")
             if not end.get("ok"):
                 end["steps_completed"] = steps
                 end["requirement_token"] = req_token

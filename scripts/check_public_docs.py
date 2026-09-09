@@ -51,7 +51,8 @@ def check(root: Path):
             parts = urlsplit(href)
             if parts.scheme in {"https", "http", "mailto"}:
                 external.add(href)
-                if any(value in href for value in ("github.com/petro1eum/apatch", "github.com/petro1eum/Human_Capital")):
+                repository = unquote(parts.path).strip("/").split("/")[:2]
+                if parts.hostname == "github.com" and repository in (["petro1eum", "apatch"], ["petro1eum", "Human_Capital"]):
                     errors.append({"file": str(path.relative_to(root)), "href": href, "reason": "private repository link"})
                 continue
             if parts.scheme:

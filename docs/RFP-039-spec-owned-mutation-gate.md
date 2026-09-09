@@ -91,6 +91,8 @@ actual requirement. No patch JSONL is generated for any part of the rejected bat
 | SO-J | The OLang consumer profile is selectable through the public `init-consumer` command and installs sandbox/enforcement coverage for `o_lang/**`, governance docs, and `AGENTS.md`. | MUST |
 | SO-K | A session bound to `spec-bootstrap:<SPEC>#Rk` may create that absent SPEC file through the local mutation channel; existing, foreign, or plain-bound SPEC files stay gated. | MUST |
 
+| SO-L | Runtime sync preserves the selected Python environment and explicit user profile; configured-child checks fail closed on bootstrap/import/version/readiness failures and never substitute current-process health for client availability. | MUST |
+
 ## Security invariants
 
 - The guard runs before patch JSONL is persisted.

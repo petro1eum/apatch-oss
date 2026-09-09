@@ -866,6 +866,7 @@ class MutationRuntime:
         *,
         message: Optional[str] = None,
         evidence: Optional[Dict[str, Any]] = None,
+        reverification=None,
     ) -> Dict[str, Any]:
         """RFP-027 U27-F: attest a requirement satisfied by another Rk's mutation,
         without a fabricated marker file. Records an attestation carrying
@@ -875,6 +876,10 @@ class MutationRuntime:
         from apatch.session_state import load_session_state
         from apatch.trustchain_helper import TrustChainHelper
 
+        try:
+            self._capture_binding("noop_attest")
+        except SessionBindingError as exc:
+            return exc.to_dict()
         if isinstance(covered_by, str):
             covered_by = [covered_by]
         covered_by = list(covered_by or [])
@@ -892,6 +897,21 @@ class MutationRuntime:
             payload["artifacts"] = artifacts
         if evidence:
             payload["evidence"] = evidence
+        if reverification is not None:
+            from apatch.spec_reverification import FileReverification, ReverificationError
+            try:
+                if not isinstance(reverification, FileReverification):
+                    raise ReverificationError("internal pre-verification snapshot required")
+                payload["file_reverification"] = reverification.payload(self.target_dir, artifacts)
+                self._capture_binding("noop_attest")
+            except SessionBindingError as exc:
+                return exc.to_dict()
+            except ReverificationError as exc:
+                return self._finish("apatch_attest", {
+                    "ok": False, "error_type": "REVERIFICATION_INVALID",
+                    "error": str(exc), "recoverable": True,
+                    "recommended_action": "reverify_current_files",
+                })
         committed = (
             tc.commit_action("apatch_attest", payload) if tc.has_trustchain() else False
         )

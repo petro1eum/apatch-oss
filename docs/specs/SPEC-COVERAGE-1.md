@@ -32,7 +32,21 @@ session (mutations recorded in the TrustChain ledger bound to that requirement's
 with each file's sha256 at attestation time. Source of truth is the signed ledger only;
 the field is never agent-writable.
 
-(verify: python3 -m pytest tests/test_spec_coverage.py::test_file_sets_from_ledger -q)
+A repeated verification may replace the reference hashes only through a signed
+file-reverification record. Capture the complete prior requirement-bound scope,
+current file bytes, requirement hash and exact verifier before execution. A
+completed green result must be revalidated against unchanged files, intent and
+lineage immediately before signing. Keep genuine mutation operation references;
+never fabricate a mutation or infer missing historical file hashes from disk.
+Bare no-verify/precomputed booleans and primary in-progress declarations remain
+separate from fresh file evidence. Pin the full requirement mutation history;
+a new mutation in another session invalidates the capture. Exact asynchronous
+verifiers must reach a successful terminal exit before signing. File identity
+and change metadata are checked along with hashes, including change-and-restore.
+Rebind, verify-only spec execution and single-run slug ratification share this
+boundary. Fileless covered-by requirements remain distinct from file-backed proof.
+
+(verify: python3 -m pytest tests/test_spec_coverage.py tests/test_rebind_evidence_integrity.py tests/test_file_reverification.py -q)
 
 ## R2 Staleness from file drift
 

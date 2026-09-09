@@ -126,7 +126,7 @@ protection from the presence of a SPEC file or from a successful installation.
 
 The developer's `apatch status`, architect's HTML report and manager's Markdown
 report share `project_status_workspace` / `apatch_project_status`: one set of
-facts, three views (RFP-020 (`docs/RFP-020-three-views.md` in the source distribution)).
+facts, three views ([RFP-020](https://github.com/petro1eum/apatch-oss/blob/main/docs/RFP-020-three-views.md)).
 
 ### Installation options
 
@@ -243,21 +243,22 @@ Existing SPEC ownership and workspace policies still apply.
 
 The complete selected engineering documentation is included under `docs/` in
 this source tree and its source distribution. Start with the
-English documentation index (`docs/README.md` in the source distribution) or getting started (`docs/getting-started.md` in the source distribution).
-This is the **0.8.43 source candidate**; the currently published package is
-[0.8.42 on PyPI](https://pypi.org/project/apatch/0.8.42/).
+[English documentation index](https://github.com/petro1eum/apatch-oss/blob/main/docs/README.md) or [getting started](https://github.com/petro1eum/apatch-oss/blob/main/docs/getting-started.md).
+Source version: **0.8.43**. The [OSS verification guide](https://github.com/petro1eum/apatch-oss/blob/main/docs/oss-verification.md)
+explains standalone scope, raw contract results and separate integration acceptance.
+See [PyPI](https://pypi.org/project/apatch/) for published package versions.
 
 | Topic | Reference |
 |---|---|
-| Documentation index and CLI recipes | Index (`docs/README.md` in the source distribution), cookbook (`docs/cookbook.md` in the source distribution) |
-| Agent onboarding and MCP setup | Onboarding (`docs/agent-onboarding.md` in the source distribution), MCP (`docs/mcp_setup.md` in the source distribution), playbook (`docs/AGENTS.template.md` in the source distribution) |
-| Executable requirements and ownership | Spec authoring (`docs/spec-authoring.md` in the source distribution), ownership contract (`docs/specs/SPEC-SPEC-OWNERSHIP-GATE-1.md` in the source distribution) |
-| Frozen contracts, roles and task envelopes | RFP-044 (`docs/RFP-044-sdd-integrity-adoption.md` in the source distribution), integrity SPEC (`docs/specs/SPEC-SDD-INTEGRITY-1.md` in the source distribution) |
-| Fixed-purpose verifier and falsification | RFP-045 (`docs/RFP-045-sdd-verifier-closure.md` in the source distribution), probe (`docs/probe.md` in the source distribution) |
-| Ongoing proof and observed failures | Conformance (`docs/conformance.md` in the source distribution), reality (`docs/reality.md` in the source distribution) |
-| Runtime and security boundaries | Runtime invariants (`docs/governed-runtime-invariants.md` in the source distribution), sandbox (`docs/sandbox.md` in the source distribution), security (`docs/security-one-pager.md` in the source distribution) |
-| Architecture, database work and extraction | Orchestration (`docs/orchestration.md` in the source distribution), strip guide (`docs/strip_guide.md` in the source distribution) |
-| Work history, Avatar and service integration | Governed work (`docs/governed-work-trustchain.md` in the source distribution), Avatar canon (`docs/AVATAR-ARCHITECTURE-CANON.md` in the source distribution), WorkAsset privacy/IP (`docs/work-assets-privacy-ip.md` in the source distribution) |
+| Documentation index and CLI recipes | [Index](https://github.com/petro1eum/apatch-oss/blob/main/docs/README.md), [cookbook](https://github.com/petro1eum/apatch-oss/blob/main/docs/cookbook.md) |
+| Agent onboarding and MCP setup | [Onboarding](https://github.com/petro1eum/apatch-oss/blob/main/docs/agent-onboarding.md), [MCP](https://github.com/petro1eum/apatch-oss/blob/main/docs/mcp_setup.md), [playbook](https://github.com/petro1eum/apatch-oss/blob/main/docs/AGENTS.template.md) |
+| Executable requirements and ownership | [Spec authoring](https://github.com/petro1eum/apatch-oss/blob/main/docs/spec-authoring.md), [ownership contract](https://github.com/petro1eum/apatch-oss/blob/main/docs/specs/SPEC-SPEC-OWNERSHIP-GATE-1.md) |
+| Frozen contracts, roles and task envelopes | [RFP-044](https://github.com/petro1eum/apatch-oss/blob/main/docs/RFP-044-sdd-integrity-adoption.md), [integrity SPEC](https://github.com/petro1eum/apatch-oss/blob/main/docs/specs/SPEC-SDD-INTEGRITY-1.md) |
+| Fixed-purpose verifier and falsification | [RFP-045](https://github.com/petro1eum/apatch-oss/blob/main/docs/RFP-045-sdd-verifier-closure.md), [probe](https://github.com/petro1eum/apatch-oss/blob/main/docs/probe.md) |
+| Ongoing proof and observed failures | [Conformance](https://github.com/petro1eum/apatch-oss/blob/main/docs/conformance.md), [reality](https://github.com/petro1eum/apatch-oss/blob/main/docs/reality.md) |
+| Runtime and security boundaries | [Runtime invariants](https://github.com/petro1eum/apatch-oss/blob/main/docs/governed-runtime-invariants.md), [sandbox](https://github.com/petro1eum/apatch-oss/blob/main/docs/sandbox.md), [security](https://github.com/petro1eum/apatch-oss/blob/main/docs/security-one-pager.md) |
+| Architecture, database work and extraction | [Orchestration](https://github.com/petro1eum/apatch-oss/blob/main/docs/orchestration.md), [strip guide](https://github.com/petro1eum/apatch-oss/blob/main/docs/strip_guide.md) |
+| Work history, Avatar and service integration | [Governed work](https://github.com/petro1eum/apatch-oss/blob/main/docs/governed-work-trustchain.md), [Avatar canon](https://github.com/petro1eum/apatch-oss/blob/main/docs/AVATAR-ARCHITECTURE-CANON.md), [WorkAsset privacy/IP](https://github.com/petro1eum/apatch-oss/blob/main/docs/work-assets-privacy-ip.md) |
 
 Many detailed engineering documents are currently in Russian. This English
 README is the primary product description; translation of the complete

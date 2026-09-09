@@ -30,7 +30,16 @@ apatch_doctor(target_dir=".")
 | `mcp_health.mcp_tool_catalog` | **Authoritative tool count** (17 compact default; 124 full profile) |
 | `mcp_bound_workspace` | Which repo `.` resolves to |
 
-**IDE tool count may lag.** Cursor caches MCP tool descriptors; apatch registers **100** tools in the full profile. Treat `apatch_doctor` as authoritative; do not restart the IDE solely for the count if the needed tool works.
+**Distinguish the three layers.** The IDE interpreter selects a workspace's
+canonical `.apatch/mcp.json`; its isolated child must actually serve MCP; the
+host must then expose the needed tools to this task. A successful doctor in
+another task proves neither your tool availability nor your bootstrap selection.
+Do not substitute a venv's binary realpath for its interpreter path.
+Use `apatch mcp check --target-dir . --json` for configured-command readiness;
+a running doctor reports `not_checked_in_stdio` for this independent probe.
+Configured-command readiness is not host tool availability.
+Check both runtime pointers before suggesting reconnect. Doctor never repairs
+configuration; explicit sync preserves env/profile. Full profile has 124 tools.
 
 ## 2. Governed invariant
 

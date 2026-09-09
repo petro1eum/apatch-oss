@@ -96,18 +96,28 @@ def requirement_file_sets(
     by_art = index.get("by_artifact") or {}
     out: Dict[str, Dict[str, Any]] = {}
     by_id = {str(e.get("id") or e.get("signature")): e for e in entries or []}
+    from apatch.traceability import _sort_key
+    positions = {str(e.get("id") or e.get("signature")): i
+                 for i, e in enumerate(sorted(entries or [], key=_sort_key))}
+
+    def mutation_history(bucket, before=None):
+        cutoff = positions.get(str(before.get("op_id")), -1) if before else len(positions)
+        return [str(m.get("op_id")) for m in bucket.get("mutations") or []
+                if positions.get(str(m.get("op_id")), len(positions)) < cutoff]
 
     def session_files(bucket, attestation, artifact_key):
         session = attestation.get("governed_session_id")
         files: Dict[str, str] = {}
         op_ids: List[str] = []
         complete = True
+        observed = False
         for mutation in bucket.get("mutations") or []:
             if mutation.get("governed_session_id") != session:
                 continue
             att_time, mut_time = attestation.get("timestamp"), mutation.get("timestamp")
             if att_time is not None and mut_time is not None and str(mut_time) > str(att_time):
                 continue
+            observed = True
             op_id = str(mutation.get("op_id") or "")
             row = by_id.get(op_id)
             if row:
@@ -125,7 +135,7 @@ def requirement_file_sets(
                     op_ids.append(op_id)
             else:
                 complete = False
-        return files, op_ids, complete and bool(files)
+        return files, op_ids, complete and bool(files), observed
 
     for key, bucket in by_art.items():
         if not key.startswith("spec:"):
@@ -140,19 +150,45 @@ def requirement_file_sets(
         if not bucket.get("attestations") or not bucket.get("mutations"):
             continue
 
-        # Traceability already orders attestations by ledger time.
+        from apatch.spec_reverification import valid_signed_reverification
+
         attestations = bucket["attestations"]
         latest = attestations[-1]
         reference = latest
-        files, op_ids, complete = session_files(bucket, latest, key)
-        if not files:
-            for previous in reversed(attestations[:-1]):
-                files, op_ids, _ = session_files(bucket, previous, key)
-                if files:
-                    reference = previous
-                    break
+        files, op_ids = {}, []
+        complete = reference_complete = False
+        verify_sha256 = None
+        for attestation in attestations:
+            current, mutation_ids, valid, observed = session_files(bucket, attestation, key)
+            row = by_id.get(str(attestation.get("op_id")), {})
+            payload = row.get("payload") or {}
+            proofs = payload.get("file_reverification") or {}
+            proof = proofs.get(key) if isinstance(proofs, dict) else None
+            anchor_hash = next((
+                item.get("content_hash") for item in payload.get("artifacts", [])
+                if isinstance(item, dict) and item.get("kind") == "spec"
+                and item.get("id") == key[5:]
+            ), None)
+            complete = False
+            verify_sha256 = None
+            if observed:
+                files, op_ids, reference = current, mutation_ids, attestation
+                complete = reference_complete = valid
+            elif reference_complete and valid_signed_reverification(
+                proof, artifact=key, artifact_hash=anchor_hash,
+                reference=reference.get("op_id"), files=files, op_ids=op_ids,
+                mutation_history=mutation_history(bucket, attestation),
+            ):
+                files, reference = dict(proof["files"]), attestation
+                complete = reference_complete = True
+                verify_sha256 = proof["verify_sha256"]
 
+        history = mutation_history(bucket)
+        reference_history = mutation_history(bucket, reference)
+        complete = complete and history == reference_history
         out[rk] = {
+            "mutation_history_op_ids": history,
+            "reference_mutation_history_op_ids": reference_history,
             "files": files,
             "session_id": latest.get("governed_session_id"),
             "op_ids": op_ids,
@@ -160,7 +196,9 @@ def requirement_file_sets(
             "attestation_op_id": latest.get("op_id"),
             "reference_session_id": reference.get("governed_session_id"),
             "reference_attestation_op_id": reference.get("op_id"),
+            "reference_complete": reference_complete,
             "evidence_status": "complete" if complete else "incomplete",
+            "reverification_verify_sha256": verify_sha256,
         }
     return out
 
@@ -241,8 +279,18 @@ def coverage_rows(
             row["file_hashes"] = dict(fs.get("files") or {})
             row["session_id"] = fs.get("session_id")
             row["op_ids"] = list(fs.get("op_ids") or [])
+            row["mutation_history_op_ids"] = list(fs.get("mutation_history_op_ids") or [])
+            row["reference_mutation_history_op_ids"] = list(fs.get("reference_mutation_history_op_ids") or [])
             row["attested_at"] = fs.get("attested_at")
             row["evidence_status"] = fs.get("evidence_status")
+            row["reference_complete"] = fs.get("reference_complete", False)
+            verify_hash = fs.get("reverification_verify_sha256")
+            if verify_hash and verify_hash != hashlib.sha256(
+                str(row.get("verify") or "").encode("utf-8")
+            ).hexdigest():
+                fs = dict(fs, evidence_status="incomplete")
+                row["evidence_status"] = "incomplete"
+                row["reference_complete"] = False
             row["reference_session_id"] = fs.get("reference_session_id")
             row["attestation_op_id"] = fs.get("attestation_op_id")
             row["reference_attestation_op_id"] = fs.get("reference_attestation_op_id")

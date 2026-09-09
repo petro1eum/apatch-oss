@@ -242,6 +242,12 @@ def slug_ratify_workspace(
 
     cfg = load_conformance_config(root)
     timeout = _positive_int(cfg.get("verify_timeout_sec"), _VERIFY_TIMEOUT) or _VERIFY_TIMEOUT
+    from apatch.spec_reverification import capture_reverification, ReverificationError
+    try:
+        snapshot = capture_reverification(root, spec_id, open_rows, allow_primary_declarations=True)
+    except ReverificationError as exc:
+        return _error("verify", str(exc), slug_n, stages,
+                      hint="Restore complete original requirement file evidence before ratification.")
     runner = _OnceVerifyRunner(root, timeout)
     _ran, failures, broken, _details = runner(root, requirements)
     green = not failures and not broken and not unverified_rows
@@ -314,6 +320,7 @@ def slug_ratify_workspace(
             spec=spec_id,
             verify_results=verify_results,
             evidence=runner.evidence(),
+            **({"reverification": snapshot} if snapshot is not None else {}),
         )
         if not rebound.get("ok"):
             return _error("rebind", str(rebound.get("error")), slug_n, stages,

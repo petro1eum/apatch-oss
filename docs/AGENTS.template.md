@@ -84,6 +84,15 @@ Editable `-e /path/to/apatch` — только при разработке са�
 
 После `init-consumer --with-mcp`: Cursor → MCP → Restart **apatch**.
 
+Keep the exact venv interpreter in both the IDE stub and canonical
+`.apatch/mcp.json`. A shared binary realpath does not mean a shared environment.
+`apatch mcp sync --force` preserves existing env/profile; use `--profile` to
+change it explicitly. Doctor does not repair configuration.
+`apatch mcp check --target-dir . --json` checks the configured bootstrap and
+stdio catalog in a disposable workspace without copying user sessions or keys.
+A running MCP doctor reports `not_checked_in_stdio` for that independent check:
+current-process readiness is not configured-child readiness or host tool availability.
+
 ### 1.2 Runtime hygiene (patch JSONL — RFP-016)
 
 | Правило | Почему |
@@ -851,7 +860,7 @@ CLI = то же имя без префикса `apatch_` / `apatch ` (`apatch --
 3. IDE MCP stub: `python -m apatch.mcp.workspace_launcher` (auto-written to `.cursor/mcp.json`, `~/.gemini/…` when they exist)
 4. Stub env includes `APATCH_WORKSPACE` pointing at project root (IDE `cwd` is often `$HOME`)
 5. Reload MCP Servers в IDE
-6. `apatch_doctor(target_dir=".")` → `mcp_health.ok: true`; **15 intent-level tools** by default (`APATCH_MCP_PROFILE=compact`); enable `core`/`spec`/`full` only for specialist work
+6. `apatch mcp check --target-dir . --json` → configured-command health; then `apatch_doctor(target_dir=".")` → `writer_protocol.ready` for this running MCP. Host tool availability is separate. **17 intent-level tools** by default; select `core`/`spec`/`full` explicitly when needed.
 
 7. Опциональный roaming: `apatch workspace add crm /absolute/repo/root`; агент использует только `target_dir="@crm"`
 

@@ -1,13 +1,28 @@
-# Public source candidate: publication hold
+# OSS release qualification and historical evidence
 
-This is a prepared source snapshot, **not an approved 0.8.43 release**.
-The existing private repository must not be made public as a shortcut.
-No remote repository or package was published by this preparation.
+This document records source-boundary checks and historical observations, not an
+automatic approval of every artifact built from this tree. Fresh qualification
+must name its profile and exact source hashes. The existing private repository
+must not be made public as a shortcut.
+
+## Current assembly — 2026-09-09
+
+The owner approved the new destination `petro1eum/apatch-oss`; the old repository
+and its history stay private. This revision adds committed runtime-identity and
+file-bound reverification fixes plus the explicit [OSS verification profiles](oss-verification.md).
+The profile implementation passed 155 focused development checks. These are not
+the final exported-wheel qualification or a hosted CI run. Fresh full qualification
+must be recorded separately against the exact artifact; the full-run numbers below are historical.
+
+The public workflow now invokes `standalone` and retains an explicit allowlist of
+raw evidence. It does not waive failed checks, remove enrollment or certify live
+Avatar/HC/Platform acceptance. A passing scoped report and a red raw standing gate
+must be reported separately, as must local evidence, hosted CI execution and publication.
 
 ## Verified boundaries
 
-- Of 237 runtime/compatibility files, 231 match the original baseline; six match
-  the separately reviewed fixes recorded in the source manifest. No private
+- Of 239 runtime/compatibility files, 224 match the original baseline; 15 match
+  the committed fixes recorded in the source manifest. No private
   commit history was imported.
 - MIT is unchanged and matches TrustChain OSS.
 - The selected source tree has no imported private Git history, Pro implementation,
@@ -21,7 +36,7 @@ No remote repository or package was published by this preparation.
 These checks do not certify absence of every possible secret or prove acceptance
 by an external service.
 
-## Current revision
+## Historical qualification — preceding 237-file revision
 
 This revision includes the reviewed ownership fix and the installed-resource /
 native conformance-exit fixes. The dev change passed 82 targeted checks, including
@@ -99,7 +114,7 @@ This closes the missing-resource defect, not PUB-QA-1 or external release accept
 
 ## Publication steps after qualification
 
-Choose and authorize the new public repository destination; retain the old
+Create only the approved `petro1eum/apatch-oss` destination; retain the old
 repository privately. Establish the actual private vulnerability-reporting route.
 Verify anonymous documentation access, update candidate wording, rerun artifact
 and contract checks, and publish only the exact newly qualified artifacts.

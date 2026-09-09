@@ -29,10 +29,10 @@ apatch mcp sync --target-dir .       # writes .apatch/mcp.json + updates known I
 apatch mcp codex-approve --target-dir .  # Codex: approve apatch autopilot tools
 apatch mcp codex-doctor --target-dir .   # Codex: diagnose repeated prompts
 # Reload MCP in your IDE (toggle off/on)
-apatch doctor                        # expect mcp_health.ok: true
+apatch mcp check --target-dir . --json # configured-command bootstrap + stdio check
 ```
 
-**Default:** projects get the **15-tool intent-level profile** (`APATCH_MCP_PROFILE=compact`). Use `core`, `spec`, or `full` only for work that needs those specialist surfaces.
+**Default:** projects get the **17-tool intent-level profile** (`APATCH_MCP_PROFILE=compact`). Use `core`, `spec`, or `full` only for work that needs those specialist surfaces.
 **Opt-in expansion:** set `core` (28 tools), `spec` (38), or `full` (124) only when the task needs those specialist operations.
 
 ### Two-layer model
@@ -61,6 +61,44 @@ python -m apatch.mcp.workspace_launcher
 ```
 
 Discovery order in `workspace_launcher`: `APATCH_WORKSPACE` → `CURSOR_PROJECT_DIR` → walk up from `cwd` → `.apatch/mcp.json`.
+
+### Runtime identity and health
+
+Use the exact venv executable, such as `/path/to/venv/bin/python`, in both
+configuration layers. It may resolve to the same binary as base Python while
+loading different packages. Sync retains this environment identity; Homebrew
+normalization is limited to proven equivalent non-venv environments.
+
+```bash
+/path/to/venv/bin/python -I -m apatch.cli mcp sync --target-dir /path/to/project --force --no-auto-ide
+/path/to/venv/bin/python -I -m apatch.cli mcp check --target-dir /path/to/project --json
+# Explicit profile change (otherwise preserve the existing selection):
+apatch mcp sync --target-dir . --force --profile full
+```
+
+Sync preserves user env, profile and unrelated config fields. Auto-detected IDE
+configs already bound to another workspace are not rebound. A malformed config
+is refused even with force; doctor does not rewrite configs as a side effect.
+Existing isolated-mode arguments stay preserved.
+
+CLI `mcp check` and the check after `mcp sync` inspect the selected child Python
+in isolated mode and perform actual stdio initialize/tools/list through the
+workspace bootstrap. They use a disposable copy of the selected config block,
+not the user's ledger, keys, sessions or alias registry. The result's scope is
+`configured_command_in_disposable_workspace`, not project/domain acceptance.
+A failed check makes the command exit nonzero. Diagnostics distinguish the
+selected executable, binary realpath, prefix/base_prefix, loaded APatch module
+and distribution versions, canonical config source, and MCP handshake result.
+The MCP SDK's server version is not the APatch package version.
+
+Configured-command readiness and host tool availability are separate observations.
+A running MCP doctor does not recursively start another server. Its
+`configured_runtime.status=not_checked_in_stdio` means that independent check
+was not performed; `mcp_health.ok=false` is not itself a failure of the running
+writer. Read `writer_protocol.ready` for the current process. Neither a process
+report nor a separate successful handshake proves that the host exposed tools to
+this task: `host_tool_availability=not_observable`. Check both configuration
+layers before asking for a reconnect; do not repeat installation blindly.
 
 ### Safe local workspace roaming
 
@@ -117,8 +155,9 @@ apatch mcp sync                            # generate the local MCP config
 ```
 
 The committed `scripts/hooks/{post-merge,post-checkout}` then run `apatch mcp sync`
-after every pull/checkout, so the local config self-refreshes. `apatch doctor` also
-keeps `.apatch/mcp.json` healthy on demand. A fresh clone needs only those two
+after every pull/checkout. If an existing runtime pointer differs, review it and
+use explicit sync with force. `apatch doctor` is diagnostic only and never repairs
+`.apatch/mcp.json`. A fresh clone needs only those two
 commands — no machine paths live in the repo. See `scripts/hooks/README.md`.
 
 Each stub gets `APATCH_WORKSPACE=<target-dir>` so MCP works even when IDE `cwd` is wrong.
@@ -209,7 +248,7 @@ apatch doctor --json | jq '{version, profile: .mcp_profile, tools: .mcp_health.m
 
 Expected after a successful restart: `writer.ready=true`,
 `writer.writer_protocol_version=2`, `writer.reload_required=false`, and compact
-`tools=15`. `writer.path_lease_api` lists the internal v2 admission operations; they
+`tools=17`. `writer.path_lease_api` lists the internal v2 admission operations; they
 are intentionally not additional agent-callable MCP tools.
 
 If a workspace has a live v2 compatibility guard and an old MCP is still loaded, the
@@ -256,7 +295,7 @@ Consumer scaffold (`init-consumer --with-mcp`): `docs/specs/SPEC-TEMPLATE.md`, `
 
 #### IDE MCP tool count vs server catalog
 
-Cursor normally shows the 15-tool compact profile. With `APATCH_MCP_PROFILE=full`, it may still show fewer tools than `apatch_doctor` → `mcp_health.mcp_tool_catalog.count` (**124**) because of client descriptor caching. Treat `apatch_doctor` as authoritative; do not ask the user to restart Cursor solely for tool count if the required tool works.
+Cursor normally shows the 17-tool compact profile. With `APATCH_MCP_PROFILE=full`, it may still show fewer tools than `apatch_doctor` → `mcp_health.mcp_tool_catalog.count` (**124**) because of client descriptor caching. Treat `apatch_doctor` as authoritative; do not ask the user to restart Cursor solely for tool count if the required tool works.
 
 **Performance:** full diagnostics run only on explicit `apatch_doctor` (~1–3 s on typical consumers). Other MCP tools use a lightweight policy snapshot. Apply emits one Ed25519 notarization receipt per chunk and validates only the appended ledger object + HEAD; full history is explicit audit/recovery. Benchmarks: [mcp_performance.md](./mcp_performance.md). No-regression contract: [governed-runtime-invariants.md](./governed-runtime-invariants.md).
 
