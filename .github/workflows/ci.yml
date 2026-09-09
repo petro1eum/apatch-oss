@@ -15,6 +15,18 @@ jobs:
           python -m pip install 'build>=1.2' 'setuptools>=77' wheel
           python -m build --wheel --outdir "${{ runner.temp }}/apatch-dist"
           python -m pip install "$(find "${{ runner.temp }}/apatch-dist" -name '*.whl')[dev,mcp,trustchain,yaml,platform]"
+      - name: Prepare the legacy Homebrew launcher fixture
+        run: |
+          # The unchanged legacy-config test names this exact Homebrew path.
+          # Provide the real installed launcher on the disposable Linux runner;
+          # do not skip the test or widen the standalone skip inventory.
+          launcher="$(command -v apatch-mcp)"
+          test -f "$launcher"
+          test ! -e /opt/homebrew/bin/apatch-mcp
+          test ! -L /opt/homebrew/bin/apatch-mcp
+          sudo mkdir -p /opt/homebrew/bin
+          sudo ln -s "$launcher" /opt/homebrew/bin/apatch-mcp
+          python -m pytest tests/test_mcp_health.py::test_bare_apatch_mcp_fails_env_match -q
       - name: Qualify standalone (raw failures remain visible)
         run: python scripts/qualify_oss.py --profile standalone --source . --output "${{ runner.temp }}/apatch-qualification"
       - name: Retain verification evidence only
