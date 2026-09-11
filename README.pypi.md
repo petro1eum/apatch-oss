@@ -240,9 +240,9 @@ Existing SPEC ownership and workspace policies still apply.
 
 ## Documentation
 
-The links below are paths in the source repository; access to repository-hosted
-documentation currently requires repository access. The public wheel and source
-distribution are available on [PyPI](https://pypi.org/project/apatch/).
+The complete source documentation is public in
+[petro1eum/apatch-oss](https://github.com/petro1eum/apatch-oss). The wheel and
+source distribution are available on [PyPI](https://pypi.org/project/apatch/).
 
 | Topic | Reference |
 |---|---|

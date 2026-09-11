@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "apatch"
-version = "0.8.43"
+version = "0.8.44"
 description = "Executable contracts for AI agents: scoped changes, frozen verification, and signed evidence"
 readme = "README.pypi.md"
 license = "MIT"
@@ -44,7 +44,7 @@ Issues = "https://github.com/petro1eum/apatch-oss/issues"
 
 [project.optional-dependencies]
 # Backward-compatible alias for existing `apatch[trustchain]` install commands.
-# TrustChain is a base dependency from 0.8.43 because signed contract evidence is
+# TrustChain is a base dependency from 0.8.44 because signed contract evidence is
 # part of APatch itself, not an optional service integration.
 trustchain = []
 # Contribution / Avatar emission — the ONE shared canonical ContributionEvent

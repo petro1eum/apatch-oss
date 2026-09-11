@@ -6,7 +6,7 @@
 
 ## [Unreleased]
 
-## [0.8.43] — 2026-09-11
+## [0.8.44] — 2026-09-12
 
 ### Added
 
@@ -23,6 +23,12 @@
 ### Documentation
 
 - **English, contract-first product description:** explain how APatch binds specifications, permitted changes, frozen verification and signed evidence into an executable engineering contract. Retain the governed-spec quickstart and secondary replay workflow; correct obsolete private/unreleased, installation and license copy. Distinguish opt-in strict SDD, mediated-only containment and optional service integration from base installation. The published 0.8.42 archives remain unchanged.
+
+## [0.8.43] — 2026-09-09
+
+### Distribution
+
+- Previous immutable public maintenance archive. It predates the mandatory TrustChain dependency and canonical Cowork Work Item acceptance delivered in 0.8.44.
 
 ## [0.8.42] — 2026-09-08
 

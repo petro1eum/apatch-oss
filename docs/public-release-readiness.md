@@ -5,7 +5,7 @@ automatic approval of every artifact built from this tree. Fresh qualification
 must name its profile and exact source hashes. The existing private repository
 must not be made public as a shortcut.
 
-## Current assembly — 2026-09-11
+## Current assembly — 2026-09-12
 
 The owner approved the new destination `petro1eum/apatch-oss`; the old repository
 and its history stay private. This revision adds the reviewed Cowork execution

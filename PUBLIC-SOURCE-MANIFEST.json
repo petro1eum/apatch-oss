@@ -1,6 +1,6 @@
 {
   "schema": "apatch.public-source.v1",
-  "version": "0.8.43",
+  "version": "0.8.44",
   "status": "public_release_candidate",
   "baseline_commit": "3846465860d44222029ebe7d8f9de8ff5f596415",
   "private_git_history_included": false,
@@ -41,7 +41,8 @@
     "b66b34cbd9abcd429436b0e2bdf2beab2c6774d2",
     "090d82e6a9439f5333d168c0f3207411377b7b92",
     "c301e085144539e66166a863f1caaece6af8cb54",
-    "666e882c8a7d35c359fcdb6d9beccd17bd616804"
+    "666e882c8a7d35c359fcdb6d9beccd17bd616804",
+    "a885f9b0acd1a5d03656bd545ad70ec77363a6c8"
   ],
   "self_excluded": "PUBLIC-SOURCE-MANIFEST.json",
   "generated_artifacts_excluded": true,
@@ -160,8 +161,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "de7bf871915202cbc30c9a2acd67e799f7500ae9b240f44b1645f80246450a17",
-      "bytes": 58180,
+      "sha256": "01b99425cc7cebe04f16351dbf5a63e657330c161d45969c4e78d7abccbcd842",
+      "bytes": 58387,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -188,15 +189,15 @@
     },
     {
       "path": "README.md",
-      "sha256": "3d45f0d565333b4eb428a8c33503c800b849de96ef0f51f324137e7651f6ec6b",
-      "bytes": 16397,
+      "sha256": "2a350271ea3b4c26517b2b653f0834a3f164a2dc194f9850f8e3d90407df3a3e",
+      "bytes": 16370,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
     {
       "path": "README.pypi.md",
-      "sha256": "3d45f0d565333b4eb428a8c33503c800b849de96ef0f51f324137e7651f6ec6b",
-      "bytes": 16397,
+      "sha256": "2a350271ea3b4c26517b2b653f0834a3f164a2dc194f9850f8e3d90407df3a3e",
+      "bytes": 16370,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -216,7 +217,7 @@
     },
     {
       "path": "SOURCE-EXPORT.md",
-      "sha256": "cf17a4f22a041cae2201362bb08252deb1f99924303b233dd8d631e210194129",
+      "sha256": "be3bbf576f51a0c8eb6216387b692354cc60886ff6c0f27fe48db9e72e25b34c",
       "bytes": 4041,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
@@ -1938,7 +1939,7 @@
     },
     {
       "path": "docs/README.md",
-      "sha256": "aad0eba35d58f9891865a9c84b3133cae2d327202e02e7e27a344f0393409313",
+      "sha256": "56a7e1044b2eda7347dcf05c273805c8b40bf3d851cc787fc86890dbca988679",
       "bytes": 4269,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
@@ -2239,7 +2240,7 @@
     },
     {
       "path": "docs/apatch-studio.md",
-      "sha256": "907a896209b9a8b23192d56b65d0f91b5d3d9d8c5434822c52b3eaae3757cc27",
+      "sha256": "95b21eea91baf8a8d956adc7c17f5e3850a4f20cb18f239640948b8ab1818696",
       "bytes": 2615,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
@@ -2638,7 +2639,7 @@
     },
     {
       "path": "docs/product-matrix.md",
-      "sha256": "a5007aae6619b94d88f181bb8221ba1936dfe21bad979630431ca943186a8150",
+      "sha256": "ec406baa11e243e6486498e02dc23ae08fb28b02098f1bdf2fa25240776e7ecd",
       "bytes": 2249,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
@@ -2694,7 +2695,7 @@
     },
     {
       "path": "docs/public-release-readiness.md",
-      "sha256": "dd3c19c0bfbc4a37bcfdd4790453886a7219333a207fc4e6126ab9ec42449a70",
+      "sha256": "15c0994b71cf9832c4ff94c33e0ecb0df75875fe16392655f20b4711977ed591",
       "bytes": 7238,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
@@ -3625,7 +3626,7 @@
     },
     {
       "path": "pyproject.toml",
-      "sha256": "1dcd7f7bee61f6e2777cfc427e6889d2e662b68550e7c923393b8200060174a1",
+      "sha256": "ab674b9a9446bf6318227d619d33672bbd8e14e7f297a2a4650b569ece035330",
       "bytes": 3669,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
@@ -6558,7 +6559,7 @@
     },
     {
       "path": "tests/test_public_source_boundary.py",
-      "sha256": "17056421da80defcc316cc60ec3e9c9048f76cdf1a2c033f6466e8a679cd2533",
+      "sha256": "445bb50d1a41177b3d62403ae06c591593f87f756203318e572aa0e450442a7f",
       "bytes": 4299,
       "mode": "0o644",
       "runtime_baseline_unchanged": false

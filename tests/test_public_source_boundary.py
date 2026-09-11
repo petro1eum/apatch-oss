@@ -31,7 +31,7 @@ def test_selected_public_source_matches_recorded_manifest():
         "apatch/spec_reverification.py", "apatch/spec_run.py", "apatch_search_workflows/slug_ratify.py",
         "apatch/work_item_acceptance.py",
     }
-    assert len(manifest["reviewed_source_commits"]) == 13
+    assert len(manifest["reviewed_source_commits"]) == 14
     assert manifest["private_git_history_included"] is False
     paths = [item["path"] for item in manifest["files"]]
     assert len(paths) == len(set(paths))

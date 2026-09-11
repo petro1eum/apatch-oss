@@ -1,6 +1,6 @@
 # APatch delivery and integration boundary
 
-Updated for the public OSS 0.8.43 release, 2026-09-11.
+Updated for the public OSS 0.8.44 release, 2026-09-12.
 This describes existing delivery boundaries, not a new product strategy or a pricing plan.
 
 | Surface | Role | Included in this repository |
@@ -11,7 +11,7 @@ This describes existing delivery boundaries, not a new product strategy or a pri
 | TrustChain Cowork / Platform | Shared projects, people and agents, context and service authority | External service |
 | HC Tracker / Avatar | Optional professional-history, time and evidence integration | APatch-side adapters only; external peer/service delivered separately |
 
-APatch 0.8.43 is released under MIT from the clean public source snapshot.
+APatch 0.8.44 is released under MIT from the clean public source snapshot.
 Publishing this runtime does not qualify or release the Studio UI or the hosted Cowork assembly.
 
 ## Shared engineering quality

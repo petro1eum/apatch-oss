@@ -1,6 +1,6 @@
 # APatch documentation
 
-Source version: **0.8.43**. See [PyPI](https://pypi.org/project/apatch/) for published package versions
+Source version: **0.8.44**. See [PyPI](https://pypi.org/project/apatch/) for published package versions
 and the [verification guide](oss-verification.md) for the evidence scope.
 
 APatch turns specification-driven and test-driven agent work into an executable contract:
