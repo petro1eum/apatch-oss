@@ -97,7 +97,7 @@ Requires **Python 3.10+**. macOS and Linux are the supported platforms.
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install "apatch[mcp,trustchain]"
+python -m pip install "apatch[mcp]"  # TrustChain is included
 
 # Run inside the project you want to govern.
 apatch init-consumer --target-dir . --with-sandbox --with-enforcement
@@ -131,9 +131,8 @@ facts, three views ([RFP-020](https://github.com/petro1eum/apatch-oss/blob/main/
 ### Installation options
 
 ```bash
-python -m pip install apatch                    # Local CLI and patch engine
-python -m pip install "apatch[mcp]"             # MCP interface for AI agents
-python -m pip install "apatch[mcp,trustchain]"  # MCP and signed-ledger integration
+python -m pip install apatch         # Local CLI, patch engine and TrustChain evidence
+python -m pip install "apatch[mcp]"  # Add the MCP interface for AI agents
 ```
 
 Additional extras: `yaml` for YAML manifests, `languages` for Java/C#/Ruby/PHP
@@ -241,12 +240,9 @@ Existing SPEC ownership and workspace policies still apply.
 
 ## Documentation
 
-The complete selected engineering documentation is included under `docs/` in
-this source tree and its source distribution. Start with the
-[English documentation index](https://github.com/petro1eum/apatch-oss/blob/main/docs/README.md) or [getting started](https://github.com/petro1eum/apatch-oss/blob/main/docs/getting-started.md).
-Source version: **0.8.43**. The [OSS verification guide](https://github.com/petro1eum/apatch-oss/blob/main/docs/oss-verification.md)
-explains standalone scope, raw contract results and separate integration acceptance.
-See [PyPI](https://pypi.org/project/apatch/) for published package versions.
+The links below are paths in the source repository; access to repository-hosted
+documentation currently requires repository access. The public wheel and source
+distribution are available on [PyPI](https://pypi.org/project/apatch/).
 
 | Topic | Reference |
 |---|---|
@@ -266,10 +262,10 @@ documentation set is separate work.
 
 ## Development and verification
 
-From a source checkout or extracted source distribution:
+From an authorized source checkout:
 
 ```bash
-python -m pip install -e ".[mcp,trustchain,dev,yaml]"
+python -m pip install -e ".[mcp,dev,yaml]"
 python -m pytest tests/ -q
 ```
 
@@ -283,8 +279,10 @@ checked documentation box is not a substitute for requirement-level evidence.
 with the same license text as TrustChain OSS. The license is included in both
 the wheel and source distribution.
 
+APatch Studio is one market-facing product with two planned editions: APatch Studio OSS and APatch Studio Pro.
+
 This package contains the APatch OSS CLI/MCP runtime. It does not bundle Pro
-implementations, managed services or the external Avatar peer. APatch Studio OSS
+implementations, managed services or the external Avatar peer. APatch Studio
 and the APatch Studio Pro / TrustChain Cowork assembly have their own delivery
 and acceptance lifecycle; publishing this runtime does not declare them released.
 

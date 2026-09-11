@@ -5,14 +5,15 @@ automatic approval of every artifact built from this tree. Fresh qualification
 must name its profile and exact source hashes. The existing private repository
 must not be made public as a shortcut.
 
-## Current assembly — 2026-09-09
+## Current assembly — 2026-09-11
 
 The owner approved the new destination `petro1eum/apatch-oss`; the old repository
-and its history stay private. This revision adds committed runtime-identity and
-file-bound reverification fixes plus the explicit [OSS verification profiles](oss-verification.md).
-The profile implementation passed 155 focused development checks. These are not
-the final exported-wheel qualification or a hosted CI run. Fresh full qualification
-must be recorded separately against the exact artifact; the full-run numbers below are historical.
+and its history stay private. This revision adds the reviewed Cowork execution
+proposal, selective evidence delivery and canonical Work Item acceptance path,
+plus runtime-identity and file-bound reverification fixes and explicit
+[OSS verification profiles](oss-verification.md). The complete public source suite
+passed **2240 tests with 1 optional skip** locally; this is not a hosted CI run or
+proof of live Avatar, HC, Platform or Cowork acceptance.
 
 The public workflow now invokes `standalone` and retains an explicit allowlist of
 raw evidence. It does not waive failed checks, remove enrollment or certify live
@@ -21,7 +22,7 @@ must be reported separately, as must local evidence, hosted CI execution and pub
 
 ## Verified boundaries
 
-- Of 239 runtime/compatibility files, 224 match the original baseline; 15 match
+- Of 241 runtime/compatibility files, 221 match the original baseline; 20 match
   the committed fixes recorded in the source manifest. No private
   commit history was imported.
 - MIT is unchanged and matches TrustChain OSS.

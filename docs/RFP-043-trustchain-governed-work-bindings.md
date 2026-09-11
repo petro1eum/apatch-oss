@@ -338,7 +338,7 @@ but the full expert API remains available.
 | GW-7 | The full professional MCP catalog exposes Change, binding, evidence, sync and status operations with actionable machine-readable states; no artificial tool-count reduction is introduced | MUST |
 | GW-8 | Existing ContributionEvent bytes and ownership boundaries remain unchanged; Platform decisions are consumed as separate signed documents and no cross-system state is inferred | MUST |
 | GW-9 | Tests prove deterministic replay, signature/hash tamper rejection, binding mismatch/revocation, stale attestation rejection, offline recovery, idempotent delivery and zero forbidden privacy fields in emitted envelopes | MUST |
-| GW-10 | Work enters APatch only through a governed session opened in the local repository; no network path delivers something to execute. Every remote read is a decision or verification input about work already declared locally, validated against an exact key set, and a response that carries an instruction is rejected before it reaches storage | MUST |
+| GW-10 | Work starts only through a governed session opened in the local repository. APatch may transiently read one exact short-lived Platform-signed execution proposal, but the read stores nothing and reports `work_started=false`; a separate explicit local acceptance pins `work_item_id:authority_version`, local SPEC and private purpose before creating the ordinary Change, and still opens no session. Every other remote response carrying an instruction is rejected before storage | MUST |
 
 ## Non-goals
 

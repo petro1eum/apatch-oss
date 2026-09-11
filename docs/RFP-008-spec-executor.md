@@ -1,6 +1,6 @@
 # RFP-008: Spec Executor — от patch management к requirement execution
 
-* **Статус**: **Implemented** — [SPEC-EXECUTOR-1](./specs/SPEC-EXECUTOR-1.md) **7/7 attested**; MCP **17 compact / 124 full**
+* **Статус**: **Implemented** — [SPEC-EXECUTOR-1](./specs/SPEC-EXECUTOR-1.md) **7/7 attested**; MCP **17 compact / 129 full**
 * **Автор**: Ed Cherednik
 * **Дата**: 2026-06-09
 * **Зависимости**: RFP-004 (governed session), RFP-006 (artifacts), RFP-007 (`spec_*`, `session_start --requirement`), `apatch_generate_batch` (patch orchestration)
@@ -170,4 +170,4 @@ apatch_execute_next(spec='SPEC-ONPREM-2')                 # следующий R
 | Архитектура | этот RFP |
 | Реализация | [SPEC-EXECUTOR-1](./specs/SPEC-EXECUTOR-1.md) |
 | Агент consumer | [AGENTS.template.md](./AGENTS.template.md) §3J (после R1–R6) |
-| MCP таблица | [mcp_setup.md](./mcp_setup.md) (17 compact / 124 full) |
+| MCP таблица | [mcp_setup.md](./mcp_setup.md) (17 compact / 129 full) |

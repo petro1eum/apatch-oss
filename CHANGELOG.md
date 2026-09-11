@@ -6,14 +6,19 @@
 
 ## [Unreleased]
 
-## [0.8.43] — Unreleased source candidate
+## [0.8.43] — 2026-09-11
+
+### Added
+
+- **Canonical Cowork acceptance:** an explicitly accepted signed execution proposal is delivered to the Platform Work Item acceptance endpoint and returns an immutable, hash-linked local binding. Tampered proposal, acceptance, authority, actor or receipt data fail closed.
+- **TrustChain by default:** every APatch installation now requires `trustchain>=3.3.0`; the historical `trustchain` extra remains as an empty compatibility alias for existing install commands.
 
 ### Public source preparation
 
 - Prepare a clean, independently rooted OSS source snapshot with selected engineering documentation and offline source-package access.
 - Preserve the runtime modules, MIT license, enforcement policies and frozen acceptance assertions; exclude private history, operational identity/evidence, Pro implementation and unrelated third-party reference data.
 - Make the owner-frozen RFP check portable through an explicitly approved byte-identical fixture; preserve its original SHA-256 and historical freeze records.
-- Separate the repository README from the PyPI description so relative source links are never published as broken PyPI URLs. This candidate has not been uploaded; 0.8.42 remains the published version.
+- Keep both the repository README and PyPI description on absolute public links so package documentation never resolves against a nonexistent PyPI-relative path.
 
 ### Documentation
 

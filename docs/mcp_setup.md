@@ -33,7 +33,7 @@ apatch mcp check --target-dir . --json # configured-command bootstrap + stdio ch
 ```
 
 **Default:** projects get the **17-tool intent-level profile** (`APATCH_MCP_PROFILE=compact`). Use `core`, `spec`, or `full` only for work that needs those specialist surfaces.
-**Opt-in expansion:** set `core` (28 tools), `spec` (38), or `full` (124) only when the task needs those specialist operations.
+**Opt-in expansion:** set `core` (28 tools), `spec` (38), or `full` (129) only when the task needs those specialist operations.
 
 ### Two-layer model
 
@@ -295,7 +295,7 @@ Consumer scaffold (`init-consumer --with-mcp`): `docs/specs/SPEC-TEMPLATE.md`, `
 
 #### IDE MCP tool count vs server catalog
 
-Cursor normally shows the 17-tool compact profile. With `APATCH_MCP_PROFILE=full`, it may still show fewer tools than `apatch_doctor` → `mcp_health.mcp_tool_catalog.count` (**124**) because of client descriptor caching. Treat `apatch_doctor` as authoritative; do not ask the user to restart Cursor solely for tool count if the required tool works.
+Cursor normally shows the 17-tool compact profile. With `APATCH_MCP_PROFILE=full`, it may still show fewer tools than `apatch_doctor` → `mcp_health.mcp_tool_catalog.count` (**129**) because of client descriptor caching. Treat `apatch_doctor` as authoritative; do not ask the user to restart Cursor solely for tool count if the required tool works.
 
 **Performance:** full diagnostics run only on explicit `apatch_doctor` (~1–3 s on typical consumers). Other MCP tools use a lightweight policy snapshot. Apply emits one Ed25519 notarization receipt per chunk and validates only the appended ledger object + HEAD; full history is explicit audit/recovery. Benchmarks: [mcp_performance.md](./mcp_performance.md). No-regression contract: [governed-runtime-invariants.md](./governed-runtime-invariants.md).
 
@@ -303,7 +303,7 @@ The launcher redirects **stderr to `.apatch/mcp_stderr.log`** so Rich output can
 
 ## Tools (CLI parity)
 
-**17 MCP tools by default; 124 in `full`** — бизнес-логика через `MutationRuntime` / `apatch.workflows`, как в CLI.
+**17 MCP tools by default; 129 in `full`** — бизнес-логика через `MutationRuntime` / `apatch.workflows`, как в CLI.
 Актуальное число: `apatch_doctor` → `mcp_health.tool_count`.
 
 Every MCP response includes **`state_update`** (R53), **`invariant`**, **`core_invariant`**, and formal **`error_type`** on failure (R56). State file: `.apatch/session_state.json`.
@@ -329,7 +329,7 @@ Every MCP response includes **`state_update`** (R53), **`invariant`**, **`core_i
 | **Sandbox** | `apatch_sandbox_status`, `apatch_sandbox_audit` | Policy и lease |
 | **Product views (RFP-020/RFP-033)** | `apatch_project_status`, `apatch_knowledge_graph`, `apatch_slug_cockpit` | Unified DTO, session graph, and slug diagnostics cockpit; CLI: `apatch status`, `apatch report`, `apatch spec list`, `apatch slug cockpit` |
 | **Contribution (RFP-026)** | `apatch_timesheet` | Per-identity, cross-project timesheet over signed ContributionEvent receipts; `--by identity/project/spec/day`, `--verify`; CLI: `apatch timesheet` |
-| **TrustChain governed work (RFP-043, full)** | `apatch_governed_work_configure`, `apatch_governed_work_transition_endpoint`, `apatch_governed_work_prepare_change`, `apatch_governed_work_store_binding`, `apatch_governed_work_build_evidence`, `apatch_governed_work_sync`, `apatch_governed_work_retire_outbox`, `apatch_governed_work_status` | ProjectGroup WorkProgram → signed Change/binding/evidence/receipt; safe endpoint transition and rejected-request retirement; [onboarding](./governed-work-trustchain.md) |
+| **TrustChain governed work (RFP-043/RFP-047, full)** | `apatch_governed_work_configure`, `apatch_governed_work_transition_endpoint`, `apatch_governed_work_prepare_change`, `apatch_governed_work_store_binding`, `apatch_governed_work_build_evidence`, `apatch_governed_work_read_execution_proposal`, `apatch_governed_work_accept_execution_proposal`, `apatch_governed_work_preview_evidence`, `apatch_governed_work_publish_evidence`, `apatch_governed_work_sync`, `apatch_governed_work_disconnect`, `apatch_governed_work_retire_outbox`, `apatch_governed_work_status` | ProjectGroup WorkProgram → signed Change/binding/local evidence → explicit preview/confirm/publish → receipt; disconnect fences sharing without deleting history; [onboarding](./governed-work-trustchain.md) |
 | **Consumer** | `apatch_doctor`, `apatch_init_consumer` | Диагностика и scaffold |
 | **Scan / logs** | `apatch_scan`, `apatch_view` | Транскрипты IDE |
 

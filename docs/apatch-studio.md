@@ -1,7 +1,7 @@
 # APatch Studio, APatch OSS and TrustChain Cowork
 
 This repository supplies the **APatch OSS runtime**, not the Studio UI or the hosted Pro service.
-APatch 0.8.42 is published under MIT; this source tree prepares the next maintenance release.
+APatch 0.8.43 is the MIT-licensed OSS release represented by this source tree.
 
 ## User paths
 

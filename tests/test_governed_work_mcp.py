@@ -21,6 +21,8 @@ class Provider:
 TOOL_NAMES = {
     "apatch_governed_work_configure",
     "apatch_governed_work_transition_endpoint",
+    "apatch_governed_work_read_execution_proposal",
+    "apatch_governed_work_accept_execution_proposal",
     "apatch_governed_work_prepare_change",
     "apatch_governed_work_store_binding",
     "apatch_governed_work_build_evidence",
@@ -70,6 +72,8 @@ def test_mcp_operations_route_to_the_domain_service(monkeypatch, tmp_path):
         "transition_governed_work_endpoint",
         fake("transition_endpoint"),
     )
+    monkeypatch.setattr(M, "read_execution_proposal", fake("read_execution_proposal"))
+    monkeypatch.setattr(M, "accept_execution_proposal", fake("accept_execution_proposal"))
     monkeypatch.setattr(M, "prepare_governed_change", fake("prepare_change"))
     monkeypatch.setattr(M, "store_governed_source_binding", fake("store_binding"))
     monkeypatch.setattr(M, "build_governed_evidence", fake("build_evidence"))
@@ -94,6 +98,17 @@ def test_mcp_operations_route_to_the_domain_service(monkeypatch, tmp_path):
         platform_url="https://clients.trust-chain.ai",
         idempotency_key="prod-surface-transition-20260831",
     )["operation"] == "transition_endpoint"
+    proposal = {"schema": "trustchain.apatch-studio.execution-intent.v1"}
+    assert _tool("apatch_governed_work_read_execution_proposal")(
+        target_dir=target, tenant_id="tenant", project_group_id="group",
+        work_item_id="item", work_item_hash="hash", authority_version=1,
+        work_program_id="program", work_program_hash="hash",
+        idempotency_key="proposal-read-00000001",
+    )["operation"] == "read_execution_proposal"
+    assert _tool("apatch_governed_work_accept_execution_proposal")(
+        target_dir=target, proposal=proposal, confirmation="item:1",
+        spec_id="SPEC-X", purpose="private",
+    )["operation"] == "accept_execution_proposal"
     assert _tool("apatch_governed_work_prepare_change")(
         target_dir=target,
         tenant_id="tenant",
@@ -125,6 +140,8 @@ def test_mcp_operations_route_to_the_domain_service(monkeypatch, tmp_path):
     assert [name for name, _target, _kwargs in calls] == [
         "configure",
         "transition_endpoint",
+        "read_execution_proposal",
+        "accept_execution_proposal",
         "prepare_change",
         "store_binding",
         "build_evidence",

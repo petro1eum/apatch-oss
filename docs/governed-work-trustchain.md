@@ -144,15 +144,26 @@ is not an ACK.
    when it matches the exact local Change.
 4. Add the returned `project-source-binding:...@sha256:...` artifact to the
    governed APatch session and execute the SPEC requirements normally.
-5. `apatch_governed_work_build_evidence` derives the signed timesheet draft and
-   evidence bundle from current source-bound attestations and unchanged
-   ContributionEvents, then queues evidence admission.
-6. `apatch_governed_work_sync` marks evidence delivered only after the exact
-   direct signed `trustchain.governed-work-admission-receipt.v1` is verified.
-   The Platform response is the receipt document itself, not a wrapper.
-7. `apatch_governed_work_status(refresh_platform=true, ...)` shows four
-   independent states: collective acceptance, source verification,
-   contribution binding and timesheet acceptance.
+5. `apatch_governed_work_build_evidence` derives and stores the signed
+   timesheet draft and evidence bundle locally. Its default is local-only; it
+   does not create an outbox entry.
+6. `apatch_governed_work_preview_evidence` reads those current signed documents
+   and returns an exact content-free plan: recipient, scope, ids, hashes,
+   claimed active seconds and connection generation. Preview writes nothing.
+7. After the user reviews the plan,
+   `apatch_governed_work_publish_evidence(plan=..., confirmation="publish:<plan_hash>")`
+   accepts only that unchanged current plan and queues exactly its evidence
+   bundle and timesheet. Unknown fields or a stale plan fail before the outbox.
+8. `apatch_governed_work_sync` retries identical queued bytes and marks evidence
+   delivered only after the exact direct signed
+   `trustchain.governed-work-admission-receipt.v1` is verified. The Platform
+   response is the receipt document itself, not a wrapper.
+9. `apatch_governed_work_disconnect` writes an immutable local fence. It keeps
+   local artifacts and acknowledged history, while new sharing and fenced
+   pending retries stop before network access.
+10. `apatch_governed_work_status(refresh_platform=true, ...)` shows four
+    independent states: collective acceptance, source verification,
+    contribution binding and timesheet acceptance.
 
 A WorkRelease may be accepted while source verification or timesheet acceptance
 is still pending. APatch never infers one decision from another.

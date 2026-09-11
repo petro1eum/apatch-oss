@@ -27,7 +27,7 @@ apatch_doctor(target_dir=".")
 | `protocol_contract` | Task routing, never-do list |
 | `spec_authoring` | SPEC.md format rules |
 | `spec_run` | Whole-spec batch workflow (§3K) |
-| `mcp_health.mcp_tool_catalog` | **Authoritative tool count** (17 compact default; 124 full profile) |
+| `mcp_health.mcp_tool_catalog` | **Authoritative tool count** (17 compact default; 129 full profile) |
 | `mcp_bound_workspace` | Which repo `.` resolves to |
 
 **Distinguish the three layers.** The IDE interpreter selects a workspace's
@@ -39,7 +39,7 @@ Use `apatch mcp check --target-dir . --json` for configured-command readiness;
 a running doctor reports `not_checked_in_stdio` for this independent probe.
 Configured-command readiness is not host tool availability.
 Check both runtime pointers before suggesting reconnect. Doctor never repairs
-configuration; explicit sync preserves env/profile. Full profile has 124 tools.
+configuration; explicit sync preserves env/profile. Full profile has 129 tools.
 
 ## 2. Governed invariant
 

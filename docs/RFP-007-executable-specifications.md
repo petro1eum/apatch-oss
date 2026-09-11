@@ -58,7 +58,7 @@ SPEC.md  →  Requirements (spec:ID#Rk)  →  Intent  →  Session  →  Mutatio
 | `apatch_spec_next` | `apatch spec next` | Следующее открытое требование + его `verify` |
 | `apatch_session_start(requirement='SPEC-42#R3')` | `session start --requirement` | Авто `intent` + artifact `spec:SPEC-42#R3@<hash>` |
 
-Полная таблица MCP: [mcp_setup.md](./mcp_setup.md). Счётчик tools: `apatch_doctor` → `mcp_health.tool_count` (**17 compact / 124 full**).
+Полная таблица MCP: [mcp_setup.md](./mcp_setup.md). Счётчик tools: `apatch_doctor` → `mcp_health.tool_count` (**17 compact / 129 full**).
 
 ---
 

@@ -497,6 +497,40 @@ def _queue(
     }
 
 
+def fetch_execution_proposal(
+    target_dir: str, *, tenant_id: str, project_group_id: str,
+    work_item_id: str, work_item_hash: str, authority_version: int,
+    work_program_id: str, work_program_hash: str, idempotency_key: str,
+    http_client: Any = None, timeout: float = 20.0,
+    request_key_provider: Any = None, now: Any = None,
+) -> Dict[str, Any]:
+    """Read one signed Cowork proposal without persisting or starting work."""
+    from apatch import execution_proposal as P
+    cfg = load_config(target_dir)
+    path = f"/api/internal/client/project-groups/{project_group_id}/work-items/{work_item_id}/apatch-studio/execution-intents"
+    body = {"subject":cfg["client_id"],"tenant_id":tenant_id,"expected_authority_version":authority_version,"expected_work_item_hash":work_item_hash,"expected_work_program":{"program_id":work_program_id,"program_hash":work_program_hash},"idempotency_key":idempotency_key}
+    raw_body = canonical_bytes(body)
+    headers = {"Content-Type":"application/json","Idempotency-Key":idempotency_key,"X-Apatch-Client-Id":cfg["client_id"],**T.signed_service_headers(target_dir,method="POST",path=path,raw_body=raw_body,tenant_id=tenant_id,subject=cfg["client_id"],expected_key_id=cfg["service_request_key_id"],key_provider=request_key_provider)}
+    if http_client is None and httpx is None:
+        raise GovernedWorkError("execution proposal transport is unavailable")
+    client = http_client or httpx.Client(timeout=timeout)
+    close = http_client is None
+    try:
+        response = client.post(cfg["platform_url"] + path, content=raw_body, headers=headers)
+        status = int(response.status_code)
+        if status not in {200,201}:
+            reason = {401:"identity_invalid",403:"access_revoked",404:"work_item_missing",409:"authority_changed",503:"platform_unavailable"}.get(status,"platform_rejected")
+            raise GovernedWorkError(f"execution proposal unavailable: {reason}")
+        proposal = P.parse_execution_proposal(getattr(response,"content",None),trusted_keys=cfg["binding_authority_keys"],now=now)
+        pins = {"tenant_id":tenant_id,"project_group_id":project_group_id,"work_item_id":work_item_id,"work_item_hash":work_item_hash,"authority_version":authority_version,"work_program_id":work_program_id,"work_program_hash":work_program_hash}
+        if any(proposal[key] != value for key,value in pins.items()):
+            raise GovernedWorkError("execution proposal optimistic pins changed")
+        return {"ok":True,"status":"proposal_available","proposal":proposal,"work_started":False,"stored":False,"next_action":"explicitly accept with a local SPEC and private purpose"}
+    finally:
+        if close:
+            client.close()
+
+
 def queue_source_binding_request(
     target_dir: str,
     *,
@@ -525,6 +559,40 @@ def queue_source_binding_request(
         ),
         payload={"change": validated},
         created_at=created_at,
+    )
+
+
+def queue_work_item_acceptance(
+    target_dir: str,
+    *,
+    proposal_acceptance: Mapping[str, Any],
+    change: Mapping[str, Any],
+    client_id: str,
+    created_at: Optional[str] = None,
+) -> Dict[str, Any]:
+    from apatch import work_item_acceptance as W
+    from apatch.governed_work import validate_change
+
+    accepted = W.validate_acceptance(proposal_acceptance)
+    validated = validate_change(change)
+    expected = {
+        "tenant_id": validated["tenant_id"], "project_group_id": validated["project_group_id"],
+        "work_program_id": validated["work_program_id"], "work_program_hash": validated["work_program_hash"],
+        "change_id": validated["change_id"], "change_hash": document_hash(validated),
+    }
+    if any(accepted[field] != expected_value for field, expected_value in expected.items()):
+        raise GovernedWorkError("proposal acceptance does not match its Change")
+    if accepted["signature"]["key_id"] != validated["actor_key_id"]:
+        raise GovernedWorkError("proposal acceptance and Change actor keys differ")
+    group_id, item_id = accepted["project_group_id"], accepted["work_item_id"]
+    payload = {"proposal_acceptance": accepted, "change": validated}
+    return _queue(
+        target_dir, command="work_item_acceptance", tenant_id=accepted["tenant_id"],
+        project_group_id=group_id, client_id=client_id,
+        idempotency_key=f"work-item-acceptance:{validated['change_id']}",
+        request_hash=value_hash({"command": "accept_apatch_studio_work_item", "payload": payload}),
+        endpoint=f"/api/internal/client/project-groups/{group_id}/work-items/{item_id}/apatch-studio/acceptances",
+        payload=payload, created_at=created_at,
     )
 
 
@@ -867,6 +935,29 @@ def _ack_source_binding(
     }
 
 
+def _ack_work_item_acceptance(
+    target_dir: str,
+    entry: Mapping[str, Any],
+    body: Mapping[str, Any],
+    *,
+    trusted_authority_keys: Mapping[str, str | bytes],
+) -> Dict[str, Any]:
+    from apatch import work_item_acceptance as W
+
+    result = W.store_binding(
+        target_dir, binding=body,
+        acceptance=entry["payload"]["proposal_acceptance"],
+        change=entry["payload"]["change"],
+        trusted_keys=trusted_authority_keys,
+    )
+    return {
+        "schema": "apatch.governed-work-ack.v1", "entry_id": entry["entry_id"],
+        "request_hash": entry["request_hash"], "command": entry["command"],
+        "resource_id": result["binding_id"], "resource_hash": result["binding_hash"],
+        "projection_cursor": 0, "acknowledged_at": _utc_now(),
+    }
+
+
 def _ack_evidence(
     entry: Mapping[str, Any],
     body: Mapping[str, Any],
@@ -1011,6 +1102,11 @@ def sync_governed_work(
                         target_dir,
                         entry,
                         body,
+                        trusted_authority_keys=cfg["binding_authority_keys"],
+                    )
+                elif entry["command"] == "work_item_acceptance":
+                    ack = _ack_work_item_acceptance(
+                        target_dir, entry, body,
                         trusted_authority_keys=cfg["binding_authority_keys"],
                     )
                 elif entry["command"] == "evidence_admission":

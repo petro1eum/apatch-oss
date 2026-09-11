@@ -1,6 +1,6 @@
 # RFP-009: Spec Run — batch execution всей спеки
 
-* **Статус**: **Implemented (MVP)** — [SPEC-RUN-1](./specs/SPEC-RUN-1.md) **8/8 attested**; MCP **17 compact / 124 full**
+* **Статус**: **Implemented (MVP)** — [SPEC-RUN-1](./specs/SPEC-RUN-1.md) **8/8 attested**; MCP **17 compact / 129 full**
 * **Автор**: Ed Cherednik
 * **Дата**: 2026-06-09
 * **Зависимости**: RFP-007 (`spec_*`), RFP-008 (`apatch_execute_next`, [SPEC-EXECUTOR-1](./specs/SPEC-EXECUTOR-1.md)), `apatch_generate_batch`, governed session / TrustChain enforce

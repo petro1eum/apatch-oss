@@ -107,15 +107,34 @@ the complete Change -> binding -> evidence chain.
 
 (verify: python3 -m pytest tests/test_governed_work_*.py -q)
 
-## R10 Single task-intake point
+## R10 Single task-intake point and explicit Cowork proposal acceptance
 
-Work reaches APatch through one door: a governed session opened in this
-repository with an explicit local intent. No network path hands APatch
-something to execute. Every remote read is either a verification input or a
-signed decision about work already declared here, and each is admitted only
-through an exact key set, so a response carrying an instruction, a command or
-an intent is rejected before it is stored or acted on. The set of modules able
-to open a socket is frozen by the gate; a new one fails the test until its
-direction is stated.
+Work still starts through one door: a governed session opened in this repository
+for a locally selected SPEC and explicit local purpose. APatch may read one exact,
+short-lived, Platform-signed `trustchain.apatch-studio.execution-intent.v1` as a
+**proposal**. Reading is transient: it writes no file, opens no session, applies no
+mutation and returns `work_started=false`. Signature, canonical bytes, expiry,
+tenant, ProjectGroup, ProjectWorkItem, authority version and WorkProgram pins all
+fail closed.
 
-(verify: python3 -m pytest tests/test_single_intake.py -q)
+Acceptance is a separate explicit local operation. The caller repeats the exact
+`work_item_id:authority_version` confirmation and supplies the local SPEC and
+private purpose. APatch then creates its ordinary signed Change and an immutable,
+content-free acceptance reference containing proposal/change hashes and authority
+pins; proposal objective and criteria are not persisted. Acceptance still opens
+no governed session. Duplicate acceptance is byte-identical. A changed, expired,
+tampered, cancelled or access-revoked proposal cannot expand authority.
+
+When delivery is requested, APatch durably queues the exact acceptance and Change
+for the canonical ProjectWorkItem acceptance endpoint. It acknowledges delivery
+only after the returned Platform-signed Work Item execution binding verifies and
+matches every tenant, group, item, authority, intent, WorkProgram, acceptance and
+Change hash. Invalid, replay-conflicting or tampered responses remain pending.
+The older generic source-binding route is not a substitute for this transition.
+
+All other remote projections retain exact key sets and reject smuggled task,
+command, instruction or intent fields before storage. The frozen inventory of
+network-capable modules remains enforced, and no such module may call a
+work-starting primitive.
+
+(verify: python3 -m pytest tests/test_single_intake.py tests/test_execution_proposal.py tests/test_work_item_acceptance_delivery.py -q)

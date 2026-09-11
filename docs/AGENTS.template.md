@@ -789,6 +789,11 @@ CLI = то же имя без префикса `apatch_` / `apatch ` (`apatch --
 | `apatch_governed_work_prepare_change` | Sign an exact APatch Change and queue its ProjectSourceBinding admission |
 | `apatch_governed_work_store_binding` | Verify and immutably store the exact Platform-signed ProjectSourceBinding |
 | `apatch_governed_work_build_evidence` | Build source-bound metadata-only evidence plus factual timesheet draft and queue admission |
+| `apatch_governed_work_read_execution_proposal` | Verify and transiently read one exact Platform-signed Work Item proposal without starting work |
+| `apatch_governed_work_accept_execution_proposal` | Explicitly accept the exact proposal into a local Change and queue canonical Work Item acceptance |
+| `apatch_governed_work_preview_evidence` | Preview the exact metadata-only evidence selection before any publication |
+| `apatch_governed_work_publish_evidence` | Explicitly publish only the confirmed evidence selection |
+| `apatch_governed_work_disconnect` | Fence further sharing while preserving local history and pending evidence |
 | `apatch_governed_work_sync` | Deliver the durable governed-work outbox and require an exact signed Platform receipt as ACK |
 | `apatch_governed_work_retire_outbox` | Preserve and sign retirement of a rejected request only after an exact same-scope replacement is acknowledged |
 | `apatch_governed_work_status` | Read delivery state plus the four independent Platform states without copying Platform lifecycle into APatch |

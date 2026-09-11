@@ -49,6 +49,7 @@ def _assert_distribution_members(names: set[str]) -> None:
         "apatch/__init__.py",
         "apatch/extensions/host.py",
         "apatch/extensions/schemas/manifest-v1.json",
+        "apatch/work_item_acceptance.py",
         "apatch_search_workflows/__init__.py",
         "apatch_search_workflows/slug_intake.py",
         "apatch_search_workflows/slug_ratify.py",
@@ -83,7 +84,34 @@ def test_source_license_matches_trustchain_oss() -> None:
     # on record in the file so the exact MIT contract commit is not lost.
     assert "avatar" not in project.get("optional-dependencies", {})
     assert AVATAR_CONTRACT_COMMIT in (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    # TrustChain is part of every APatch installation: signed contract evidence is
+    # a base invariant, not an extra users must discover after MCP startup fails.
+    assert "trustchain>=3.3.0" in project["dependencies"]
+    assert project["optional-dependencies"]["trustchain"] == []
     assert "wheel>=0.43" in project["optional-dependencies"]["dev"]
+
+
+def test_public_metadata_and_readme_links_target_oss_repository() -> None:
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
+    public_root = "https://github.com/petro1eum/apatch-oss"
+    assert project["urls"] == {
+        "Homepage": public_root,
+        "Documentation": public_root + "#readme",
+        "Repository": public_root,
+        "Issues": public_root + "/issues",
+    }
+
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    markdown_targets = [
+        chunk.split(")", 1)[0]
+        for chunk in readme.split("](")[1:]
+    ]
+    relative = [
+        target for target in markdown_targets
+        if not target.startswith(("https://", "http://", "#", "mailto:"))
+    ]
+    assert relative == []
+    assert public_root + "/blob/main/docs/README.md" in markdown_targets
 
 
 def test_wheel_and_sdist_publish_mit_without_private_inputs(tmp_path: Path) -> None:
@@ -160,6 +188,7 @@ def test_wheel_and_sdist_publish_mit_without_private_inputs(tmp_path: Path) -> N
     assert "License-Expression: MIT" in metadata
     assert "Classifier: License :: OSI Approved :: MIT License" not in metadata
     assert "License-File: LICENSE" in metadata
+    assert "Requires-Dist: trustchain>=3.3.0" in metadata
     # The upload precondition, not a style rule: an index rejects any distribution
     # whose metadata names a dependency by URL instead of by name. Until this held,
     # apatch could be built and installed by hand but never published.

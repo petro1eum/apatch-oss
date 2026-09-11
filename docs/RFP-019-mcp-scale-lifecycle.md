@@ -143,7 +143,7 @@ MCP shutdown (IDE reload, kill, crash after signal)
 | **compact** | 15 | **Default** — complete intent-level governed workflow |
 | **core** | 26 | Opt-in — compact + generation, chunked apply, extensions and hygiene |
 | **spec** | 37 | Opt-in — core + advanced multi-SPEC and slug operations |
-| **full** | 124 | Opt-in — complete product surface |
+| **full** | 129 | Opt-in — complete product surface |
 
 Handshake size scales with profile.
 

@@ -56,7 +56,12 @@ def wheel_runtime(tmp_path_factory):
     site = Path(site_result.stdout.strip())
     # Dependencies are explicitly shared with the test runner; APatch itself is
     # installed into this venv and must win over every ambient/source installation.
-    (site / 'test-dependencies.pth').write_text(sysconfig.get_path('purelib') + '\n')
+    # A runner venv may itself expose system site-packages, so preserve every
+    # concrete site-packages entry instead of assuming sysconfig names the one
+    # that actually supplied click/mcp.
+    dependency_sites = [path for path in sys.path if path.endswith(('site-packages', 'dist-packages'))]
+    assert dependency_sites
+    (site / 'test-dependencies.pth').write_text('\n'.join(dependency_sites) + '\n')
     installed = run(sys.executable, '-m', 'pip', '--python', str(python), 'install',
                     '--no-index', '--no-deps', '--ignore-installed', str(wheel), cwd=root, timeout=60)
     assert installed.returncode == 0, installed.stdout + installed.stderr
@@ -112,7 +117,7 @@ async def main():
         async with ClientSession(*streams) as session:
             await session.initialize()
             catalog=await session.list_tools()
-            assert len(catalog.tools)==124
+            assert len(catalog.tools)==129
             result=await session.call_tool('apatch_doctor',{'target_dir':'.'})
             assert not result.isError
             doctor=json.loads(result.content[0].text)
@@ -129,7 +134,7 @@ asyncio.run(asyncio.wait_for(main(),30))
 '''
     smoke = run(python, '-c', code, str(workspace), cwd=hostile, env=env)
     assert smoke.returncode == 0, smoke.stdout + smoke.stderr
-    assert json.loads(smoke.stdout)['tools'] == 124
+    assert json.loads(smoke.stdout)['tools'] == 129
     assert path.read_bytes() == before
 
 

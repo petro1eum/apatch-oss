@@ -8,7 +8,7 @@ For security questionnaires and enterprise procurement.
 
 **Governed mutation runtime** for AI-assisted code changes: atomic apply, policy enforcement, cryptographic attestation. Not a VCS replacement — a governance layer above the working tree.
 
-**Current scale:** 17 MCP tools by default / 124 full · 11 self-verified specifications · 9-layer engineering truth stack.
+**Current scale:** 17 MCP tools by default / 129 full · 11 self-verified specifications · 9-layer engineering truth stack.
 
 ## Core Invariant
 

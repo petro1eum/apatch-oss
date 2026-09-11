@@ -25,7 +25,7 @@
 | Enforcement | `enforcement.py`, `trustchain_helper.py` |
 | State machine | `session_state.py`, `failure_taxonomy.py` |
 
-**Новая команда:** `workflows.py` → CLI → MCP tool → `tests/test_mcp.py` (`expected` ⊆ registered; сейчас **124** — `apatch_doctor` → `mcp_health.tool_count`, он и есть источник, а не эта строка).
+**Новая команда:** `workflows.py` → CLI → MCP tool → `tests/test_mcp.py` (`expected` ⊆ registered; сейчас **129** — `apatch_doctor` → `mcp_health.tool_count`, он и есть источник, а не эта строка).
 
 **Тесты:**
 

@@ -59,7 +59,7 @@ def test_inventory_is_exact_and_hash_bound(tmp_path, change):
     inv = inventory()
     assert len(inv['absent_peer_failures']) == 40
     assert len(inv['peer_requirements']) == 22
-    assert len(inv['runtime_files']) == 239
+    assert len(inv['runtime_files']) == 241
     assert len(inv['source_files']) == 19
     source = source_fixture(tmp_path, inv)
     first = inv['absent_peer_failures'][0]

@@ -239,7 +239,7 @@ python3 -m pytest tests/test_policy_snapshot.py tests/test_toolchain_perf.py -q
 
 | Документ | Связь |
 |----------|-------|
-| [mcp_setup.md](./mcp_setup.md) | Установка, restart MCP, 17 compact / 124 full tools |
+| [mcp_setup.md](./mcp_setup.md) | Установка, restart MCP, 17 compact / 129 full tools |
 | [RFP-019-mcp-scale-lifecycle.md](./RFP-019-mcp-scale-lifecycle.md) | Scale: L1 lifecycle, L2 pip release, L3 hosted MCP |
 | [AGENTS.template.md](./AGENTS.template.md) | `apatch_doctor` раз в сессию; не shell-retry pip |
 | [adr/ADR-001_Enterprise_Scale_Gaps.md](./adr/ADR-001_Enterprise_Scale_Gaps.md) | PathIndex, parallel plan (масштаб apply) |

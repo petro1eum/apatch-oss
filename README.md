@@ -97,7 +97,7 @@ Requires **Python 3.10+**. macOS and Linux are the supported platforms.
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install "apatch[mcp,trustchain]"
+python -m pip install "apatch[mcp]"  # TrustChain is included
 
 # Run inside the project you want to govern.
 apatch init-consumer --target-dir . --with-sandbox --with-enforcement
@@ -126,14 +126,13 @@ protection from the presence of a SPEC file or from a successful installation.
 
 The developer's `apatch status`, architect's HTML report and manager's Markdown
 report share `project_status_workspace` / `apatch_project_status`: one set of
-facts, three views ([RFP-020](docs/RFP-020-three-views.md)).
+facts, three views ([RFP-020](https://github.com/petro1eum/apatch-oss/blob/main/docs/RFP-020-three-views.md)).
 
 ### Installation options
 
 ```bash
-python -m pip install apatch                    # Local CLI and patch engine
-python -m pip install "apatch[mcp]"             # MCP interface for AI agents
-python -m pip install "apatch[mcp,trustchain]"  # MCP and signed-ledger integration
+python -m pip install apatch         # Local CLI, patch engine and TrustChain evidence
+python -m pip install "apatch[mcp]"  # Add the MCP interface for AI agents
 ```
 
 Additional extras: `yaml` for YAML manifests, `languages` for Java/C#/Ruby/PHP
@@ -241,24 +240,21 @@ Existing SPEC ownership and workspace policies still apply.
 
 ## Documentation
 
-The complete selected engineering documentation is included under `docs/` in
-this source tree and its source distribution. Start with the
-[English documentation index](docs/README.md) or [getting started](docs/getting-started.md).
-Source version: **0.8.43**. The [OSS verification guide](docs/oss-verification.md)
-explains standalone scope, raw contract results and separate integration acceptance.
-See [PyPI](https://pypi.org/project/apatch/) for published package versions.
+The links below are paths in the source repository; access to repository-hosted
+documentation currently requires repository access. The public wheel and source
+distribution are available on [PyPI](https://pypi.org/project/apatch/).
 
 | Topic | Reference |
 |---|---|
-| Documentation index and CLI recipes | [Index](docs/README.md), [cookbook](docs/cookbook.md) |
-| Agent onboarding and MCP setup | [Onboarding](docs/agent-onboarding.md), [MCP](docs/mcp_setup.md), [playbook](docs/AGENTS.template.md) |
-| Executable requirements and ownership | [Spec authoring](docs/spec-authoring.md), [ownership contract](docs/specs/SPEC-SPEC-OWNERSHIP-GATE-1.md) |
-| Frozen contracts, roles and task envelopes | [RFP-044](docs/RFP-044-sdd-integrity-adoption.md), [integrity SPEC](docs/specs/SPEC-SDD-INTEGRITY-1.md) |
-| Fixed-purpose verifier and falsification | [RFP-045](docs/RFP-045-sdd-verifier-closure.md), [probe](docs/probe.md) |
-| Ongoing proof and observed failures | [Conformance](docs/conformance.md), [reality](docs/reality.md) |
-| Runtime and security boundaries | [Runtime invariants](docs/governed-runtime-invariants.md), [sandbox](docs/sandbox.md), [security](docs/security-one-pager.md) |
-| Architecture, database work and extraction | [Orchestration](docs/orchestration.md), [strip guide](docs/strip_guide.md) |
-| Work history, Avatar and service integration | [Governed work](docs/governed-work-trustchain.md), [Avatar canon](docs/AVATAR-ARCHITECTURE-CANON.md), [WorkAsset privacy/IP](docs/work-assets-privacy-ip.md) |
+| Documentation index and CLI recipes | [Index](https://github.com/petro1eum/apatch-oss/blob/main/docs/README.md), [cookbook](https://github.com/petro1eum/apatch-oss/blob/main/docs/cookbook.md) |
+| Agent onboarding and MCP setup | [Onboarding](https://github.com/petro1eum/apatch-oss/blob/main/docs/agent-onboarding.md), [MCP](https://github.com/petro1eum/apatch-oss/blob/main/docs/mcp_setup.md), [playbook](https://github.com/petro1eum/apatch-oss/blob/main/docs/AGENTS.template.md) |
+| Executable requirements and ownership | [Spec authoring](https://github.com/petro1eum/apatch-oss/blob/main/docs/spec-authoring.md), [ownership contract](https://github.com/petro1eum/apatch-oss/blob/main/docs/specs/SPEC-SPEC-OWNERSHIP-GATE-1.md) |
+| Frozen contracts, roles and task envelopes | [RFP-044](https://github.com/petro1eum/apatch-oss/blob/main/docs/RFP-044-sdd-integrity-adoption.md), [integrity SPEC](https://github.com/petro1eum/apatch-oss/blob/main/docs/specs/SPEC-SDD-INTEGRITY-1.md) |
+| Fixed-purpose verifier and falsification | [RFP-045](https://github.com/petro1eum/apatch-oss/blob/main/docs/RFP-045-sdd-verifier-closure.md), [probe](https://github.com/petro1eum/apatch-oss/blob/main/docs/probe.md) |
+| Ongoing proof and observed failures | [Conformance](https://github.com/petro1eum/apatch-oss/blob/main/docs/conformance.md), [reality](https://github.com/petro1eum/apatch-oss/blob/main/docs/reality.md) |
+| Runtime and security boundaries | [Runtime invariants](https://github.com/petro1eum/apatch-oss/blob/main/docs/governed-runtime-invariants.md), [sandbox](https://github.com/petro1eum/apatch-oss/blob/main/docs/sandbox.md), [security](https://github.com/petro1eum/apatch-oss/blob/main/docs/security-one-pager.md) |
+| Architecture, database work and extraction | [Orchestration](https://github.com/petro1eum/apatch-oss/blob/main/docs/orchestration.md), [strip guide](https://github.com/petro1eum/apatch-oss/blob/main/docs/strip_guide.md) |
+| Work history, Avatar and service integration | [Governed work](https://github.com/petro1eum/apatch-oss/blob/main/docs/governed-work-trustchain.md), [Avatar canon](https://github.com/petro1eum/apatch-oss/blob/main/docs/AVATAR-ARCHITECTURE-CANON.md), [WorkAsset privacy/IP](https://github.com/petro1eum/apatch-oss/blob/main/docs/work-assets-privacy-ip.md) |
 
 Many detailed engineering documents are currently in Russian. This English
 README is the primary product description; translation of the complete
@@ -266,10 +262,10 @@ documentation set is separate work.
 
 ## Development and verification
 
-From a source checkout or extracted source distribution:
+From an authorized source checkout:
 
 ```bash
-python -m pip install -e ".[mcp,trustchain,dev,yaml]"
+python -m pip install -e ".[mcp,dev,yaml]"
 python -m pytest tests/ -q
 ```
 
@@ -283,8 +279,10 @@ checked documentation box is not a substitute for requirement-level evidence.
 with the same license text as TrustChain OSS. The license is included in both
 the wheel and source distribution.
 
+APatch Studio is one market-facing product with two planned editions: APatch Studio OSS and APatch Studio Pro.
+
 This package contains the APatch OSS CLI/MCP runtime. It does not bundle Pro
-implementations, managed services or the external Avatar peer. APatch Studio OSS
+implementations, managed services or the external Avatar peer. APatch Studio
 and the APatch Studio Pro / TrustChain Cowork assembly have their own delivery
 and acceptance lifecycle; publishing this runtime does not declare them released.
 

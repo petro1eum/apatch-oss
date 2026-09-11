@@ -18,6 +18,7 @@ def test_public_runtime_and_studio_delivery_boundaries():
     assert "TrustChain Cowork" in studio
     assert "APatch Studio OSS" in readme
     assert "APatch Studio Pro" in readme
+    assert "one market-facing product with two planned editions" in readme
     assert "Standalone operation" in matrix
     assert "does not require an account or subscription" in matrix
     assert "No hosted Pro implementation" in matrix

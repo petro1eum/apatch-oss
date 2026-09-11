@@ -3398,6 +3398,55 @@ if mcp is not None:
         )
 
     @mcp.tool()
+    def apatch_governed_work_read_execution_proposal(
+        tenant_id: str = Field(description="Exact TrustChain tenant id."),
+        project_group_id: str = Field(description="Exact ProjectGroup id."),
+        work_item_id: str = Field(description="Exact proposed work-item id."),
+        work_item_hash: str = Field(description="Canonical proposed work-item hash."),
+        authority_version: int = Field(description="Expected work-item authority version."),
+        work_program_id: str = Field(description="Exact owning WorkProgram id."),
+        work_program_hash: str = Field(description="Canonical owning WorkProgram hash."),
+        idempotency_key: str = Field(description="Stable proposal-read idempotency key."),
+        target_dir: str = ".",
+    ) -> Dict[str, Any]:
+        """Read and verify a transient Cowork proposal without starting work."""
+        from apatch.governed_work_mcp import read_execution_proposal
+        return read_execution_proposal(
+            target_dir, tenant_id=tenant_id, project_group_id=project_group_id,
+            work_item_id=work_item_id, work_item_hash=work_item_hash,
+            authority_version=authority_version, work_program_id=work_program_id,
+            work_program_hash=work_program_hash, idempotency_key=idempotency_key,
+        )
+
+    @mcp.tool()
+    def apatch_governed_work_accept_execution_proposal(
+        proposal: Dict[str, Any] = Field(
+            description="Exact signed transient Cowork execution proposal.",
+        ),
+        confirmation: str = Field(
+            description="Exact <work_item_id>:<authority_version> confirmation.",
+        ),
+        spec_id: str = Field(description="Local SPEC selected for execution."),
+        purpose: str = Field(
+            description="Private local work purpose; only its hash is shared.",
+        ),
+        target_dir: str = ".",
+        requirement_ids: Optional[List[str]] = None,
+        spec_path: Optional[str] = None,
+        queue_source_binding: bool = Field(
+            default=True,
+            description="Durably queue the accepted source-binding request.",
+        ),
+    ) -> Dict[str, Any]:
+        """Explicitly bind a signed proposal to a local SPEC/Change; no session opens."""
+        from apatch.governed_work_mcp import accept_execution_proposal
+        return accept_execution_proposal(
+            target_dir, proposal=proposal, confirmation=confirmation,
+            spec_id=spec_id, purpose=purpose, requirement_ids=requirement_ids,
+            spec_path=spec_path, queue_source_binding=queue_source_binding,
+        )
+
+    @mcp.tool()
     def apatch_governed_work_prepare_change(
         tenant_id: str = Field(
             description="TrustChain tenant id pinned into the Change.",
@@ -3482,11 +3531,11 @@ if mcp is not None:
             description="Optional contribution store used to resolve referenced facts.",
         ),
         queue_for_admission: bool = Field(
-            default=True,
-            description="Durably queue the evidence bundle for Platform admission.",
+            default=False,
+            description="Compatibility opt-in; keep false and use preview/publish for explicit sharing.",
         ),
     ) -> Dict[str, Any]:
-        """Build signed source-bound evidence and durably queue its admission."""
+        """Build signed source-bound evidence locally without implicit sharing."""
         from apatch.governed_work_mcp import build_governed_evidence
 
         return build_governed_evidence(
@@ -3495,6 +3544,51 @@ if mcp is not None:
             contribution_store_dir=contribution_store_dir,
             queue_for_admission=queue_for_admission,
         )
+
+    @mcp.tool()
+    def apatch_governed_work_preview_evidence(
+        binding_id: str = Field(
+            description="Exact local ProjectSourceBinding whose evidence is proposed for sharing.",
+        ),
+        target_dir: str = ".",
+    ) -> Dict[str, Any]:
+        """Preview an exact content-free evidence publication plan without writing."""
+        from apatch.governed_work_mcp import (
+            preview_governed_evidence_publication,
+        )
+
+        return preview_governed_evidence_publication(
+            target_dir,
+            binding_id=binding_id,
+        )
+
+    @mcp.tool()
+    def apatch_governed_work_publish_evidence(
+        plan: Dict[str, Any] = Field(
+            description="Exact unchanged plan returned by the preview operation.",
+        ),
+        confirmation: str = Field(
+            description="Exact publish:<plan_hash> explicit user confirmation.",
+        ),
+        target_dir: str = ".",
+    ) -> Dict[str, Any]:
+        """Queue only the exact current previewed evidence after confirmation."""
+        from apatch.governed_work_mcp import publish_governed_evidence
+
+        return publish_governed_evidence(
+            target_dir,
+            plan=plan,
+            confirmation=confirmation,
+        )
+
+    @mcp.tool()
+    def apatch_governed_work_disconnect(
+        target_dir: str = ".",
+    ) -> Dict[str, Any]:
+        """Fence current and pending sharing while retaining local history."""
+        from apatch.governed_work_mcp import disconnect_governed_work
+
+        return disconnect_governed_work(target_dir)
 
     @mcp.tool()
     def apatch_governed_work_sync(
