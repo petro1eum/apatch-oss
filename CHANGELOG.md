@@ -6,6 +6,12 @@
 
 ## [Unreleased]
 
+## [0.8.45] — 2026-09-14
+
+### Fixed
+
+- **Complete Cowork acceptance round trip:** after APatch verifies and stores the exact Platform-signed Work Item acceptance acknowledgement, it queues the separately signed ProjectSourceBinding request. Work remains source-unbound until that second acknowledgement verifies; crash replay preserves the order without duplicating either authority.
+
 ## [0.8.44] — 2026-09-12
 
 ### Added

@@ -506,7 +506,7 @@ def accept_execution_proposal(target_dir: str, *, proposal: Mapping[str, Any], c
         delivery: Dict[str,Any] = {"status":"not_requested"}
         if queue_source_binding:
             delivery = {"status":"queued",**D.queue_work_item_acceptance(target_dir,proposal_acceptance=accepted["acceptance"],change=prepared["change"],client_id=config["client_id"])}
-        return {"ok":True,"operation":"accept_execution_proposal","work_started":False,"governed_session_id":None,"change":prepared["change"],"change_hash":prepared["change_hash"],"proposal_acceptance":accepted["acceptance"],"stored":accepted["stored"],"work_item_acceptance_delivery":delivery,"source_binding_delivery":{"status":"superseded_by_work_item_acceptance"},"next_action":"sync the canonical Work Item acceptance, then open a governed session for the selected local SPEC"}
+        return {"ok":True,"operation":"accept_execution_proposal","work_started":False,"governed_session_id":None,"change":prepared["change"],"change_hash":prepared["change_hash"],"proposal_acceptance":accepted["acceptance"],"stored":accepted["stored"],"work_item_acceptance_delivery":delivery,"source_binding_delivery":{"status":"queued_after_work_item_acceptance_ack"},"next_action":"sync until the exact ProjectSourceBinding is acknowledged, then open a governed session for the selected local SPEC"}
     except (G.GovernedWorkError,OSError,ValueError) as exc:
         return _failure(exc,operation="accept_execution_proposal")
 

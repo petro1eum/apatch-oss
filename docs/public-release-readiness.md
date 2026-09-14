@@ -5,15 +5,18 @@ automatic approval of every artifact built from this tree. Fresh qualification
 must name its profile and exact source hashes. The existing private repository
 must not be made public as a shortcut.
 
-## Current assembly — 2026-09-12
+## Current assembly — 2026-09-14
 
 The owner approved the new destination `petro1eum/apatch-oss`; the old repository
 and its history stay private. This revision adds the reviewed Cowork execution
-proposal, selective evidence delivery and canonical Work Item acceptance path,
-plus runtime-identity and file-bound reverification fixes and explicit
-[OSS verification profiles](oss-verification.md). The complete public source suite
-passed **2240 tests with 1 optional skip** locally; this is not a hosted CI run or
-proof of live Avatar, HC, Platform or Cowork acceptance.
+proposal, selective evidence delivery, canonical Work Item acceptance and the
+separately acknowledged ProjectSourceBinding required before evidence becomes
+source-bound, plus runtime-identity and file-bound reverification fixes and explicit
+[OSS verification profiles](oss-verification.md). The 0.8.45 public-source run passed **2237 tests with 1 optional skip**; the
+remaining three MCP configuration-repair tests also fail on unchanged tag
+`v0.8.44` under the host's loaded/installed runtime mismatch. The release-focused
+188-test suite and clean-wheel installation passed. This is not a hosted CI run
+or proof of live Avatar, HC, Platform or Cowork acceptance.
 
 The public workflow now invokes `standalone` and retains an explicit allowlist of
 raw evidence. It does not waive failed checks, remove enrollment or certify live

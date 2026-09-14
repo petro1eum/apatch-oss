@@ -950,6 +950,11 @@ def _ack_work_item_acceptance(
         change=entry["payload"]["change"],
         trusted_keys=trusted_authority_keys,
     )
+    queue_source_binding_request(
+        target_dir,
+        change=entry["payload"]["change"],
+        client_id=str(entry["client_id"]),
+    )
     return {
         "schema": "apatch.governed-work-ack.v1", "entry_id": entry["entry_id"],
         "request_hash": entry["request_hash"], "command": entry["command"],

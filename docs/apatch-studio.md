@@ -1,7 +1,7 @@
 # APatch Studio, APatch OSS and TrustChain Cowork
 
 This repository supplies the **APatch OSS runtime**, not the Studio UI or the hosted Pro service.
-APatch 0.8.44 is the MIT-licensed OSS release represented by this source tree.
+APatch 0.8.45 is the MIT-licensed OSS release represented by this source tree.
 
 ## User paths
 
@@ -9,7 +9,9 @@ APatch 0.8.44 is the MIT-licensed OSS release represented by this source tree.
   governed work locally. The full professional runtime remains available without an account.
 - A connected developer may voluntarily accept a project proposal and share permitted
   evidence with the selected project. A received proposal is not authorization to execute:
-  local governed intake opens the actual work.
+  local governed intake opens the actual work. After the exact Work Item acceptance is
+  acknowledged, APatch obtains a separately signed ProjectSourceBinding; project evidence
+  remains source-unbound until that second acknowledgement verifies.
 - A project lead uses **APatch Studio Pro**, assembled into **TrustChain Cowork**, to agree
   commitments, offer work, observe execution, review delivery and make acceptance decisions.
   Browser work does not require a local APatch installation or repository.

@@ -1,11 +1,11 @@
 # Public OSS source boundary
 
-This is the clean **0.8.44 public release candidate**, updated on 2026-09-12
+This is the clean **0.8.45 public source release**, updated on 2026-09-14
 from separately reviewed APatch runtime patches. `petro1eum/apatch-oss` is the
-public source destination; the 0.8.44 package upload follows source qualification.
+public source destination; the 0.8.45 package is built from this qualified source.
 
 **Release scope: standalone OSS, with separately qualified optional integrations.**
-The full public-only suite retains40 absent-Avatar failures; a passing standalone
+The full public-only suite retains 40 absent-Avatar failures; a passing standalone
 profile must not relabel those tests or the raw native contract as passing.
 Use [the verification guide](docs/oss-verification.md) and exact source hashes to
 produce fresh evidence. This inventory and [the historical readiness record](docs/public-release-readiness.md)

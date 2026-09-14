@@ -131,6 +131,11 @@ only after the returned Platform-signed Work Item execution binding verifies and
 matches every tenant, group, item, authority, intent, WorkProgram, acceptance and
 Change hash. Invalid, replay-conflicting or tampered responses remain pending.
 The older generic source-binding route is not a substitute for this transition.
+After the exact Work Item execution binding is verified and stored, APatch queues
+its ordinary ProjectSourceBinding request as a second, separately acknowledged
+step. The Work Item acknowledgement never claims source verification; evidence
+remains unbound until the separately Platform-signed source binding is received.
+Crash recovery and replay preserve this order and cannot duplicate either authority.
 
 All other remote projections retain exact key sets and reject smuggled task,
 command, instruction or intent fields before storage. The frozen inventory of

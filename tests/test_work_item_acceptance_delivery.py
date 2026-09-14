@@ -46,13 +46,13 @@ class Client:
         return Response(self.body)
 
 
-def _platform_signed(body, provider):
+def _platform_signed(body, provider, *, purpose=W.BINDING_PURPOSE):
     return {
         **body,
         "signature": {
             "algorithm": "Ed25519",
             "key_id": G.signer_key_id(provider),
-            "value": G._b64url_encode(provider.sign(G._platform_signature_payload(body, purpose=W.BINDING_PURPOSE))),
+            "value": G._b64url_encode(provider.sign(G._platform_signature_payload(body, purpose=purpose))),
         },
     }
 
@@ -106,14 +106,37 @@ def _config(actor, platform):
     }
 
 
-def test_exact_acceptance_is_delivered_to_work_item_endpoint_and_acknowledged(tmp_path):
+def _source_binding(platform, change):
+    return _platform_signed({
+        "schema": G.SOURCE_BINDING_SCHEMA,
+        "binding_id": "tcpsb_" + "0" * 32,
+        "tenant_id": TENANT,
+        "project_group_id": GROUP,
+        "source_kind": "work_program",
+        "work_program_id": PROGRAM,
+        "work_program_hash": change["work_program_hash"],
+        "context_release_id": None,
+        "context_release_manifest_hash": None,
+        "execution_system": "apatch",
+        "change_id": change["change_id"],
+        "change_hash": G.document_hash(change),
+        "spec_id": change["spec_id"],
+        "spec_hash": change["spec_hash"],
+        "requirement_refs": change["requirement_refs"],
+        "actor_ref": "member:" + "1" * 32,
+        "authority_version": 2,
+        "issued_at": "2026-09-11T12:02:00Z",
+    }, platform, purpose=G.PLATFORM_SOURCE_BINDING_PURPOSE)
+
+
+def test_exact_acceptance_chains_to_source_binding_without_claiming_it_early(tmp_path):
     actor, platform = Provider(), Provider()
     change, acceptance = _documents(actor)
     queued = D.queue_work_item_acceptance(str(tmp_path), proposal_acceptance=acceptance, change=change, client_id=TENANT)
     binding = _binding(platform, change, acceptance)
     client = Client(binding)
     result = D.sync_governed_work(str(tmp_path), config=_config(actor, platform), request_key_provider=actor, http_client=client)
-    assert result == {"ok": True, "status": "in_sync", "delivered": 1, "pending": 0, "errors": []}
+    assert result == {"ok": True, "status": "delivery_incomplete", "delivered": 1, "pending": 1, "errors": []}
     assert queued["pending"] is True
     call = client.calls[0]
     assert call["url"].endswith(f"/api/internal/client/project-groups/{GROUP}/work-items/{ITEM}/apatch-studio/acceptances")
@@ -122,6 +145,31 @@ def test_exact_acceptance_is_delivered_to_work_item_endpoint_and_acknowledged(tm
         "change": change, "idempotency_key": f"work-item-acceptance:{change['change_id']}",
     }
     assert W.binding_path(str(tmp_path), binding["binding_id"]).is_file()
+    assert D.pending_count(str(tmp_path)) == 1
+    commands = [entry["command"] for _path, entry in D._iter_outbox(str(tmp_path))]
+    assert commands == ["work_item_acceptance", "source_binding"]
+
+    source = _source_binding(platform, change)
+    source_client = Client(source)
+    second = D.sync_governed_work(
+        str(tmp_path),
+        config=_config(actor, platform),
+        request_key_provider=actor,
+        http_client=source_client,
+    )
+    assert second == {"ok": True, "status": "in_sync", "delivered": 1, "pending": 0, "errors": []}
+    assert source_client.calls[0]["url"].endswith(
+        f"/api/internal/project-groups/{GROUP}/governed-work/source-bindings"
+    )
+    assert G.load_project_source_binding(str(tmp_path), source["binding_id"]) == source
+
+    replay = D.sync_governed_work(
+        str(tmp_path),
+        config=_config(actor, platform),
+        request_key_provider=actor,
+        http_client=Client({}),
+    )
+    assert replay == {"ok": True, "status": "in_sync", "delivered": 0, "pending": 0, "errors": []}
 
 
 def test_tampered_or_cross_linked_binding_stays_pending(tmp_path):
@@ -134,3 +182,5 @@ def test_tampered_or_cross_linked_binding_stays_pending(tmp_path):
     assert result["ok"] is False
     assert result["errors"][0]["code"] == "ACK_VALIDATION_FAILED"
     assert D.pending_count(str(tmp_path)) == 1
+    commands = [entry["command"] for _path, entry in D._iter_outbox(str(tmp_path))]
+    assert commands == ["work_item_acceptance"]

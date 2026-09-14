@@ -19,6 +19,7 @@ def _checker():
 
 def test_selected_public_source_matches_recorded_manifest():
     manifest = json.loads((ROOT / "PUBLIC-SOURCE-MANIFEST.json").read_text())
+    assert manifest["version"] == "0.8.45"
     assert manifest["runtime_files_total"] == 241
     assert manifest["runtime_files_unchanged"] == 221
     assert set(manifest["runtime_files_modified"]) == {
@@ -31,7 +32,7 @@ def test_selected_public_source_matches_recorded_manifest():
         "apatch/spec_reverification.py", "apatch/spec_run.py", "apatch_search_workflows/slug_ratify.py",
         "apatch/work_item_acceptance.py",
     }
-    assert len(manifest["reviewed_source_commits"]) == 14
+    assert len(manifest["reviewed_source_commits"]) == 16
     assert manifest["private_git_history_included"] is False
     paths = [item["path"] for item in manifest["files"]]
     assert len(paths) == len(set(paths))
