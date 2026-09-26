@@ -334,6 +334,16 @@ MCP: `apatch_session_start` → `apatch_generate_batch` → `apatch_apply_sessio
 ---
 
 
+## Stop tracking APatch runtime files (fixed scope)
+
+`apatch git-untrack-runtime --dry-run --json` validates that exactly four ignored
+runtime files remain tracked and that the index is clean. After reviewing the
+paths, `apatch git-untrack-runtime --json` signs and commits their index-only
+deletions. Working-tree files remain on disk and become ignored. MCP defaults to
+preview: `apatch_git_untrack_runtime(dry_run=true)`; remote broker:
+`plan={"git_untrack_runtime": true, "dry_run": false}` with outer
+`dry_run=false`. This is not a general-purpose Git path deletion tool.
+
 ## Commit/push only exact attested sessions
 
 After verify, attestation, and `session_end`, hand Git only the explicit session ids:

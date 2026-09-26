@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any, Dict, Iterable, Mapping, Optional, Sequence
+from typing import Any, Dict, Iterable, Mapping, Optional, Sequence, Union
 
 from apatch.remote.errors import RemoteTaskError
+from apatch.remote.jump import normalize_jump_hosts, ssh_args_declare_jump
 from apatch.remote.policy import DEFAULT_REMOTE_TASK_OPERATIONS, resolve_remote_target
 
 
@@ -27,6 +28,9 @@ def build_remote_config(
     python: Optional[str] = None,
     runtime_path: Optional[str] = None,
     ssh_args: Optional[Sequence[str]] = None,
+    jump_host: Optional[Union[str, Sequence[str]]] = None,
+    allowed_jump_hosts: Optional[Iterable[str]] = None,
+    require_jump_host: bool = False,
     timeout_sec: int = 600,
     health_timeout_sec: int = 60,
     allowed_hosts: Optional[Iterable[str]] = None,
@@ -56,6 +60,23 @@ def build_remote_config(
         target["python"] = python
     if ssh_args:
         target["ssh_args"] = [str(item) for item in ssh_args]
+    hops = normalize_jump_hosts(jump_host)
+    if hops and ssh_args_declare_jump(ssh_args):
+        raise RemoteTaskError(
+            "REMOTE_CONFIG_INVALID",
+            "--jump-host conflicts with a ProxyJump flag in --ssh-arg.",
+            recoverable=True,
+            recommended_action="Pass the bastion only via --jump-host.",
+        )
+    if require_jump_host and not hops:
+        raise RemoteTaskError(
+            "REMOTE_CONFIG_INVALID",
+            "--require-jump-host needs at least one --jump-host.",
+            recoverable=True,
+            recommended_action="Add --jump-host <bastion> or drop --require-jump-host.",
+        )
+    if hops:
+        target["jump_host"] = hops[0] if len(hops) == 1 else list(hops)
     if runtime_path:
         runtime = _require_text(runtime_path, "runtime_path")
         if not runtime.startswith("/"):
@@ -98,11 +119,16 @@ def build_remote_config(
             "local_roots": list(source_roots or [os.path.abspath(os.path.expanduser("."))]),
         }
 
-    return {
+    config: Dict[str, Any] = {
         "allowed_hosts": list(allowed_hosts or [host]),
         "allowed_roots": list(allowed_roots or [target["path"]]),
-        "targets": {alias: target},
     }
+    if hops or allowed_jump_hosts:
+        config["allowed_jump_hosts"] = list(allowed_jump_hosts or hops or [])
+    if require_jump_host:
+        config["require_jump_host"] = True
+    config["targets"] = {alias: target}
+    return config
 
 
 def write_remote_config(
@@ -156,8 +182,12 @@ def validate_remote_config(*, target_dir: str, alias: str) -> Dict[str, Any]:
 
 def _merge_policy(existing: Mapping[str, Any], incoming: Mapping[str, Any]) -> Dict[str, Any]:
     merged = dict(existing or {})
-    for key in ("allowed_hosts", "allowed_roots"):
+    for key in ("allowed_hosts", "allowed_roots", "allowed_jump_hosts"):
+        if key not in merged and key not in incoming:
+            continue
         merged[key] = _unique([*(merged.get(key) or []), *(incoming.get(key) or [])])
+    if incoming.get("require_jump_host"):
+        merged["require_jump_host"] = True
     targets = dict(merged.get("targets") or {})
     targets.update(dict(incoming.get("targets") or {}))
     merged["targets"] = targets

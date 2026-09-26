@@ -5,7 +5,17 @@ automatic approval of every artifact built from this tree. Fresh qualification
 must name its profile and exact source hashes. The existing private repository
 must not be made public as a shortcut.
 
-## Current assembly — 2026-09-14
+## Current assembly — 2026-09-26
+
+By owner decision of 2026-09-26, 0.8.48 publishes the complete APatch line since the
+public 0.8.45: the private 0.8.46/0.8.47 source intake and runtime Git hygiene, bastion
+routing, exact Avatar evidence publication (RFP-048), CSV partition preservation,
+slug and lane fixes, and the bundled canonical MIT Avatar contract with measured
+contribution time (RFP-049). All 266 runtime files are byte-identical to the private
+release commit recorded in the source manifest; Apatch Pro is excluded from the source
+and both archives. Qualification evidence for this revision is recorded below.
+
+## Previous assembly — 2026-09-14
 
 The owner approved the new destination `petro1eum/apatch-oss`; the old repository
 and its history stay private. This revision adds the reviewed Cowork execution
@@ -25,9 +35,8 @@ must be reported separately, as must local evidence, hosted CI execution and pub
 
 ## Verified boundaries
 
-- Of 241 runtime/compatibility files, 221 match the original baseline; 20 match
-  the committed fixes recorded in the source manifest. No private
-  commit history was imported.
+- All 266 runtime/compatibility files match the private release commit recorded
+  in the source manifest. No private commit history was imported.
 - MIT is unchanged and matches TrustChain OSS.
 - The selected source tree has no imported private Git history, Pro implementation,
   production signing identity, operational ledger or unrelated third-party dataset.
@@ -64,6 +73,10 @@ parity checks passed. Other Python versions and a remote CI run were not remeasu
 ## Remaining qualification and historical observations
 
 ### PUB-QA-1: optional Avatar integration is not a public-only test profile
+
+**Resolved in 0.8.48.** The owner approved public MIT distribution of the canonical
+contract; it is bundled byte-for-byte (RFP-049), so the 40 absent-peer failures below
+no longer occur. The history below describes 0.8.45 and earlier.
 
 The preceding revision completed with **1882 passed, 40 failed, 6 skipped** in a
 public-only environment. The current revision retains those same 40 failures.

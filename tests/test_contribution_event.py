@@ -6,8 +6,7 @@ import os
 
 import pytest
 
-pytest.importorskip("avatar_contract")  # contribution emission requires the shared schema
-
+# The shared schema is bundled (apatch._vendor.avatar_contract): emission always runs.
 from apatch import contribution as C
 
 

@@ -180,9 +180,11 @@ Supported governed-work exports use bounded metadata and signed references, not
 an automatic upload of source code, private prompts, credentials or raw logs.
 Queued evidence survives an unavailable service and can be reconciled later.
 
-Avatar/HC adapters remain in OSS. Their external `avatar-contract` peer is not
-bundled and is installed separately where authorized; there is no public
-`apatch[avatar]` extra. A timesheet draft records work facts, not accepted hours,
+Avatar/HC adapters remain in OSS. The canonical MIT `avatar-contract` they use is
+bundled byte-for-byte as `apatch._vendor.avatar_contract` (commit and hashes in its
+`UPSTREAM.json`), so every install can emit signed contribution receipts and work
+evidence; a separately installed `avatar-contract` is never imported, and there is
+no `apatch[avatar]` extra. A timesheet draft records work facts, not accepted hours,
 payroll, pricing or settlement. An evidence upload is not business acceptance.
 
 Work starts through a locally opened governed session. Network responses do not
@@ -281,8 +283,8 @@ the wheel and source distribution.
 
 APatch Studio is one market-facing product with two planned editions: APatch Studio OSS and APatch Studio Pro.
 
-This package contains the APatch OSS CLI/MCP runtime. It does not bundle Pro
-implementations, managed services or the external Avatar peer. APatch Studio
+This package contains the APatch OSS CLI/MCP runtime and the bundled MIT Avatar
+contract. It does not bundle Pro implementations or managed services. APatch Studio
 and the APatch Studio Pro / TrustChain Cowork assembly have their own delivery
 and acceptance lifecycle; publishing this runtime does not declare them released.
 

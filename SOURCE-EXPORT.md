@@ -1,12 +1,15 @@
 # Public OSS source boundary
 
-This is the clean **0.8.45 public source release**, updated on 2026-09-14
-from separately reviewed APatch runtime patches. `petro1eum/apatch-oss` is the
-public source destination; the 0.8.45 package is built from this qualified source.
+This is the clean **0.8.48 public source release**, updated on 2026-09-26.
+By owner decision the complete APatch line since the public 0.8.45 is published:
+every runtime file is byte-identical to the recorded private release commit, with
+Apatch Pro excluded. `petro1eum/apatch-oss` is the public source destination; the
+0.8.48 package is built from this qualified source.
 
 **Release scope: standalone OSS, with separately qualified optional integrations.**
-The full public-only suite retains 40 absent-Avatar failures; a passing standalone
-profile must not relabel those tests or the raw native contract as passing.
+The canonical MIT Avatar contract is bundled as `apatch._vendor.avatar_contract`
+(RFP-049), so the public-only suite no longer has absent-Avatar failures. A passing
+profile still does not prove live Avatar, HC, Platform or Cowork acceptance.
 Use [the verification guide](docs/oss-verification.md) and exact source hashes to
 produce fresh evidence. This inventory and [the historical readiness record](docs/public-release-readiness.md)
 are not themselves an acceptance certificate or proof of external integration.
@@ -16,10 +19,12 @@ The MIT license is unchanged and identical to TrustChain OSS.
 
 ## Included
 
-- The APatch CLI/MCP runtime and compatibility package: 241 selected module/schema files;
-  221 remain byte-identical to the baseline and 20 match committed fixes recorded
-  in the source manifest (ownership, resources, blocking exits, runtime identity
-  and file-bound reverification). No private commit objects are imported.
+- The APatch CLI/MCP runtime and compatibility package: 266 module/schema files, all
+  byte-identical to the private release commit recorded in the source manifest.
+  No private commit objects are imported.
+- The canonical MIT `avatar-contract` 0.7.2, bundled byte-for-byte under
+  `apatch/_vendor/avatar_contract` with only its own imports rewritten;
+  `UPSTREAM.json` pins its commit, license and hashes.
 - Executable requirements, regression tests, frozen verification records and selected
   engineering guides, examples and tutorials.
 - Local Avatar/HC adapters, factual time-accounting, WorkAssets and optional service

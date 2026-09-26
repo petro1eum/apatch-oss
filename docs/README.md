@@ -1,6 +1,6 @@
 # APatch documentation
 
-Source version: **0.8.45**. See [PyPI](https://pypi.org/project/apatch/) for published package versions
+Source version: **0.8.48**. See [PyPI](https://pypi.org/project/apatch/) for published package versions
 and the [verification guide](oss-verification.md) for the evidence scope.
 
 APatch turns specification-driven and test-driven agent work into an executable contract:
@@ -29,6 +29,7 @@ They are included in this source tree and source distribution; they do not requi
 | Fixed-purpose verifier and falsification | [RFP-045](RFP-045-sdd-verifier-closure.md), [Probe](probe.md) |
 | Continuous conformance | [Conformance](conformance.md), [Reality feedback](reality.md) |
 | Runtime controls and limits | [Invariants](governed-runtime-invariants.md), [Sandbox](sandbox.md), [Security model](security-one-pager.md) |
+| CSV partition preservation | [CSV scope](csv-scope-preservation.md) |
 | Full executable contract catalog | [SPEC index](specs/README.md) |
 | Historical freeze portability | [Public-source amendment](public-source-amendment.md) |
 
@@ -42,6 +43,7 @@ A successful test suite is not proof of external delivery, owner acceptance or p
 - [Remote workspace setup](remote-onboarding.md) and [remote configuration example](examples/remote/remote.example.json).
 - [WorkAssets](work-assets.md), [privacy and intellectual property](work-assets-privacy-ip.md), [consent and retention](work-assets-consent-retention.md).
 - [Governed work and TrustChain](governed-work-trustchain.md), [Avatar architecture](AVATAR-ARCHITECTURE-CANON.md), [Avatar utility contract](AVATAR-UTILITY-CONTRACT.md).
+- [Bundled Avatar contract](RFP-049-OSS-BUNDLED-AVATAR-CONTRACT.md) and [exact evidence publication to Avatar](RFP-048-AVATAR-SELECTIVE-PUBLICATION.md).
 - [Local extensions](extensions.md), [strip guide](strip_guide.md), [database and architecture workflows](orchestration.md).
 - [Reports for leaders](for-leaders.md), [engineering evidence overview](engineering-truth-overview.md).
 - [Studio and Cowork delivery boundary](apatch-studio.md), [product matrix](product-matrix.md).

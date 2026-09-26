@@ -26,29 +26,59 @@ def test_run_doctor(tmp_path):
     assert info["trustchain"]["behaviors"]["no_trustchain_allowed"] is True
 
 
-def test_doctor_surfaces_incompatible_avatar_runtime(monkeypatch, tmp_path):
+def test_doctor_surfaces_damaged_bundled_avatar_runtime(monkeypatch, tmp_path):
     monkeypatch.setattr(
         "apatch.avatar_delivery.avatar_runtime_compatibility",
         lambda: {
             "ok": False,
             "status": "dependency_incompatible",
-            "installed_version": "0.4.0",
+            "source": "bundled",
+            "installed_version": "0.7.2",
             "python_executable": "/opt/homebrew/bin/python3",
-            "module_path": "/tmp/stale/avatar_contract/__init__.py",
+            "module_path": "/tmp/site/apatch/_vendor/avatar_contract/__init__.py",
             "missing_symbols": ["build_work_review_package"],
         },
     )
 
     info = run_doctor(str(tmp_path))
 
-    assert info["avatar_contract"]["installed_version"] == "0.4.0"
+    assert info["avatar_contract"]["installed_version"] == "0.7.2"
     warning = next(
         item
         for item in info["warnings"]
         if item.startswith("AVATAR CONTRACT INCOMPATIBLE:")
     )
     assert "build_work_review_package" in warning
-    assert "restart MCP" in warning
+    assert "bundled with APatch" in warning
+    assert "Reinstall APatch" in warning and "restart MCP" in warning
+
+
+def test_doctor_ignores_stale_external_avatar_contract(monkeypatch, tmp_path):
+    """A stale separately installed avatar-contract cannot degrade APatch."""
+    import sys
+    from types import SimpleNamespace
+
+    monkeypatch.setitem(
+        sys.modules,
+        "avatar_contract",
+        SimpleNamespace(__file__="/tmp/stale/avatar_contract/__init__.py"),
+    )
+    monkeypatch.setattr(
+        "apatch.avatar_delivery.metadata.version",
+        lambda _name: "0.4.0",
+    )
+
+    info = run_doctor(str(tmp_path))
+
+    contract = info["avatar_contract"]
+    assert contract["ok"] is True and contract["status"] == "ready"
+    assert contract["bundled"] is True and contract["installed_version"] == "0.7.2"
+    assert contract["external_installed_version"] == "0.4.0"
+    assert contract["external_used"] is False
+    assert "stale" not in contract["module_path"]
+    assert not any(
+        item.startswith("AVATAR CONTRACT INCOMPATIBLE:") for item in info["warnings"]
+    )
 
 
 def test_doctor_trustchain_audit_mode(tmp_path):

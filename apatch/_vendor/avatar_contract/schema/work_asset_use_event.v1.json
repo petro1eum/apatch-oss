@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trust-chain.ai/schema/work_asset_use_event.v1.json",
+  "title": "WorkAssetUseEvent v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "event_id",
+    "idempotency_key",
+    "avatar_id",
+    "source",
+    "trust_level",
+    "spec_id",
+    "project_id",
+    "adaptation",
+    "verification_ok",
+    "occurred_at",
+    "content_safe"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "kind": {"const": "work_asset_use"},
+    "event_id": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "idempotency_key": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "avatar_id": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[A-Za-z0-9._:@#+-]+$", "not": {"enum": [".", ".."]}},
+    "source": {"const": "apatch"},
+    "trust_level": {"enum": ["claimed", "attested", "verified"]},
+    "spec_id": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[A-Za-z0-9._:@#+-]+$", "not": {"enum": [".", ".."]}},
+    "project_id": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[A-Za-z0-9._:@#+-]+$", "not": {"enum": [".", ".."]}},
+    "adaptation": {"enum": ["unchanged", "adapted"]},
+    "verification_ok": {"type": "boolean"},
+    "occurred_at": {"type": "string", "format": "date-time"},
+    "content_safe": {"const": true},
+    "session_id": {"type": "string", "maxLength": 256, "pattern": "^[A-Za-z0-9._:@#+-]+$", "not": {"enum": [".", ".."]}},
+    "asset_id": {"type": "string", "maxLength": 256, "pattern": "^[A-Za-z0-9._:@#+-]+$", "not": {"enum": [".", ".."]}},
+    "spec_refs": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {"type": "string", "maxLength": 256, "pattern": "^[A-Za-z0-9._:@#+-]+$", "not": {"enum": [".", ".."]}}
+    },
+    "ledger_anchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op_id", "signature", "payload_sha256"],
+      "properties": {
+        "op_id": {"type": "string", "minLength": 1},
+        "signature": {"type": "string", "minLength": 1},
+        "payload_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

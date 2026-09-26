@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/petro1eum/apatch/avatar-contract/contribution_event.v2.json",
+  "title": "ContributionEvent",
+  "description": "Canonical contract between Layer 1 (work) and Layer 2 (avatar). Avatar Architecture Canon §7. v2 uses proof_ref; the legacy v1 key `attestation` is accepted on read.",
+  "type": "object",
+  "required": ["schema_version", "kind", "event_id", "idempotency_key", "avatar_id", "source", "trust_level", "identity", "project", "session", "volume"],
+  "properties": {
+    "schema_version": {"type": "integer", "enum": [1, 2]},
+    "kind": {"type": "string", "enum": ["fact", "claim", "contribution"], "description": "`contribution` is a legacy v1 alias for `fact`."},
+    "event_id": {"type": "string"},
+    "idempotency_key": {"type": "string"},
+    "avatar_id": {"type": "string", "description": "Equals identity.key_id (canon §7.3 #4)."},
+    "source": {"type": "string", "enum": ["apatch", "witness", "tracker", "manual", "agent"]},
+    "trust_level": {"type": "string", "enum": ["claimed", "attested", "verified"]},
+    "identity": {
+      "type": "object",
+      "required": ["key_id"],
+      "properties": {
+        "key_id": {"type": "string"},
+        "cert_fingerprint": {"type": ["string", "null"]},
+        "ca": {"type": "string"}
+      }
+    },
+    "project": {"type": "object", "properties": {"id": {"type": "string"}, "name": {"type": "string"}, "remote": {"type": ["string", "null"]}}},
+    "session": {"type": "object"},
+    "volume": {"type": "object", "properties": {"ops": {"type": "integer"}, "files": {"type": "integer"}, "insertions": {"type": "integer"}, "deletions": {"type": "integer"}}},
+    "proof_ref": {
+      "type": ["object", "null"],
+      "description": "Required iff trust_level is attested or verified.",
+      "properties": {"ledger": {"type": "string"}, "op_ids": {"type": "array", "items": {"type": "string"}}, "head": {"type": "string"}, "anchor": {"type": ["string", "null"]}}
+    },
+    "attestation": {"type": ["object", "null"], "description": "DEPRECATED v1 mirror of proof_ref. Dual-written during the shim; removed after migration."},
+    "payload": {"type": ["object", "null"], "description": "Domain payload for kind=fact. No source code, no secrets, no economic keys."},
+    "cv_delta": {"type": ["object", "null"], "description": "Attribution vector delta for kind=claim."},
+    "declares_for": {"type": ["string", "null"], "description": "event_id of the fact a claim refers to."},
+    "methodology_tags": {"type": "array", "items": {"type": "string"}},
+    "created_at": {"type": ["string", "null"]},
+    "signature": {"type": ["string", "null"]}
+  },
+  "$comment": "Invariant (not expressible in plain JSON Schema): the event MUST NOT contain economic-layer keys (pi, gpi, creator_bonus, clearing, marketplace, scarcity_index, portability_index, amount, currency, bonus). Enforced by avatar_contract.assert_economic_barrier."
+}

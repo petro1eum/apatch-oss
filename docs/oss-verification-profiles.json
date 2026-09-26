@@ -1,5 +1,5 @@
 {
-  "schema": "apatch.oss-verification-inventory.v1",
+  "schema": "apatch.oss-verification-inventory.v2",
   "qualification_scope": "declarations_only_not_profile_acceptance",
   "provenance": {
     "public_commit": "7accbb286d73a31957e6934a47f76ba911c608a3",
@@ -8,6 +8,26 @@
   },
   "runtime_files": {
     "apatch/__init__.py": "270c38646d2045e9818df7867363bf0cbba6fa0f9855e79cc5784b20ef9a3d4f",
+    "apatch/_vendor/__init__.py": "28370d1cc48f94cd79da6539e0023e3c6f0a274e2aa1537bc6932e58dfa4bc01",
+    "apatch/_vendor/avatar_contract/LICENSE": "20c02baf3d0e544cc3e70d2bbfc263be0ca6341a5d342921dd8fee65a68ccc8b",
+    "apatch/_vendor/avatar_contract/UPSTREAM.json": "d9317a3f0de932e7a858513cc0dd64a76463dc8eb12dba44f7df727c61a89fcc",
+    "apatch/_vendor/avatar_contract/__init__.py": "87158f5b82fe9e7e521c09fb68c1090f10fd7d992341a29f2c8d3eea14429f40",
+    "apatch/_vendor/avatar_contract/capability_evidence.py": "e7e0fb6e949b560768ce6b4954943a463bec227b6b52a546d18d3411d493d063",
+    "apatch/_vendor/avatar_contract/contribution_event.py": "d07655c8bcc3b11c675e39bebb9d98bc9cfd0ec183706a3fbad56d775a281391",
+    "apatch/_vendor/avatar_contract/identity.py": "ead13c6dce1271fe746319e06b831b4e11434f309ff09c467e2059385d654be6",
+    "apatch/_vendor/avatar_contract/outcome_attestation.py": "8f304e7588e9fb17cae2407296dee0c51627f45686bcc049bfe85921ec006fa8",
+    "apatch/_vendor/avatar_contract/ownership.py": "beec974ba491a8586e2e84cd1fe20b83950a01f8821cff4c5af131002074ec94",
+    "apatch/_vendor/avatar_contract/schema/capability_evidence.v2.json": "7d885b81a2bebc029307efa2fa1d91a14e01f48f04a9120bb1fff3546813c048",
+    "apatch/_vendor/avatar_contract/schema/contribution_event.v2.json": "065b348f72c13a40c53c72709efac850281454d5aeae55f71f8d611dc358d230",
+    "apatch/_vendor/avatar_contract/schema/contribution_event.v3.json": "21feadd2815b54c32e840bd9f6cdd7a8de35b3ba78c8999d96cfef1287ecf623",
+    "apatch/_vendor/avatar_contract/schema/work_asset_use_event.v1.json": "517f91b005fed8d7719e121e5e9f57676ddd209e1354a1c0ea53e97fc4ab66c1",
+    "apatch/_vendor/avatar_contract/schema/work_review_package.v1.json": "2dc24184f1b87eebdbfe270131ffe2874f672c6f9a1e23c5588719beb12500cc",
+    "apatch/_vendor/avatar_contract/taxonomy_decision.py": "e1e714c92c3103cb3e9385f55bf9c185c6ef3204089f9ba9f65b2ea277d9a916",
+    "apatch/_vendor/avatar_contract/transport/__init__.py": "d06e95c2d3c7504498d3ab94457e4baf173730dec07ca7b1a21ed62194c602b4",
+    "apatch/_vendor/avatar_contract/transport/avatar_bff.v1.json": "a1b4c2157ef37593a5535588a9ec86ebddfa9eaadd22848874e80b4bd4a930cc",
+    "apatch/_vendor/avatar_contract/transport/hc_tracker_internal.v1.json": "42ebe4b789618ac47e771bbe4f897ead6e49b7a5e96f0fdc322d1fd782b7c621",
+    "apatch/_vendor/avatar_contract/work_asset_use_event.py": "38ae563065d15f5ea896c764995ef031d47733286d54e6c66787176e42df7c49",
+    "apatch/_vendor/avatar_contract/work_review.py": "f3b082a554c17b2718cc39589cfbca075fcfa7951c46ebf171734ca9445bbbaf",
     "apatch/agent_guidance.py": "7c82f21868537a12d5f4503538102b634b610ae36c038530afc7b7398a0f2035",
     "apatch/agent_playbooks.py": "c0933cf258f4ebd2add07d26104541c060792a1d6db9d5555e0a6fe2dcab806e",
     "apatch/apatch_paths.py": "9e81b2e1e1ddd7e0fe617d1656f5ab5369f830ae7515d24524547ff75a072e78",
@@ -19,8 +39,9 @@
     "apatch/ast_window.py": "ab2b9e86f0646c17a161d1b8284c7fd0da863bbc3dbea805688f33a5bf74d147",
     "apatch/auto_wire.py": "d8f50c882198904908189da48b11c9a279fc20a4d57c601f7c11d67033e02e31",
     "apatch/avatar_compiler.py": "e909169d580e07b076b2444060fe051abfc0f35695cfbf7d437cff3660778435",
-    "apatch/avatar_delivery.py": "29b2ef4a21df8f5b1acd402a5efa898f8fb2fbd5f52f72ee28fe80a25b7d4f40",
-    "apatch/avatar_evidence.py": "564fc27a346a7603d93103880719aa3dc616e811853e28b3e7429dec5641e231",
+    "apatch/avatar_delivery.py": "c69e90b95c829b359566a9a11dff3daca60c4fce7d8fe72db892043764912f0d",
+    "apatch/avatar_evidence.py": "a929671a39a128514b17fcef3e2f0d16f7ed0c4558d1406ccea1ac14177a646d",
+    "apatch/avatar_identity_gate.py": "fe470954ce58bef1393c4a9627d389a5f67941afa2f4c836a6677c07a09825ae",
     "apatch/avatar_runtime_config.py": "086aaca19ddbfcdad495245f7f9f92683e052ff9f74d31794ba56c2b92714103",
     "apatch/backup.py": "b550902f92f59fab29a9d0b94ab204d70e41e9132af36dce3b1f0a3be4402cba",
     "apatch/barrel_export.py": "8b03394978a105a0fea75959708d084f8ecd0cbc3a5436ae664224390bcfa678",
@@ -30,7 +51,7 @@
     "apatch/build_diagnose.py": "00e2efd4da77b95c624b29a9ca26c484375c0800606028061f989e0334a06375",
     "apatch/capability.py": "1ee9babe44eb9d29f4728b434dc840e50845c0fe058f5d787e6e461eec0c823b",
     "apatch/change_budget.py": "2b2407c2f6830b8055693f95d7d5e9ce03e7191757cf8ef030931321ef11c085",
-    "apatch/cli.py": "66c0b64d1bf85b51332785049c6a8d8a03efe173769f26a666011f7f8a4dd6fb",
+    "apatch/cli.py": "c0cea240c47b4aea7ff320108205177aa1216146a1ebb2c96f828b0497f4ef5c",
     "apatch/cli_concept.py": "fc14ae02be5b4ce5a7b3b612f3d33a4c5d6c725cae60fa051962522032c849db",
     "apatch/cli_conformance.py": "584f4aa648b562c75b0f64e18ad8d892dbdd4ccd85f1a368b076d575f4a59bce",
     "apatch/cli_extension.py": "ed9d9b27a200f5cc60d5fb7ae43286c923ddced1637f6c3db91861dae327df62",
@@ -40,18 +61,19 @@
     "apatch/concept_compile.py": "24d4256d4ff6cbc031b8e92c949a5d2f9089b08067435c46e577302a22ba7b95",
     "apatch/concept_crud.py": "2b68d706c319545dee18257e6402a48911b0bead77a77c3a471f4927ad87ba39",
     "apatch/concept_merge.py": "73a31c03520842adb30048c530da2bec0096a2bffd47a9993b458757a1ced907",
-    "apatch/concept_verify.py": "76cd06eaf13b6bdba4813d8e83ce54278c310062774112283232f29160eaa3a0",
-    "apatch/conformance.py": "ae4b9714a627165099563c22a10b8ff25f4c2e50421887a5bbbcbdc487a1e59f",
+    "apatch/concept_verify.py": "88e4cb5f2e7b28e58f57f6d036bcc3aab25c22fb16691024c836a35d36315d64",
+    "apatch/conformance.py": "957b74b989410270437d3db079e5030a5642572c31b6e167131c55af6276d2d9",
     "apatch/console/__init__.py": "f1be4d3299d28fac86c02a1a443d3d868fd678fef047e6895d6ab4cbd892afc3",
     "apatch/console/mvp.py": "0083292d387443e69ea4190993fd541d2a2a850404f8612b42885e4759cdb665",
     "apatch/console/state.py": "100b7e1dfa0f21b48464099dc3fac52fc75a0d9ae44ff8fb73169ffda829885a",
-    "apatch/consumer_profiles.py": "26f9e16b8e7260fe828f950fee3a500d7f4324f8af8b1a4a142c0bb50658d623",
-    "apatch/contribution.py": "0773097380eb5db606e36af449c23db1ec282216e37fc31c361f0fbcfa51ee48",
+    "apatch/consumer_profiles.py": "b831071f483de7c374ed0bb76b2dcb7b3a7963431b6a370e8da82e1eaf47b058",
+    "apatch/contribution.py": "cedf6f692af16ae86eff4485d8185bbc6d04d00d7b20e4e65f91439826ed8a4b",
     "apatch/contribution_delivery.py": "fb07006b3f6a87eadf49ac9639a836ac454a01714ff99a607b6c4eafdb8d982c",
-    "apatch/contribution_export.py": "fa2ea01cfda7ce23bd30f972aff7f2913f3f46b5c9a8434d23a7d2428cd4ae3f",
+    "apatch/contribution_export.py": "766c2e149590c238edea43e482744e45146ba6aac8772f82ca8161cae4242601",
     "apatch/converters/__init__.py": "e9f76fc2cd857c79a800188b20eb439c6777824184a259da1f0a0761b1325a5d",
     "apatch/converters/registry.py": "60d950353c6811dda2414bcedd9b46e391980beae7b6474d0cc11662588fad3d",
     "apatch/converters/ts_module.py": "2516a34a738fcc2d79aa7df6e6b9d94d37c5815318aba2454f8ed8679d311b76",
+    "apatch/csv_scope.py": "edbcc8fadb7653febe993d63a310c005468d0b0889b651dbda9301a993c133b2",
     "apatch/dangling_refs.py": "324ad3fb8711c135246c585dd33558ea378e2e5ef75bf536bd07833f813e6e59",
     "apatch/db_check.py": "3133bbb07cb42a36f57af1eed24297f969200b5246fe460aaed5de424941dd33",
     "apatch/db_profiles.py": "959efe4b2cfdc4a93555866fc9e38542d3d5db1a6a55c402e5599a3364bfc57a",
@@ -70,12 +92,13 @@
     "apatch/diagnostics/schema.py": "e993f3ef94424117f291a46c498b3b76fad595617a6318b30430f29f7c499d79",
     "apatch/discovery.py": "c0e7a29442052dc1ff4d2f65ec4fe3a2b4eabb5321242ae40f208e885b1deaf4",
     "apatch/doc_outline.py": "f00d062ae28246f94b516997d5bddc45393e65d61ad2742783e7fa5aee8ed513",
-    "apatch/doctor.py": "caf64fb7ceacc8d3f24721b87db3c43f7817477438129b687d7a305dcc29d389",
-    "apatch/edge_lockstep.py": "0fb155715c89b8604dcff7f59394c877edaff21c622ebdc4b44ec34f47e7a030",
+    "apatch/doctor.py": "fb59b7ad53ebec18b78db2ee6bce48124663a73316c6d41b08e2faa4b0f4828a",
+    "apatch/edge_lockstep.py": "91202e276e4e8dc87294f17715478dd6d62ede43a69bd83e06b6d85a20601cac",
     "apatch/enforcement.py": "f0090086174734850dcc4f61bb6a07a8a77b3d43b66ee88ef414635c991180a6",
     "apatch/enforcement_messages.py": "a21602cdf387086732f90d3ff95f9a552c5efbce3bdf6b8eb89aeae5bdddb755",
-    "apatch/episode.py": "f4314a438410dde69deee2946c01061083936acd16f28b86b7cc2cff5827b048",
+    "apatch/episode.py": "ba552fd93d56d53832c608ee58a12d8f7816b294fc307b4011827061878228e6",
     "apatch/execution_proposal.py": "ff0649a448c8b13739c8ca5875aca1920d0eaa2f45047bf3ea9a4712ae366f88",
+    "apatch/existing_source_intake.py": "d15c821660665794a78b777da378f1aefb90d79695625fa5dc5d82512df0b6c9",
     "apatch/extensions/__init__.py": "2736b1cf29a1f80a2d92e37376d8045de2891208279d6e799112ac034a2c52cc",
     "apatch/extensions/authoring.py": "86369e5e7b5732365d948f58f663cb87250e35ab00f8bf5c201756cd375d48f6",
     "apatch/extensions/catalog.py": "a62593bd07e6e5ba0a6e70541d982b9848c579660312c8b4fb4ff8160bbea510",
@@ -90,12 +113,13 @@
     "apatch/feedback_status.py": "1484566097f14936b5afcf0d376d6c3105aed1990a61815852003a2ae2495461",
     "apatch/file_modes.py": "3ce024a6897079e70ddfaeb1f400c989ebb830c0471ff744f580520c9b5ad5af",
     "apatch/gc.py": "8b32a39048caeeeadee566ca6241248b411f2b68ed4aa6c9727f85b3c30b32f6",
-    "apatch/generate.py": "8f025b3644fc4d6977dacac938706982f0c8de0a05188b2fb7fbbee3a77bb54b",
+    "apatch/generate.py": "af7f184e5ac956da739ae1efdf8d2fa7c3a601c11f8dc9dc2079e493e5b10817",
     "apatch/git_commit.py": "5892a9eb68d51b7c8d67f7b2dcb9ce2294bfeaa3b4df68de4b583af4b57d1089",
+    "apatch/git_hygiene.py": "a1d05ffa6012f4572ffd859b4901f23429dbebef67383ba07c60eb2eef4713ae",
     "apatch/git_util.py": "2821c44168e2f5b51e54f1a767a690bb9289ed3f040313af65374f77c78ef49f",
     "apatch/governed_work.py": "739539e4d918c3ec7f3a1b2db13697b4c7c56d7362bc39128a7ac07abdd74225",
     "apatch/governed_work_delivery.py": "0f0e9aff091fc205d4166011ab07897fd3e705f0f4230d10a6658ba9a67e6bcd",
-    "apatch/governed_work_mcp.py": "706bb92b053e2d5cdb06b976d8a0f0e914e757e325a7ea1f4e86560252f803e7",
+    "apatch/governed_work_mcp.py": "5927a4089574811a502282e629c79bf3a7e9c2c4a9604ff8774fcffd799181b8",
     "apatch/governed_work_transport.py": "ad83263d9b60fa42d447f202893a2835ffc83443b28813e70036cb608c93596d",
     "apatch/graph_execute.py": "579feed405e758c51b500f23dafd95042eced5926ca6894650824f82141c71cb",
     "apatch/impact.py": "f4bb84173b555bd33d1e66bd0b27f2ba78779b41be4a4db889cbac66d198a632",
@@ -113,7 +137,7 @@
     "apatch/manifest_bundle.py": "7baf32cf6f8096db2e3d8a4448ba44b6a993de3b71ffd1fdba2ae4fbaa8bbbb9",
     "apatch/manifest_validator.py": "1a79352228a4bf24b4e196f945cddc459d68aea69932c1fe42dcbf14206a80ff",
     "apatch/match_session.py": "3e7df4836dd83d1005087e3d44e22cb6d7f9d9e94902b72b9b72802354bd40ce",
-    "apatch/matcher.py": "ef097e4e5a380b0bf9014dab4c8019a2289e85075e825519414588b0512736bc",
+    "apatch/matcher.py": "864d5bead1ae7019e00c81a69a1faae248bc9062271b0a2318c3b89a1816306a",
     "apatch/mcp/__init__.py": "c61a4cd91292af9bed6d0b6f16962a71e290c55cdc7557130258fb1c39372521",
     "apatch/mcp/__main__.py": "d95b6f6002c0915a56a0779cf2959c5fbd01e6c40acb29e1c782aa602c83521e",
     "apatch/mcp/bound_workspace.py": "2d458f1f165a25c83817d20dd1840aebb755bc575944baeed691c256b6455df4",
@@ -124,7 +148,7 @@
     "apatch/mcp/resources.py": "05200aa23e2f3b9ea2e7ce256f142e54d6d7b94a131d2f8ff156287bca0678c8",
     "apatch/mcp/runtime_probe.py": "05decc92c614c6f21e8b064da13fe5be474e13050e6842f3f88e9d844653f464",
     "apatch/mcp/sanitize.py": "9a8543657304df1a8e6069846c3e2fc2b2ae826efb02202f9039395a441cd4c6",
-    "apatch/mcp/server.py": "0645068781d2e0e52cb702d0cb16c07453d1b82e7070872ea59e9d94119f9659",
+    "apatch/mcp/server.py": "7600a24d14b3a7532cd01577b671d5418b542bc1384c586ffab9de28498d58e1",
     "apatch/mcp/stdio_guard.py": "c12bde6b899d98a84bd90c828f124741cfcd3ee987fd2c277c6fa3cdccc2a7f5",
     "apatch/mcp/workspace_launcher.py": "afec2d7f823a0a588ebda3f5c061e25494792070dc5bafb0b483a0b6a79ab07b",
     "apatch/mcp/workspace_registry.py": "c67f0320d90eae5c3a85ece00bbe3555f16efe70acf6b396d09c6d6cc3017aa2",
@@ -132,13 +156,13 @@
     "apatch/native_converter.py": "7be34b6b75516e3eb23685e805da7ef98f06e4e1d303358ff8ff628a1a5c6fe7",
     "apatch/native_refs.py": "8ae0b22bbf1524c876d48a6b0919696e895c94a947531a9f263390d36f0e780b",
     "apatch/orchestrate.py": "83e117fed565dbc02deb9fcd6b9bb3a75d0ed64737fa2678de1d4480a6f08760",
-    "apatch/outcome_delivery.py": "6f9ee0cf1a55ccbd3690150c9f627381d8a0b93c42876d112b998bf29e30bf31",
+    "apatch/outcome_delivery.py": "b15e7672fd33c55b99f37a436c863088dd1529dca7beb2dbcd1d3382d3042f9c",
     "apatch/path_index.py": "3efabc780e3d7212f7dbaa42914b10f9368af159f6ce24697b680d59598efdbc",
     "apatch/path_leases.py": "f204e5f984c6446a813d3230933d167c71dc3beb1d6e0d8a8a8dcc1d5111980e",
     "apatch/pipeline_run.py": "5d0270b56b290372f20e1ae06aaa30a93d467e9866c4ba581fbd759b5d50d5bd",
     "apatch/plan_adherence.py": "657ec142c2a384e635d40455132d3acc50277877f14b6667cf17def3d278bde5",
     "apatch/plan_worker.py": "da9cab09f52624c2036b26c109ae68e975335e65f417b94c858a6cd4a596f117",
-    "apatch/platform_client.py": "b7fb1fe6656c150de93d2de30fabaf19325127f889f7a39d7d2d7b7f7a7fd27b",
+    "apatch/platform_client.py": "5795188cc2c10417de82ad2ae9165c1ebce2d468862b54759ada9f06d465ab94",
     "apatch/policy_lock.py": "f0f8d3d46840f21121bb750b2810efefea06556cef883d226c3dd3d1f5983aaa",
     "apatch/probe.py": "91be2b611ff713abd4c0f8b63ccb05866e2c5a17927ae629fe354a78a97006dd",
     "apatch/project_index.py": "c47c5d5173907886847aabef6d0ffa856b4c2c634889f5a7cadf887ca7da0a3c",
@@ -147,17 +171,18 @@
     "apatch/refactor_run.py": "beea7b52d0fe93c590443327c73864fe43ac0c7d290f3364bd30b1d8ac868397",
     "apatch/remote/__init__.py": "a34178fe47b4aedd09b76afe2815c2197582b47ebada99e0dce7490356931af9",
     "apatch/remote/doctor.py": "af0b7cd0d1e3302448bc1fac0ecb046b3afbd019c7384f2f3ea6c0a6991965b5",
-    "apatch/remote/errors.py": "f53562ca1bf9d0840c6a3b2926dbbe3d18ef3f8ef6dd4c7fcd23aff8a6645290",
-    "apatch/remote/handoff.py": "48036bceadb1f78d0722ff023f6e9b51e533266fd5a72d25c2e6f80dc627cbf8",
-    "apatch/remote/onboarding.py": "072959114173b9d77c6c1c49703aadc4e1b7f0e542adead032bcfe6fdb335e46",
-    "apatch/remote/orchestrator.py": "71d48dc69aa317b1f36b1906851c68a1a9023a526b0a96619c69a7ff8d60dae9",
-    "apatch/remote/policy.py": "b898e97a87e792f9b34a6590fccea7e8dc1877a283ac19d7242be7cce5c061a3",
-    "apatch/remote/services.py": "313f9400d78df79704950c9fb97e5698960314462663ecea424a9cc15ed70495",
-    "apatch/remote/ssh.py": "8a21a54aecc795c6e02bc4165902a5c24747dca5c502f9050179560a32238265",
-    "apatch/remote/target.py": "c52fb101476770a2ac8cafe0954ed8db25a6cb07b16b39c2ecdbea4a1da34b27",
+    "apatch/remote/errors.py": "c3039c7eabb55e92af170aab3839303868b2e7fadf2d4f4a7671aa16effd43da",
+    "apatch/remote/handoff.py": "6d75855bdb8a987e22d38b138d224ad33bda3e70c56c40335ff4a55ed4cce822",
+    "apatch/remote/jump.py": "ec6c3b8755a244ddfafcbe11d9cbdfb7ceadca9e1e28d9ad1076d22abf6de8f3",
+    "apatch/remote/onboarding.py": "d24df6119db7b82315d172e9cc28e8112ceae6b45a18826c12e79859cfac8a36",
+    "apatch/remote/orchestrator.py": "fd7d06798790565aac61019525f2a35f50de24a8251886018f86b650a4555b5a",
+    "apatch/remote/policy.py": "a8826f7039b3649b06b37d4344966aea4664a39686f71751236b743b806e959b",
+    "apatch/remote/services.py": "474a5ab181ee1656afd182a1838cdc4014b0cc0a61398716445dc1a2728b4173",
+    "apatch/remote/ssh.py": "c2ea1ecb4870601f80cf23cbc7f5b9a8b0dd4ab1dfbc7753ae6ec94e8afccf23",
+    "apatch/remote/target.py": "7323ac7a0a3997eb3b90b634c937b8a8a5c285a65c08c6cbbc62eddc1af4a295",
     "apatch/remote/transport.py": "b267cf332966e070ea34885d5d8309c954a8881b9a8085a7e4be269833bcbc09",
     "apatch/remote/verify.py": "4c7166e01fd58cd048edadb356937346983bf055400f75a90ae4f1db973cbcc3",
-    "apatch/remote/worker.py": "f825ffe91273507e5e0207a82d644ce95f65d1396a7cb4bc6bbb19fe3b912b1f",
+    "apatch/remote/worker.py": "fbe7da258629f5626c9c153b2a3276bfebdb5dfb50864412223f6777d26fcf5c",
     "apatch/repair_map.py": "ddc3d24ea8e10710d1acdb8aa04df5294fc0aa4a205267ec89dd1a83fd68e580",
     "apatch/replay.py": "fa6de3a202384e0aa344439492434c1649a77a4be7b469d2ab8c4697b91e0782",
     "apatch/report_render.py": "ef08379bc1e1368ecf55ff19b9a84738c1eec6c3d7e3739f5cfc254bdc825005",
@@ -190,9 +215,9 @@
     "apatch/semantic_parser.py": "473ccb42a938ec5c8bcfee5e978bb9d45e5cf581089cd53e334507bd4484ac59",
     "apatch/semantic_verify.py": "d09982c2b098d83b99659a1c41becc30b820e00c5bb13b31b691d762fddad35d",
     "apatch/service_secret.py": "a43b97693e65c426e901211bd52f1a96230d97f9cd72bc66ef941e895bc4760f",
-    "apatch/session_state.py": "4cc5dea0741db9137ec6603e0b331a2895957309c80967ae0bf93fc18a8d527c",
+    "apatch/session_state.py": "a968940aeb5d48f12d1116f7869c5fe08a417318a6ed02194fc75d516e6a73b6",
     "apatch/session_status.py": "0770e3b2e607d1b8a373099b4e942dbec5c277d41156b7753dff1be5d31cfd22",
-    "apatch/shared_maintenance.py": "4bb8af69bf1d8c2abccfa97653fdbdb2e891b3dcd6cbfe0d3f93ad2a312389dc",
+    "apatch/shared_maintenance.py": "73249aa738e54cd01bdd4818a9ce8f09c28f2b3dc1b7824659aed42f5db97062",
     "apatch/simulate.py": "4e34d686b3c82402a58d966791455b5320d060b8b76306ee81d964a9a6b1532b",
     "apatch/slug_close.py": "ee57564541781897b57e75f9f562ed0ae2ba83ac57a87eb7849565675e341c0d",
     "apatch/slug_cockpit.py": "d45b455a58bec3453c63b5ce23a287aa595703f2b085e4b5791d9884cc56a74a",
@@ -207,7 +232,7 @@
     "apatch/spec_interference.py": "7f8c9ba8e8683b64a7d23c65e950b9f2645a4b9b10bfe3f5d39d770b3f1ab71b",
     "apatch/spec_interference_l0.py": "533529155a00cd8fbb46496c416ac96b0d464a52e2bc561c1ab769bc173e41a9",
     "apatch/spec_needles_scaffold.py": "1a1f317eed4b3f418c900b7d25e0feaf58946d50eadc5e6b5eec8b62848ea03c",
-    "apatch/spec_ownership.py": "c1b4db42a2248fa003f5fd8f3ded3dcc341de552ac06433703f0ff04443858a5",
+    "apatch/spec_ownership.py": "4e90482772d373860682c4464808c9a6954ae4475dd2d0180069e860e68762ad",
     "apatch/spec_plan.py": "f5a727a5b87b0810797e44fcc0171b8ae53c66f7b50b56528fb56279b9a8e7df",
     "apatch/spec_rebind.py": "3e6fb64f0f6fcdfc34936714043bc4cd7a5e8f74a2e4d50622075a45177d2c3c",
     "apatch/spec_registry.py": "b08799f9fd690a31a31d8dfd41586f35fa1a669d66274ae71fb51e3fb12098b6",
@@ -219,13 +244,13 @@
     "apatch/strip_pipeline.py": "c87e7b01f88c0b77961a5ba541cf36243f803a6b660f99696427578ed6d89854",
     "apatch/symbol_anchor.py": "9c59cae75b0fbcfb81ef93ca015e1bd087c415bd4cf89b2d11102bcd101c3357",
     "apatch/symbol_index.py": "912bf9319854be94fca8aaa940f28c1a45be5bf12d24bcfdbb88b808010291dc",
-    "apatch/taxonomy_delivery.py": "ca699ae6b3a11c1c7a1b4ce99a4bd2754677126b4b08ffa15cafa0e92f2938bc",
-    "apatch/timesheet.py": "c8caf0518c171302feaf28f0db188e02fcc0bf3397edfb53aaf0e46878a1ae62",
-    "apatch/tool_paths.py": "9a450a4a6b640bce039a38f7aeb1e9475c5f81193c4f0598b76daceadddabf72",
+    "apatch/taxonomy_delivery.py": "16fdd204034f4e9f366982ae4f87249307ea7a66d4674e196f3bb3aa7dc9da06",
+    "apatch/timesheet.py": "3887c9e8d47c5185efa5ed7408b0f71a516860ab4ff7d0b7aee8f69b5eca83c2",
+    "apatch/tool_paths.py": "6d03acfd4b6f8d6809b7ab169a4362f7fe632b24f56902e65e4f5132b3833da0",
     "apatch/toolchain.py": "64e178818e76280fac4e2beef47668a6b2ce595488a6cb06677de67e69b1eaf4",
     "apatch/traceability.py": "619a019a75b5d6a72a2912ef1bebe14e50d178eb96fdc229d073c06d93ee8298",
     "apatch/trust_identity.py": "033413da201c7255d7f79d2b57d6487f6639bbcb8ecb16852012d81a53335949",
-    "apatch/trustchain_helper.py": "67aaf58ec81375797c5bcac067b538e6157be7f458eaa57c219a468b5a81c638",
+    "apatch/trustchain_helper.py": "bf820d0f7297f2718405540b64af4a6c34841a886d34401ecc1f78caebf64bff",
     "apatch/tui.py": "d7e28d7c67a019dded7476c1269dfaade3fae8fb5e355383f2b9c22a6b384cc8",
     "apatch/ux_audit.py": "90acdd1485333b09ad68050845c9699f1107635cdffb99ae40773cee6c642131",
     "apatch/verify_baseline.py": "c8c713bab9c3e0698f05dcc0cb272d5adc9d349ac64994c33d5bd0eb99368541",
@@ -237,7 +262,7 @@
     "apatch/work_asset_suggest.py": "99661f1241e98dc8800f22d9e9721abb8c3cb3b594f769d8893457d4894f45c4",
     "apatch/work_assets.py": "8ee0f9530ad32ab3ade391d21d82761e0928f7d9a636468e03260c8ecf03e21c",
     "apatch/work_item_acceptance.py": "11f4896c7854076146bbf64c0de4ef059df0653bc4671631a367112e7bf9d02b",
-    "apatch/workflows.py": "ffbd605e5bdcb6683acf13b692fb0e68e738f5aca0c67b18bf5f10d90c7b1285",
+    "apatch/workflows.py": "2f77fcd0b66977d7d10f65b408b421a8c39b38366cd49cf19865d58f06f84d6e",
     "apatch/workspace_identity.py": "ed535fc038930d143d403eb7ac08c0cedb3068d785b9c8bfb77c6e6288c5cfcf",
     "apatch/worktree_lane.py": "3d095cd2990f925d4830cff23cf53998a52bfb1587b08fdfad02cc0d6bff6392",
     "apatch_search_workflows/__init__.py": "d81432601259694d68d1f31e729312088468496deead16f135a55211361d954b",
@@ -250,482 +275,14 @@
     "apatch_search_workflows/slug_ratify.py": "6aebc3cdb317531ebea20eb399f125c8f0a7cde8479c42976a66fcba580d6cba"
   },
   "source_files": {
-    "docs/specs/SPEC-AVATAR-CONTRACT-1.md": "bc62aca2deb1fed6b91ed05a463155b1361a9d7df6018289d372dd152940b865",
-    "docs/specs/SPEC-AVATAR-EVIDENCE-1.md": "1cd00db849ee76a0b013bb0171bca18024a9d4890b8995d0de1101a4912accf8",
-    "docs/specs/SPEC-CONTRIB-TIMESHEET-1.md": "d88d3e59fd9623e05c6bb8ecff8b40d4e6fc7d8a9efd1569c8375c24a1049798",
-    "docs/specs/SPEC-EDGE-LOCKSTEP-1.md": "440b77156a8f72cb9584126dc7b90180d5110e5ae99f981f8cfa51845b8cea4e",
-    "docs/specs/SPEC-EPISODE-1.md": "d2a6c9ca09dd039d9822fea803f0fde8ebbc4246dc5b58a3e15a2a6665fe3e87",
-    "docs/specs/SPEC-GOVERNED-WORK-BINDINGS-1.md": "507ba82e63c65ce4ef4b3e345a61b3815b26ba2944b89eaa3dfc0962e0defa0a",
-    "tests/test_avatar_delivery.py": "bea10b965379c23646534087cc9f65a2937719123d60c6f1bb0500354967a3de",
-    "tests/test_avatar_evidence.py": "8a5b57ca2d299fca159ed0470a82373a665ffe01041f10fcad3d1fddab6729ba",
-    "tests/test_avatar_runtime_config.py": "4c9f7c189b65b6d032b705335d1426175a2a21637de8ddaba4c63c341bd5fb99",
-    "tests/test_concept_cli.py": "c60b8ac1cded0515db901cf6b97876b40b66db2abe281986d2605fd1345d3cc1",
-    "tests/test_concept_status.py": "37f269bcce5ee86a5cdf741bb36f0d5786be8f711026cf7b9afacf1df3948ca9",
-    "tests/test_concept_verify.py": "e7464c04ac36960deaed1b327fee25e99bf7c9ee1f6bf6753a13c33c666ed644",
-    "tests/test_contribution_event.py": "a6773fb50f983db4437ba477b2cea73c48466a14fd2d063d5c6d3b3179d312de",
-    "tests/test_edge_lockstep.py": "54d868abe642e3f4105468fc5301404ce0c224bb2c100a3d18ac3127043921c8",
-    "tests/test_episode.py": "25ffd8e3b9bc285739ba872c107991f9eda754d59b22c819ea6d20dad8223a91",
-    "tests/test_governed_work_compatibility.py": "04248dfd0fec778230054f6f69651470f3e2e090b5dad44aca76ab6f0e166411",
-    "tests/test_matcher.py": "1c062a20d0e4d838111f82d46eb7952d68f2431caa8254dcfeabc2512638cd35",
-    "tests/test_outcome_delivery.py": "2a75096680306c4b990ad02a99fd5b56a6fadd790f3777f2ec1244eacb7e94d7",
-    "tests/test_taxonomy_delivery.py": "792682ce6b1c76ebd9a0090b2ce9a2fb68918dc1d1c1bf9bb87fce14de5c6b7f"
+    "docs/specs/SPEC-AVATAR-CONTRACT-1.md": "b375fe307613f9fc03a0ae6c7e3d00d29b96969f5b4bea8a87927b3fd36df836",
+    "tests/test_matcher.py": "1c062a20d0e4d838111f82d46eb7952d68f2431caa8254dcfeabc2512638cd35"
   },
-  "absent_peer_failures": [
-    {
-      "node": "tests/test_avatar_delivery.py::test_direct_sync_resolves_broker_token_once",
-      "dependency": "avatar_contract",
-      "reason": "Sync performs the shared-contract compatibility preflight before credential resolution and delivery; the absent canonical peer rejects this path.",
-      "observed_message": "assert False is True"
-    },
-    {
-      "node": "tests/test_avatar_delivery.py::test_direct_sync_returns_sanitized_credential_failure",
-      "dependency": "avatar_contract",
-      "reason": "Sync performs the shared-contract compatibility preflight before credential resolution and delivery; the absent canonical peer rejects this path.",
-      "observed_message": "AssertionError: assert {'dependency'...hon3.14', ...} == {'ok': False,...e': True, ...}\n  \n  Omitting 2 identical items, use -vv to show\n  Differing items:\n  {'status': 'dependency_incompatible'} != {'status': 'credential_unavailable'}\n  {'retryable': False} != {'retryable': True}\n  Left contains 10 more items:\n  {'action_required': ['install_apatch_avatar_extra'],...\n  \n  ...Full output truncated (24 lines hidden), use '-vv' to show"
-    },
-    {
-      "node": "tests/test_avatar_delivery.py::test_invalid_durable_config_fails_before_sync_and_preserves_outbox",
-      "dependency": "avatar_contract",
-      "reason": "Sync performs the shared-contract compatibility preflight before credential resolution and delivery; the absent canonical peer rejects this path.",
-      "observed_message": "AssertionError: assert {'dependency'...hon3.14', ...} == {'ok': False,...': False, ...}\n  \n  Omitting 3 identical items, use -vv to show\n  Differing items:\n  {'status': 'dependency_incompatible'} != {'status': 'configuration_invalid'}\n  Left contains 10 more items:\n  {'action_required': ['install_apatch_avatar_extra'],\n   'dependency': 'avatar-contract',...\n  \n  ...Full output truncated (23 lines hidden), use '-vv' to show"
-    },
-    {
-      "node": "tests/test_avatar_delivery.py::test_owner_sync_pulls_outcomes_before_contributions_and_evidence",
-      "dependency": "avatar_contract",
-      "reason": "Sync performs the shared-contract compatibility preflight before credential resolution and delivery; the absent canonical peer rejects this path.",
-      "observed_message": "assert False is True"
-    },
-    {
-      "node": "tests/test_avatar_evidence.py::test_attested_export_fails_closed_without_signer",
-      "dependency": "avatar_contract",
-      "reason": "Evidence export and validation import the canonical CapabilityEvidenceBundle shared schema.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_avatar_evidence.py::test_bundle_contains_no_economic_projection",
-      "dependency": "avatar_contract",
-      "reason": "Evidence export and validation import the canonical CapabilityEvidenceBundle shared schema.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_avatar_evidence.py::test_bundle_exports_proxy_candidate_without_feeding_capability",
-      "dependency": "avatar_contract",
-      "reason": "Evidence export and validation import the canonical CapabilityEvidenceBundle shared schema.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_avatar_evidence.py::test_bundle_exports_qualified_distillate_not_rejected_activity",
-      "dependency": "avatar_contract",
-      "reason": "Evidence export and validation import the canonical CapabilityEvidenceBundle shared schema.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_avatar_evidence.py::test_bundle_is_signed_shared_contract",
-      "dependency": "avatar_contract",
-      "reason": "Evidence export and validation import the canonical CapabilityEvidenceBundle shared schema.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_avatar_evidence.py::test_bundle_verify_rederives_every_field",
-      "dependency": "avatar_contract",
-      "reason": "Evidence export and validation import the canonical CapabilityEvidenceBundle shared schema.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_avatar_runtime_config.py::test_delivery_consumers_use_durable_trust_policy",
-      "dependency": "avatar_contract",
-      "reason": "Durable delivery configuration is exercised through sync preflight, which requires the canonical Avatar contract.",
-      "observed_message": "apatch.outcome_delivery.OutcomeAttestationError: outcome issuer contains roles that cannot accept work: ['client_counterparty']"
-    },
-    {
-      "node": "tests/test_episode.py::test_attestation_only_is_a_proxy_not_external_outcome",
-      "dependency": "avatar_contract",
-      "reason": "The event fixture imports canonical ContributionEvent before episode projection can execute.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_episode.py::test_full_episode_rederivation_detects_any_field_tamper",
-      "dependency": "avatar_contract",
-      "reason": "The event fixture imports canonical ContributionEvent before episode projection can execute.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_episode.py::test_hashed_spec_reference_stays_exact_across_episode_and_review_package",
-      "dependency": "avatar_contract",
-      "reason": "The event fixture imports canonical ContributionEvent before episode projection can execute.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_episode.py::test_invalid_signature_and_unknown_role_fail_closed",
-      "dependency": "avatar_contract",
-      "reason": "The event fixture imports canonical ContributionEvent before episode projection can execute.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_episode.py::test_missing_legacy_timestamp_is_deterministic_not_wall_clock",
-      "dependency": "avatar_contract",
-      "reason": "The event fixture imports canonical ContributionEvent before episode projection can execute.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_episode.py::test_outcome_attestation_must_match_exact_ready_review_package",
-      "dependency": "avatar_contract",
-      "reason": "The event fixture imports canonical ContributionEvent before episode projection can execute.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_episode.py::test_private_intent_is_never_guessed_into_legacy_review_package",
-      "dependency": "avatar_contract",
-      "reason": "The event fixture imports canonical ContributionEvent before episode projection can execute.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_episode.py::test_producer_self_claim_never_counts_as_external_acceptance",
-      "dependency": "avatar_contract",
-      "reason": "The event fixture imports canonical ContributionEvent before episode projection can execute.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_episode.py::test_signed_observed_human_episode_is_eligible",
-      "dependency": "avatar_contract",
-      "reason": "The event fixture imports canonical ContributionEvent before episode projection can execute.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_episode.py::test_signed_review_submission_becomes_ready_counterparty_package",
-      "dependency": "avatar_contract",
-      "reason": "The event fixture imports canonical ContributionEvent before episode projection can execute.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_episode.py::test_volume_does_not_exist_on_the_episode_signal_surface",
-      "dependency": "avatar_contract",
-      "reason": "The event fixture imports canonical ContributionEvent before episode projection can execute.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_governed_work_compatibility.py::test_contribution_event_wire_bytes_keep_the_existing_golden_hash",
-      "dependency": "avatar_contract",
-      "reason": "The compatibility fixture builds a canonical ContributionEvent through apatch.contribution.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_governed_work_compatibility.py::test_timesheet_references_contribution_event_without_mutating_it",
-      "dependency": "avatar_contract",
-      "reason": "The compatibility fixture builds a canonical ContributionEvent through apatch.contribution.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_outcome_delivery.py::test_association_signed_outcome_never_enters_capability_index",
-      "dependency": "avatar_contract",
-      "reason": "Signed outcome fixtures import canonical ContributionEvent and the shared review-package builder.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_outcome_delivery.py::test_owner_pull_rejects_another_avatar_before_storage",
-      "dependency": "avatar_contract",
-      "reason": "Signed outcome fixtures import canonical ContributionEvent and the shared review-package builder.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_outcome_delivery.py::test_owner_pull_uses_avatar_token_and_pins_returned_subject",
-      "dependency": "avatar_contract",
-      "reason": "Signed outcome fixtures import canonical ContributionEvent and the shared review-package builder.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_outcome_delivery.py::test_owner_sync_pulls_outcome_recompiles_capability_and_uploads_distillate",
-      "dependency": "avatar_contract",
-      "reason": "Signed outcome fixtures import canonical ContributionEvent and the shared review-package builder.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_outcome_delivery.py::test_pull_pins_counterparty_authority_and_persists_idempotently",
-      "dependency": "avatar_contract",
-      "reason": "Signed outcome fixtures import canonical ContributionEvent and the shared review-package builder.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_outcome_delivery.py::test_recompile_reads_the_explicit_outcome_store_without_global_env",
-      "dependency": "avatar_contract",
-      "reason": "Signed outcome fixtures import canonical ContributionEvent and the shared review-package builder.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_outcome_delivery.py::test_signed_external_outcome_replaces_only_the_matching_proxy",
-      "dependency": "avatar_contract",
-      "reason": "Signed outcome fixtures import canonical ContributionEvent and the shared review-package builder.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_outcome_delivery.py::test_untrusted_outcome_never_enters_episode_index",
-      "dependency": "avatar_contract",
-      "reason": "Signed outcome fixtures import canonical ContributionEvent and the shared review-package builder.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_taxonomy_delivery.py::test_accepted_decision_classifies_episode_but_proposal_alone_does_not",
-      "dependency": "avatar_contract",
-      "reason": "Classification fixtures construct canonical ContributionEvent receipts.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_taxonomy_delivery.py::test_claim_events_never_become_work_episodes",
-      "dependency": "avatar_contract",
-      "reason": "Classification fixtures construct canonical ContributionEvent receipts.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_taxonomy_delivery.py::test_latest_superseding_rejection_removes_acceptance",
-      "dependency": "avatar_contract",
-      "reason": "Classification fixtures construct canonical ContributionEvent receipts.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_taxonomy_delivery.py::test_owner_classification_does_not_invalidate_prior_counterparty_outcome",
-      "dependency": "avatar_contract",
-      "reason": "Classification fixtures construct canonical ContributionEvent receipts.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_taxonomy_delivery.py::test_production_pull_fails_before_transport_when_issuer_pin_is_missing",
-      "dependency": "avatar_contract",
-      "reason": "Classification fixtures construct canonical ContributionEvent receipts.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_taxonomy_delivery.py::test_production_requires_pinned_tracker_key",
-      "dependency": "avatar_contract",
-      "reason": "Classification fixtures construct canonical ContributionEvent receipts.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_taxonomy_delivery.py::test_pull_pins_tracker_key_and_persists_idempotently",
-      "dependency": "avatar_contract",
-      "reason": "Classification fixtures construct canonical ContributionEvent receipts.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    },
-    {
-      "node": "tests/test_taxonomy_delivery.py::test_wrong_intent_hash_cannot_relabel_episode",
-      "dependency": "avatar_contract",
-      "reason": "Classification fixtures construct canonical ContributionEvent receipts.",
-      "observed_message": "ModuleNotFoundError: No module named 'avatar_contract'"
-    }
-  ],
   "existing_optional_skips": [
-    {
-      "node": "tests/test_concept_cli.py::test_r3_verify",
-      "dependency": "avatar_contract",
-      "collection_skip": false,
-      "reason": "Existing nested concept verification requires canonical shared-contract checks."
-    },
-    {
-      "node": "tests/test_concept_status.py::test_r3_cli_graph_verify",
-      "dependency": "avatar_contract",
-      "collection_skip": false,
-      "reason": "Existing nested concept verification requires canonical shared-contract checks."
-    },
-    {
-      "node": "tests/test_concept_verify.py::test_r1_runs_real_checks_green",
-      "dependency": "avatar_contract",
-      "collection_skip": false,
-      "reason": "Existing nested concept verification requires canonical shared-contract checks."
-    },
-    {
-      "node": "tests/test_contribution_event.py",
-      "dependency": "avatar_contract",
-      "collection_skip": true,
-      "reason": "Existing module-level importorskip for the canonical shared contract; this is reported as missing collection coverage, not as passing tests."
-    },
-    {
-      "node": "tests/test_edge_lockstep.py",
-      "dependency": "avatar_contract",
-      "collection_skip": true,
-      "reason": "Existing module-level importorskip for the canonical shared contract; this is reported as missing collection coverage, not as passing tests."
-    },
     {
       "node": "tests/test_matcher.py::test_evaluate_java_body_match",
       "dependency": "tree_sitter_java",
-      "collection_skip": false,
       "reason": "Existing optional Java matcher test uses importorskip for the Java grammar."
-    }
-  ],
-  "peer_requirements": [
-    {
-      "requirement": "SPEC-AVATAR-EVIDENCE-1#R1",
-      "command": "python3 -m pytest tests/test_avatar_evidence.py::test_bundle_is_signed_shared_contract tests/test_avatar_evidence.py::test_attested_export_fails_closed_without_signer tests/test_avatar_evidence.py::test_bundle_contains_no_economic_projection -q",
-      "observed_exit_code": 1,
-      "dependency": "avatar_contract",
-      "kind": "failure",
-      "reason": "The unchanged verify command exercises reviewed canonical-Avatar-dependent test paths; all its other tests still execute."
-    },
-    {
-      "requirement": "SPEC-AVATAR-EVIDENCE-1#R2",
-      "command": "python3 -m pytest tests/test_avatar_evidence.py::test_bundle_exports_qualified_distillate_not_rejected_activity -q",
-      "observed_exit_code": 1,
-      "dependency": "avatar_contract",
-      "kind": "failure",
-      "reason": "The unchanged verify command exercises reviewed canonical-Avatar-dependent test paths; all its other tests still execute."
-    },
-    {
-      "requirement": "SPEC-AVATAR-EVIDENCE-1#R3",
-      "command": "python3 -m pytest tests/test_avatar_evidence.py::test_bundle_verify_rederives_every_field -q",
-      "observed_exit_code": 1,
-      "dependency": "avatar_contract",
-      "kind": "failure",
-      "reason": "The unchanged verify command exercises reviewed canonical-Avatar-dependent test paths; all its other tests still execute."
-    },
-    {
-      "requirement": "SPEC-AVATAR-EVIDENCE-1#R4",
-      "command": "python3 -m pytest tests/test_avatar_delivery.py tests/test_avatar_attestation_receipt.py tests/test_outcome_delivery.py::test_owner_sync_pulls_outcome_recompiles_capability_and_uploads_distillate tests/test_contribution_delivery.py tests/test_contribution_export.py tests/test_session_state.py::test_avatar_sync_credential_failure_is_lifecycle_neutral tests/test_session_state.py::test_avatar_sync_success_preserves_active_session_state -q",
-      "observed_exit_code": 1,
-      "dependency": "avatar_contract",
-      "kind": "failure",
-      "reason": "The unchanged verify command exercises reviewed canonical-Avatar-dependent test paths; all its other tests still execute."
-    },
-    {
-      "requirement": "SPEC-AVATAR-EVIDENCE-1#R7",
-      "command": "python3 -m pytest tests/test_outcome_delivery.py tests/test_episode.py::test_attestation_only_is_a_proxy_not_external_outcome tests/test_capability.py::test_one_external_outcome_never_unlocks_technical_proxy_volume -q",
-      "observed_exit_code": 1,
-      "dependency": "avatar_contract",
-      "kind": "failure",
-      "reason": "The unchanged verify command exercises reviewed canonical-Avatar-dependent test paths; all its other tests still execute."
-    },
-    {
-      "requirement": "SPEC-CONTRIB-TIMESHEET-1#R1",
-      "command": "python3 -m pytest tests/test_contribution_event.py::test_r1_schema -q",
-      "observed_exit_code": 4,
-      "dependency": "avatar_contract",
-      "kind": "broken",
-      "reason": "The exact node cannot be collected because its unchanged module importorskip requires avatar_contract."
-    },
-    {
-      "requirement": "SPEC-CONTRIB-TIMESHEET-1#R2",
-      "command": "python3 -m pytest tests/test_contribution_event.py::test_r2_emit_on_session_boundary -q",
-      "observed_exit_code": 4,
-      "dependency": "avatar_contract",
-      "kind": "broken",
-      "reason": "The exact node cannot be collected because its unchanged module importorskip requires avatar_contract."
-    },
-    {
-      "requirement": "SPEC-CONTRIB-TIMESHEET-1#R3",
-      "command": "python3 -m pytest tests/test_contribution_event.py::test_r3_identity_from_cert -q",
-      "observed_exit_code": 4,
-      "dependency": "avatar_contract",
-      "kind": "broken",
-      "reason": "The exact node cannot be collected because its unchanged module importorskip requires avatar_contract."
-    },
-    {
-      "requirement": "SPEC-CONTRIB-TIMESHEET-1#R10",
-      "command": "python3 -m pytest tests/test_contribution_event.py::test_r10_v1_receipt_backcompat -q",
-      "observed_exit_code": 4,
-      "dependency": "avatar_contract",
-      "kind": "broken",
-      "reason": "The exact node cannot be collected because its unchanged module importorskip requires avatar_contract."
-    },
-    {
-      "requirement": "SPEC-EDGE-LOCKSTEP-1#R1",
-      "command": "python3 -m pytest tests/test_edge_lockstep.py::test_r1_anchors_and_version -q",
-      "observed_exit_code": 4,
-      "dependency": "avatar_contract",
-      "kind": "broken",
-      "reason": "The exact node cannot be collected because its unchanged module importorskip requires avatar_contract."
-    },
-    {
-      "requirement": "SPEC-EDGE-LOCKSTEP-1#R2",
-      "command": "python3 -m pytest tests/test_edge_lockstep.py::test_r2_version_lockstep -q",
-      "observed_exit_code": 4,
-      "dependency": "avatar_contract",
-      "kind": "broken",
-      "reason": "The exact node cannot be collected because its unchanged module importorskip requires avatar_contract."
-    },
-    {
-      "requirement": "SPEC-EDGE-LOCKSTEP-1#R3",
-      "command": "python3 -m pytest tests/test_edge_lockstep.py::test_r3_live_edge_in_lockstep -q",
-      "observed_exit_code": 4,
-      "dependency": "avatar_contract",
-      "kind": "broken",
-      "reason": "The exact node cannot be collected because its unchanged module importorskip requires avatar_contract."
-    },
-    {
-      "requirement": "SPEC-EDGE-LOCKSTEP-1#R4",
-      "command": "python3 -m pytest tests/test_edge_lockstep.py::test_r4_green_when_aligned -q",
-      "observed_exit_code": 4,
-      "dependency": "avatar_contract",
-      "kind": "broken",
-      "reason": "The exact node cannot be collected because its unchanged module importorskip requires avatar_contract."
-    },
-    {
-      "requirement": "SPEC-EDGE-LOCKSTEP-1#R5",
-      "command": "python3 -m pytest tests/test_edge_lockstep.py::test_r5_tracker_third_anchor -q",
-      "observed_exit_code": 4,
-      "dependency": "avatar_contract",
-      "kind": "broken",
-      "reason": "The exact node cannot be collected because its unchanged module importorskip requires avatar_contract."
-    },
-    {
-      "requirement": "SPEC-EPISODE-1#R1",
-      "command": "python3 -m pytest tests/test_episode.py::test_signed_observed_human_episode_is_eligible tests/test_episode.py::test_bare_ledger_rows_can_never_create_an_episode -q",
-      "observed_exit_code": 1,
-      "dependency": "avatar_contract",
-      "kind": "failure",
-      "reason": "The unchanged verify command exercises reviewed canonical-Avatar-dependent test paths; all its other tests still execute."
-    },
-    {
-      "requirement": "SPEC-EPISODE-1#R2",
-      "command": "python3 -m pytest tests/test_episode.py::test_missing_legacy_timestamp_is_deterministic_not_wall_clock tests/test_episode.py::test_full_episode_rederivation_detects_any_field_tamper -q",
-      "observed_exit_code": 1,
-      "dependency": "avatar_contract",
-      "kind": "failure",
-      "reason": "The unchanged verify command exercises reviewed canonical-Avatar-dependent test paths; all its other tests still execute."
-    },
-    {
-      "requirement": "SPEC-EPISODE-1#R3",
-      "command": "python3 -m pytest tests/test_episode.py::test_invalid_signature_and_unknown_role_fail_closed -q",
-      "observed_exit_code": 1,
-      "dependency": "avatar_contract",
-      "kind": "failure",
-      "reason": "The unchanged verify command exercises reviewed canonical-Avatar-dependent test paths; all its other tests still execute."
-    },
-    {
-      "requirement": "SPEC-EPISODE-1#R4",
-      "command": "python3 -m pytest tests/test_episode.py::test_attestation_only_is_a_proxy_not_external_outcome -q",
-      "observed_exit_code": 1,
-      "dependency": "avatar_contract",
-      "kind": "failure",
-      "reason": "The unchanged verify command exercises reviewed canonical-Avatar-dependent test paths; all its other tests still execute."
-    },
-    {
-      "requirement": "SPEC-EPISODE-1#R5",
-      "command": "python3 -m pytest tests/test_episode.py::test_volume_does_not_exist_on_the_episode_signal_surface -q",
-      "observed_exit_code": 1,
-      "dependency": "avatar_contract",
-      "kind": "failure",
-      "reason": "The unchanged verify command exercises reviewed canonical-Avatar-dependent test paths; all its other tests still execute."
-    },
-    {
-      "requirement": "SPEC-EPISODE-1#R7",
-      "command": "python3 -m pytest tests/test_taxonomy_delivery.py::test_owner_classification_does_not_invalidate_prior_counterparty_outcome tests/test_episode.py::test_outcome_attestation_must_match_exact_ready_review_package -q",
-      "observed_exit_code": 1,
-      "dependency": "avatar_contract",
-      "kind": "failure",
-      "reason": "The unchanged verify command exercises reviewed canonical-Avatar-dependent test paths; all its other tests still execute."
-    },
-    {
-      "requirement": "SPEC-GOVERNED-WORK-BINDINGS-1#R8",
-      "command": "python3 -m pytest tests/test_governed_work_compatibility.py -q",
-      "observed_exit_code": 1,
-      "dependency": "avatar_contract",
-      "kind": "failure",
-      "reason": "The unchanged verify command exercises reviewed canonical-Avatar-dependent test paths; all its other tests still execute."
-    },
-    {
-      "requirement": "SPEC-GOVERNED-WORK-BINDINGS-1#R9",
-      "command": "python3 -m pytest tests/test_governed_work_*.py -q",
-      "observed_exit_code": 1,
-      "dependency": "avatar_contract",
-      "kind": "failure",
-      "reason": "The unchanged verify command exercises reviewed canonical-Avatar-dependent test paths; all its other tests still execute."
     }
   ],
   "unproven_external_specs": [

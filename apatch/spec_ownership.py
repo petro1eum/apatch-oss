@@ -92,12 +92,16 @@ def authorize_spec_owned_needles(
                 "generation_started": False,
             }
 
-    if created_by_tool == "apatch_spec_run_multi:shared_maintenance":
+    if created_by_tool in {
+        "apatch_spec_run_multi:shared_maintenance",
+        "apatch_spec_run_multi:single_source_intake",
+    }:
         return _authorize_shared_maintenance(
             state,
             needles,
             owned,
             created_by_tool=created_by_tool,
+            single_source_intake=(created_by_tool == "apatch_spec_run_multi:single_source_intake"),
         )
     if not owned:
         return {"ok": True, "owned": [], "authorization": "unowned"}
@@ -149,12 +153,13 @@ def _authorize_shared_maintenance(
     owned: List[Dict[str, str]],
     *,
     created_by_tool: str,
+    single_source_intake: bool = False,
 ) -> Dict[str, Any]:
     requirements = _bound_requirements(state)
     partition = state.get("artifact_files")
     expected_keys = {"spec:{}".format(token) for token in requirements}
     if (
-        len({token.split("#", 1)[0] for token in requirements}) < 2
+        len({token.split("#", 1)[0] for token in requirements}) < (1 if single_source_intake else 2)
         or not isinstance(partition, dict)
         or set(partition) != expected_keys
     ):
@@ -280,11 +285,10 @@ def resolve_spec_owned_targets(
             canonical = _matched_contract_slugs(rel, slugs)
             explicit = [
                 slug for slug, (surface, _error) in surfaces.items()
-                if rel in surface
+                if rel in surface and (not canonical or slug in canonical)
             ]
             path_owners = []
-            invalid = {slug for slug, (_surface, error) in surfaces.items() if error}
-            for slug in sorted(set(canonical) | set(explicit) | invalid):
+            for slug in sorted(set(canonical) | set(explicit)):
                 spec_id, error = _spec_for_slug(root, slug)
                 error = error or surfaces[slug][1]
                 if spec_id and not error:
@@ -589,18 +593,23 @@ def _declared_slug_surface(
         "spec_generation": {"live_test_modules": True},
     }
     surface: Set[str] = set()
+    errors: List[str] = []
     for section, names in fields.items():
         mapping = data.get(section, {})
         if not isinstance(mapping, dict):
-            return set(), f"{section} must be a mapping"
+            errors.append(f"{section} must be a mapping")
+            continue
         for name, multiple in names.items():
             if name not in mapping:
                 continue
             values = mapping[name]
             if multiple:
                 if not isinstance(values, list):
-                    return set(), f"{section}.{name} must be a list of paths"
+                    errors.append(f"{section}.{name} must be a list of paths")
+                    continue
             else:
+                if values is None:
+                    continue  # An absent optional category hook claims no path.
                 values = [values]
             for value in values:
                 if (
@@ -609,9 +618,10 @@ def _declared_slug_surface(
                     or any(ch in value for ch in "*?[]:")
                     or any(part in {"", ".", ".."} for part in value.split("/"))
                 ):
-                    return set(), f"{section}.{name} declares invalid path {value!r}"
+                    errors.append(f"{section}.{name} declares invalid path {value!r}")
+                    continue
                 surface.add(value)
-    return surface, None
+    return surface, errors[0] if errors else None
 
 
 def _spec_for_slug(root: str, slug: str) -> Tuple[Optional[str], Optional[str]]:

@@ -5,18 +5,15 @@ import json
 import os
 from typing import Any, Dict, Iterable, Optional
 
+from apatch.avatar_identity_gate import identity_gate_error, identity_gate_refusal
+
 try:
     import httpx
 except ImportError:  # pragma: no cover
     httpx = None  # type: ignore
 
-try:
-    from avatar_contract import TaxonomyDecision, TaxonomyDecisionError
-except ImportError:  # pragma: no cover - explicit optional-contract mode
-    TaxonomyDecision = None  # type: ignore
-
-    class TaxonomyDecisionError(ValueError):
-        pass
+# The canonical contract is bundled with APatch (never a top-level import).
+from apatch._vendor.avatar_contract import TaxonomyDecision, TaxonomyDecisionError
 
 
 def default_taxonomy_store_dir() -> str:
@@ -65,6 +62,12 @@ def trusted_taxonomy_public_keys() -> list[str]:
         raise TaxonomyDecisionError(str(exc)) from None
 
 
+_UNPINNED_ISSUER = (
+    "taxonomy ingest requires pinned HC Tracker issuer keys "
+    "(APATCH_TRUSTED_TAXONOMY_PUBLIC_KEYS or the avatar trust policy)"
+)
+
+
 def _pull_trusted_keys(
     explicit: Optional[list[str]],
 ) -> Optional[list[str]]:
@@ -73,11 +76,9 @@ def _pull_trusted_keys(
         if explicit is not None
         else trusted_taxonomy_public_keys()
     )
-    if os.environ.get("TC_ENVIRONMENT", "").lower() == "production" and not keys:
-        raise TaxonomyDecisionError(
-            "production taxonomy ingest requires APATCH_TRUSTED_TAXONOMY_PUBLIC_KEYS"
-        )
-    return keys or None
+    if not keys:
+        raise TaxonomyDecisionError(_UNPINNED_ISSUER)
+    return keys
 
 
 def _issuer_unconfigured(exc: Exception) -> Dict[str, Any]:
@@ -96,22 +97,16 @@ def validate_taxonomy_decision(
     *,
     trusted_public_keys: Optional[list[str]] = None,
 ) -> TaxonomyDecision:
-    if TaxonomyDecision is None:
-        raise TaxonomyDecisionError(
-            "avatar-contract is required to consume taxonomy decisions"
-        )
     keys = (
         trusted_public_keys
         if trusted_public_keys is not None
         else trusted_taxonomy_public_keys()
     )
+    # Same floor as outcome attestations: a decision proves nothing unless the
+    # issuer key was pinned beforehand. Trusting the key embedded in the
+    # message would let any signer classify the owner's work.
     if not keys:
-        if os.environ.get("TC_ENVIRONMENT", "").lower() == "production":
-            raise TaxonomyDecisionError(
-                "production taxonomy ingest requires APATCH_TRUSTED_TAXONOMY_PUBLIC_KEYS"
-            )
-        embedded = str((raw.get("trustchain_audit") or {}).get("public_key") or "")
-        keys = [embedded] if embedded else []
+        raise TaxonomyDecisionError(_UNPINNED_ISSUER)
     for key in keys:
         try:
             return TaxonomyDecision.from_wire(
@@ -354,6 +349,17 @@ def pull_taxonomy_decisions_from_platform(
     finally:
         if close:
             client.close()
+    refusal = identity_gate_refusal(response)
+    if refusal is not None:
+        return {
+            "ok": False,
+            "status": refusal["status"],
+            "retryable": refusal["retryable"],
+            "received": 0,
+            "stored": 0,
+            "duplicates": 0,
+            "errors": [identity_gate_error(refusal)],
+        }
     if (
         response.status_code != 200
         or not isinstance(body, dict)

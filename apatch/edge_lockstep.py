@@ -5,7 +5,8 @@ Avatar Architecture Canon Rule 1 demands ONE ``ContributionEvent`` contract — 
 schemas that match by convention". The contract lives in code three times:
 
   - ``apatch/contribution.py``                                 (Layer 1 emitter)
-  - ``avatar_contract/contribution_event.py`` (avatar-contract) (canonical schema)
+  - ``avatar_contract/contribution_event.py`` (avatar-contract) (canonical schema,
+    bundled byte-identical as ``apatch._vendor.avatar_contract``)
   - HC_Tracker SQLAlchemy mirror                                (cross-repo, later layer)
 
 This guards the first two stay in lockstep. It is RFP-034's "new muscle": a check over
@@ -114,7 +115,7 @@ def contribution_lockstep(target_dir: str = ".") -> Dict[str, Any]:
     from apatch import contribution as emitter
 
     try:
-        from avatar_contract.contribution_event import (
+        from apatch._vendor.avatar_contract.contribution_event import (
             SCHEMA_VERSION as CONTRACT_VERSION,
             KINDS,
             TRUST_LEVELS,

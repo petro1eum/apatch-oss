@@ -19,20 +19,14 @@ def _checker():
 
 def test_selected_public_source_matches_recorded_manifest():
     manifest = json.loads((ROOT / "PUBLIC-SOURCE-MANIFEST.json").read_text())
-    assert manifest["version"] == "0.8.45"
-    assert manifest["runtime_files_total"] == 241
-    assert manifest["runtime_files_unchanged"] == 221
-    assert set(manifest["runtime_files_modified"]) == {
-        "apatch/agent_guidance.py", "apatch/cli.py", "apatch/cli_conformance.py",
-        "apatch/consumer_profiles.py", "apatch/doctor.py", "apatch/spec_ownership.py",
-        "apatch/execution_proposal.py", "apatch/governed_work_delivery.py",
-        "apatch/governed_work_mcp.py", "apatch/mcp/server.py",
-        "apatch/mcp/runtime_probe.py", "apatch/mcp_health.py", "apatch/path_leases.py",
-        "apatch/runtime/runtime.py", "apatch/spec_coverage.py", "apatch/spec_rebind.py",
-        "apatch/spec_reverification.py", "apatch/spec_run.py", "apatch_search_workflows/slug_ratify.py",
-        "apatch/work_item_acceptance.py",
-    }
-    assert len(manifest["reviewed_source_commits"]) == 16
+    assert manifest["version"] == "0.8.48"
+    # 0.8.48 publishes the complete private line: every runtime file is
+    # byte-identical to the recorded private release commit (Pro excluded).
+    assert manifest["baseline_commit"] == "3561c67961f80703621a6d224673d6f2070a5d66"
+    assert manifest["runtime_files_total"] == 266
+    assert manifest["runtime_files_unchanged"] == 266
+    assert manifest["runtime_files_modified"] == []
+    assert len(manifest["reviewed_source_commits"]) == 38
     assert manifest["private_git_history_included"] is False
     paths = [item["path"] for item in manifest["files"]]
     assert len(paths) == len(set(paths))

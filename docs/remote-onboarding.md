@@ -25,7 +25,8 @@ Optional but useful:
 | source handoff | `--source-handoff` |
 | apatch runtime path | `--runtime-path /home/ubuntu/.local/src/apatch_runtime` |
 | remote Python | `/opt/remote/bin/python` |
-| SSH args | `-J bastion` |
+| jump host (bastion) | `--jump-host bastion` — see [Hiding server addresses](#hiding-server-addresses-from-developers-bastion--proxyjump) |
+| SSH args | `-o ServerAliveInterval=30` |
 
 ## One-command Setup
 
@@ -150,6 +151,60 @@ doctor → resume_session → verify_run → attest → session_end
 It deliberately runs **no** `session_start`, `generate_batch`, `simulate`, or
 `apply_session`. `verify` is required; apatch refuses `finalize_current` without a fresh
 green gate.
+
+## Hiding server addresses from developers (bastion / ProxyJump)
+
+For a shared team setup, developers should not need — or ever learn — the real
+address of a workspace host. Put the host behind a bastion and let the broker dial
+through it:
+
+```bash
+apatch remote init \
+  --alias search-example \
+  --host search-internal \
+  --jump-host bastion.example.net \
+  --require-jump-host \
+  --path /srv/example/search-workspace \
+  --target-dir .
+```
+
+- `--host` is a name only the bastion can resolve (private DNS, `/etc/hosts` on the
+  bastion, or the bastion's own `~/.ssh/config`). It never has to be reachable or
+  resolvable from a developer machine, so its IP is simply not part of the
+  developer's world.
+- `--jump-host` is the only public address. Repeat it for multi-hop
+  (`--jump-host edge --jump-host core`); apatch passes the hops as one `ssh -J` list.
+- `--require-jump-host` writes `require_jump_host: true`, so any alias without a hop
+  fails closed with `REMOTE_JUMP_HOST_REQUIRED` instead of dialing directly.
+- `allowed_jump_hosts` (default: the exact `--jump-host`) bounds which bastions the
+  policy may use; a hop outside it fails with `REMOTE_JUMP_HOST_DENIED`.
+
+Every transport honours the hop — governed tasks (`apatch_remote_task_run`), service
+actions, and source handoff — and redaction treats hop names like the host: they are
+scrubbed from results, timelines, and ssh stderr, and a redacted target only says
+`via_jump_host: true`.
+
+Policy shape (`.apatch/remote.json`):
+
+```json
+{
+  "allowed_hosts": ["search-internal"],
+  "allowed_jump_hosts": ["bastion.example.net"],
+  "require_jump_host": true,
+  "targets": {
+    "search-example": {
+      "host": "search-internal",
+      "jump_host": "bastion.example.net",
+      "path": "/srv/example/search-workspace",
+      "redact": true
+    }
+  }
+}
+```
+
+A top-level `jump_host` applies to every alias; an alias may override it or opt out
+with `"jump_host": null`. Do not also pass `-J` / `-o ProxyJump` in `ssh_args` — the
+policy is rejected as ambiguous (`REMOTE_POLICY_INVALID`).
 
 ## What To Tell Codex
 

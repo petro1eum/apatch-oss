@@ -18,8 +18,12 @@ definition. The current authority is
 
 Current facts:
 
-- `avatar-contract` is a versioned `0.5.0` dependency pinned by commit SHA in both
-  apatch's `avatar` extra and HC Tracker; it is no longer a local editable-only contract.
+- `avatar-contract` is a versioned `0.7.2` contract pinned by commit SHA. APatch
+  bundles it byte-for-byte as `apatch._vendor.avatar_contract` (owner decision
+  2026-09-26, RFP-049; commit and hashes in its `UPSTREAM.json`) and HC Tracker vendors
+  the same commit; no separate install is needed and a top-level install is never
+  imported by APatch. 0.7.2 adds the machine-readable transport contracts, so the
+  owner lane's routes and the Avatar BFF's identity gate are pinned by a test on each side.
 - `apatch avatar sync` has a durable local outbox and reports delivery completeness
   separately from local queue safety. `ok=true` does not mean remote delivery completed.
 - Contribution counters are not the Avatar's useful output. WorkEpisodes,

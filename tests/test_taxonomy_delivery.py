@@ -16,7 +16,7 @@ def _isolate_host_avatar_trust_policy(monkeypatch, tmp_path):
 
 
 def _event(*, kind: str = "fact") -> tuple[dict, str, str]:
-    from avatar_contract import ContributionEvent
+    from apatch._vendor.avatar_contract import ContributionEvent
 
     avatar_id = "a" * 32
     event_id = "e" * 32 if kind == "fact" else "c" * 32
@@ -60,7 +60,7 @@ def _signed_decision(
     issued_at: datetime | None = None,
     signer=None,
 ) -> tuple[dict, object]:
-    from avatar_contract import (
+    from apatch._vendor.avatar_contract import (
         TAXONOMY_DECISION_CHAIN_ID,
         TAXONOMY_DECISION_EVENT,
         build_taxonomy_decision_payload,
@@ -177,7 +177,7 @@ def test_pull_pins_tracker_key_and_persists_idempotently(tmp_path):
     assert client.calls[0][1] == {"avatar_id": avatar_id, "limit": 1000}
 
 
-def test_latest_superseding_rejection_removes_acceptance(tmp_path):
+def test_latest_superseding_rejection_removes_acceptance(tmp_path, monkeypatch):
     from apatch.taxonomy_delivery import load_taxonomy_index, store_taxonomy_decision
 
     _raw, avatar_id, episode_id = _event()
@@ -198,6 +198,9 @@ def test_latest_superseding_rejection_removes_acceptance(tmp_path):
     trusted = [accepted["trustchain_audit"]["public_key"]]
     store_taxonomy_decision(accepted, store_dir=str(tmp_path), trusted_public_keys=trusted)
     store_taxonomy_decision(rejected, store_dir=str(tmp_path), trusted_public_keys=trusted)
+    # Reading the store re-validates against the pinned issuer, never the
+    # key inside the stored message.
+    monkeypatch.setenv("APATCH_TRUSTED_TAXONOMY_PUBLIC_KEYS", trusted[0])
     latest = load_taxonomy_index(avatar_id=avatar_id, store_dir=str(tmp_path))
     assert latest["e" * 32]["decision"]["status"] == "rejected"
 
@@ -210,6 +213,9 @@ def test_accepted_decision_classifies_episode_but_proposal_alone_does_not(
 
     raw, avatar_id, episode_id = _event()
     decision, _ = _signed_decision(avatar_id, episode_id)
+    monkeypatch.setenv(
+        "APATCH_TRUSTED_TAXONOMY_PUBLIC_KEYS", decision["trustchain_audit"]["public_key"]
+    )
     monkeypatch.setattr("apatch.episode._signature_status", lambda *_args: "verified")
 
     baseline = episode_from_event(raw, str(tmp_path))
@@ -245,6 +251,9 @@ def test_owner_classification_does_not_invalidate_prior_counterparty_outcome(
         "limitations": [],
     }
     decision, _ = _signed_decision(avatar_id, episode_id)
+    monkeypatch.setenv(
+        "APATCH_TRUSTED_TAXONOMY_PUBLIC_KEYS", decision["trustchain_audit"]["public_key"]
+    )
     monkeypatch.setattr("apatch.episode._signature_status", lambda *_args: "verified")
     source_episode = episode_from_event(raw, str(tmp_path))
     outcome_index = {
@@ -303,6 +312,23 @@ def test_claim_events_never_become_work_episodes(monkeypatch):
     monkeypatch.setattr(outcomes, "load_outcome_index", lambda **_kwargs: {})
     monkeypatch.setattr(taxonomy, "load_taxonomy_index", lambda **_kwargs: {})
     assert episodes_from_events([raw], avatar_id=avatar_id) == []
+
+
+def test_unpinned_issuer_is_refused_in_every_environment(monkeypatch):
+    """No trust-on-first-use: the key inside the message is not a trust anchor."""
+    from apatch.taxonomy_delivery import TaxonomyDecisionError, validate_taxonomy_decision
+
+    _raw, avatar_id, episode_id = _event()
+    decision, signer = _signed_decision(avatar_id, episode_id)
+    monkeypatch.delenv("TC_ENVIRONMENT", raising=False)
+    monkeypatch.delenv("APATCH_TRUSTED_TAXONOMY_PUBLIC_KEYS", raising=False)
+
+    with pytest.raises(TaxonomyDecisionError, match="pinned HC Tracker issuer keys"):
+        validate_taxonomy_decision(decision)
+    # The same decision is accepted once its issuer is pinned.
+    assert validate_taxonomy_decision(
+        decision, trusted_public_keys=[signer.export_public_key()]
+    ).decision_id == decision["decision_id"]
 
 
 def test_production_requires_pinned_tracker_key(monkeypatch):

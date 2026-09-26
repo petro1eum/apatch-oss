@@ -14,6 +14,12 @@ from datetime import datetime, timezone
 from importlib import metadata
 from typing import Any, Dict, Iterable, Optional, Tuple
 
+from apatch.avatar_identity_gate import (
+    IDENTITY_GATE_BLOCKING,
+    identity_gate_error,
+    identity_gate_refusal,
+)
+
 try:
     import httpx
 except ImportError:  # pragma: no cover - exercised by the explicit client path
@@ -55,31 +61,62 @@ AVATAR_RUNTIME_REQUIRED_SYMBOLS = (
 )
 
 
-def avatar_runtime_compatibility() -> Dict[str, Any]:
-    """Report the exact optional Avatar runtime visible to this interpreter."""
-    try:
-        installed_version = metadata.version("avatar-contract")
-    except metadata.PackageNotFoundError:
-        installed_version = None
+def bundled_avatar_contract_upstream() -> Dict[str, Any]:
+    """The vendoring record of the Avatar contract bundled with APatch."""
+    from importlib.resources import files
 
+    raw = (
+        files("apatch._vendor.avatar_contract")
+        .joinpath("UPSTREAM.json")
+        .read_text(encoding="utf-8")
+    )
+    record = json.loads(raw)
+    if not isinstance(record, dict):
+        raise ValueError("bundled avatar-contract UPSTREAM.json is malformed")
+    return record
+
+
+def _external_avatar_contract_version() -> Optional[str]:
+    """Version of a separately installed distribution, reported but never imported."""
+    try:
+        return metadata.version("avatar-contract")
+    except metadata.PackageNotFoundError:
+        return None
+
+
+def avatar_runtime_compatibility() -> Dict[str, Any]:
+    """Report the Avatar contract APatch actually uses: its bundled canonical copy.
+
+    APatch never imports a top-level ``avatar_contract``. A separately installed
+    ``avatar-contract`` of any version is only named in
+    ``external_installed_version``; it cannot change this verdict or any
+    APatch behaviour.
+    """
     base = {
         "dependency": "avatar-contract",
-        "installed_version": installed_version,
+        "source": "bundled",
+        "bundled": True,
         "python_executable": os.path.abspath(sys.executable),
         "python_executable_realpath": os.path.realpath(sys.executable),
         "isolated_python": bool(sys.flags.isolated),
         "required_symbols": list(AVATAR_RUNTIME_REQUIRED_SYMBOLS),
+        "external_installed_version": _external_avatar_contract_version(),
+        "external_used": False,
     }
     try:
-        import avatar_contract
-    except ImportError:
+        from apatch._vendor import avatar_contract
+
+        upstream = bundled_avatar_contract_upstream()
+    except (ImportError, OSError, ValueError):
         return {
             **base,
             "ok": False,
             "status": "dependency_incompatible",
+            "installed_version": None,
+            "upstream_commit": None,
             "module_path": None,
             "missing_symbols": list(AVATAR_RUNTIME_REQUIRED_SYMBOLS),
-            "action_required": ["install_apatch_avatar_extra"],
+            "action_required": ["reinstall_apatch"],
             "restart_required": True,
         }
 
@@ -93,9 +130,11 @@ def avatar_runtime_compatibility() -> Dict[str, Any]:
         **base,
         "ok": not missing,
         "status": "ready" if not missing else "dependency_incompatible",
+        "installed_version": upstream.get("version"),
+        "upstream_commit": upstream.get("commit"),
         "module_path": os.path.realpath(module_file) if module_file else None,
         "missing_symbols": missing,
-        "action_required": [] if not missing else ["upgrade_avatar_contract"],
+        "action_required": [] if not missing else ["reinstall_apatch"],
         "restart_required": bool(missing),
     }
 
@@ -126,8 +165,28 @@ def _with_operational_status(
         and delivery_ready
     )
 
+    # A refused owner is not a transport failure: no retry helps until the
+    # person connects or reactivates their HC profile on trust-chain.ai.
+    blocked = next(
+        (
+            str(part.get("status"))
+            for part in (
+                result.get("taxonomy"),
+                result.get("outcomes"),
+                result.get("evidence", {}).get("delivery"),
+                result.get("contributions", {}).get("delivery"),
+            )
+            if isinstance(part, dict)
+            and str(part.get("status")) in IDENTITY_GATE_BLOCKING
+        ),
+        "",
+    )
+
     action_required: list[str] = []
-    if not configured:
+    if blocked:
+        status = blocked
+        action_required.append("connect_hc_profile")
+    elif not configured:
         status = "tracker_unconfigured"
         action_required.append("configure_tracker_or_trustchain_avatar")
     elif not result.get("ok"):
@@ -454,6 +513,8 @@ def deliver_pending_evidence_to_platform(
     close = http_client is None
     delivered = 0
     errors = []
+    gate_status = ""
+    gate_retryable = True
     try:
         for path, payload in pending:
             try:
@@ -475,6 +536,17 @@ def deliver_pending_evidence_to_platform(
                     "error": str(exc),
                 })
                 continue
+            refusal = identity_gate_refusal(response)
+            if refusal is not None:
+                # Nothing is acknowledged and nothing is dropped: the bundles
+                # stay pending until the owner's HC profile answers again.
+                gate_status = refusal["status"]
+                gate_retryable = refusal["retryable"]
+                errors.append({
+                    "bundle_id": payload.get("bundle_id"),
+                    **identity_gate_error(refusal),
+                })
+                break
             if not accepted:
                 errors.append({
                     "bundle_id": payload.get("bundle_id"),
@@ -500,7 +572,11 @@ def deliver_pending_evidence_to_platform(
 
     return {
         "ok": not errors,
-        "status": "delivered" if not errors else "delivery_incomplete",
+        "status": (
+            "delivered" if not errors
+            else gate_status or "delivery_incomplete"
+        ),
+        **({"retryable": gate_retryable} if gate_status else {}),
         "delivered": delivered,
         "pending": pending_evidence_count(outbox),
         "errors": errors,
@@ -534,7 +610,10 @@ def sync_avatar_evidence(
     resolved_avatar_token = (
         avatar_token if avatar_token is not None else config["avatar_token"]
     )
-    if resolved_platform or resolved_avatar_token:
+    # APATCH_PLATFORM_URL is shared with the transparency log and governed
+    # work; only the Avatar token says the owner wants the platform's Avatar
+    # transport. A URL alone keeps evidence on the HC Tracker lane.
+    if resolved_avatar_token:
         delivery = deliver_pending_evidence_to_platform(
             platform_url=resolved_platform,
             avatar_token=resolved_avatar_token,
@@ -604,7 +683,10 @@ def sync_avatar_state(
         }
     platform_url = config["platform_url"]
     avatar_token = config["avatar_token"]
-    if platform_url or avatar_token:
+    # Same rule as sync_avatar_evidence: the Avatar token selects the platform
+    # transport; APATCH_PLATFORM_URL alone means the transparency log, not a
+    # second Avatar lane.
+    if avatar_token:
         from apatch.contribution_export import sync_to_trustchain_avatar
         from apatch.contribution import resolve_identity
 
@@ -679,7 +761,12 @@ def sync_avatar_state(
                         else (
                             "delivered"
                             if contributions.get("ok")
-                            else "delivery_incomplete"
+                            else str(
+                                contributions.get("remote_status")
+                                if contributions.get("remote_status")
+                                in IDENTITY_GATE_BLOCKING
+                                else "delivery_incomplete"
+                            )
                         )
                     ),
                     "delivered": contributions.get("accepted", 0),

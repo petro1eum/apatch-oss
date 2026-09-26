@@ -6,6 +6,44 @@
 
 ## [Unreleased]
 
+## [0.8.48] — 2026-09-26
+
+### Changed
+
+- **Bundled canonical Avatar contract (owner decision 2026-09-26, RFP-049):** APatch OSS now ships the MIT `avatar-contract` 0.7.2 at commit `44c8f9ad` byte-for-byte as `apatch._vendor.avatar_contract` (only its own imports rewritten; `UPSTREAM.json` pins commit, license and upstream hashes; `scripts/vendor_avatar_contract.py --check` proves identity). `apatch_attest` emits signed ContributionEvents in every install instead of `AVATAR_CONTRACT_UNAVAILABLE`, and governed-work evidence can be built without a separate install. APatch never imports a top-level `avatar_contract`, so an external install of any version (including a stale one) no longer changes behaviour; `apatch_doctor → avatar_contract` reports `source: bundled`. Newly emitted ContributionEvents also carry `session.active_sec`, the measured span from session start through the session's ledger operations (breaks over 30 minutes excluded), so governed evidence claims real work time instead of zero; `duration_sec`, timesheet hours and stored events are unchanged. The OSS qualification inventory drops the 40 absent-peer failures, 22 peer requirements and Avatar skips; the Avatar profile now proves the vendored copy equals the canonical checkout.
+
+### Added
+
+- **Bastion (ProxyJump) routing for remote aliases:** a remote alias can keep its workspace host behind one or more jump hosts, so a developer machine never needs — or learns — the workspace address. `jump_host` is settable per alias (string, list, or comma list) with a policy-level default and a per-alias `null` opt-out; `allowed_jump_hosts` and `require_jump_host` fail closed with `REMOTE_JUMP_HOST_DENIED` / `REMOTE_JUMP_HOST_REQUIRED`. Every SSH transport (worker, service action, archive handoff) dials through the hops with a single `ssh -J`, hop names are redacted like hosts and paths in results, timelines and ssh stderr (a redacted target reports only `via_jump_host: true`), and combining `jump_host` with a raw `-J` / `-o ProxyJump` in `ssh_args` is rejected as ambiguous. `apatch remote init` gains `--jump-host`, `--allowed-jump-host` and `--require-jump-host`.
+- **Exact governed evidence publication to Avatar (RFP-048):** the owner can publish only the signed ContributionEvents referenced by one current work-evidence bundle. Preview is read-only, delivery requires confirming the exact reviewed plan, and unrelated events in the same local store are never named in any request, receipt or reconciliation call. The generic account-wide `apatch avatar sync` is unchanged and is never used for project-result publication.
+
+### Fixed
+
+- **CSV partition preservation:** replacements in CSV files with a `slug` header can no longer remove existing slug partitions or change rows outside the partitions they declare; full-file replacements must keep every slug. This closes three production incidents where a single-slug edit replaced the file tail.
+- **Slug ownership:** a canonical slug owns its schema even when other slugs reference it; nullable slug hooks and a self-hosted verify Python no longer break the check.
+- **Lane-bound spec executor:** `execute_next` and `spec_run` bind their internal apply, verify, attest and session-end steps to the lane's own governed session, so a second active lane no longer aborts the cycle with `SESSION_AMBIGUOUS` after mutations were generated.
+
+### Distribution
+
+- **Public release of the complete line:** 0.8.48 publishes everything since the public 0.8.45 (including the private 0.8.46 and 0.8.47 source intake and Git hygiene) to APatch OSS and PyPI. Apatch Pro code stays out of the OSS archives.
+
+## [0.8.47] — 2026-09-24
+
+### Fixed
+
+- **Single-SPEC source intake:** one pre-existing untracked run manifest can now pass the same exact SHA-256, SPEC-owner, native verify, signed attestation, and exact commit checks as a multi-SPEC intake, without a dummy peer or rewriting bytes. Older controllers can use their existing exact `execute_next` route; ordinary shared maintenance still requires two SPECs.
+
+## [0.8.46] — 2026-09-23
+
+### Added
+
+- **Hash-bound source intake:** existing, untracked SPEC run manifests can be admitted without changing their bytes, with exact requirement ownership and signed evidence.
+- **Exact runtime Git hygiene:** four APatch runtime files can be removed from Git tracking while their working copies remain intact.
+
+### Fixed
+
+- **Scoped slug ownership:** a malformed category surface blocks its own category and valid declared files, but no longer blocks unrelated manifest intake across the whole catalog.
+
 ## [0.8.45] — 2026-09-14
 
 ### Fixed

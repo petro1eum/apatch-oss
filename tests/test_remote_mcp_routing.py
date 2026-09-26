@@ -42,6 +42,33 @@ def test_mcp_remote_task_run_dry_run_contract():
 
 
 
+def test_remote_task_routes_exact_runtime_untrack_without_outer_session():
+    transport = FakeRemoteTransport({
+        "apatch_doctor": {"ok": True},
+        "apatch_git_untrack_runtime": {"ok": True, "committed": True},
+    })
+    result = remote_task_run(
+        "ssh://example-search-host/srv/example/search-workspace",
+        intent="Stop tracking APatch runtime files",
+        plan={"git_untrack_runtime": True, "dry_run": False},
+        transport=transport,
+    )
+    assert result["ok"] is True
+    assert [call["operation"] for call in transport.calls] == [
+        "apatch_doctor", "apatch_git_untrack_runtime"
+    ]
+    assert transport.calls[1]["arguments"]["plan"]["dry_run"] is False
+
+    denied = remote_task_run(
+        "ssh://example-search-host/srv/example/search-workspace",
+        intent="Reject extra scope",
+        plan={"git_untrack_runtime": True, "needles": []},
+        transport=transport,
+    )
+    assert denied["error_type"] == "REMOTE_RUNTIME_UNTRACK_PLAN_INVALID"
+    assert len(transport.calls) == 2
+
+
 def test_remote_task_routes_commit_attested_as_standalone_operation():
     transport = FakeRemoteTransport(
         {
@@ -447,6 +474,31 @@ def test_remote_task_routes_slug_ratify_without_generic_session():
         "apatch_slug_ratify",
     ]
     assert transport.calls[1]["arguments"]["plan"] == plan
+
+
+def test_remote_task_routes_single_source_intake_without_dummy_peer():
+    transport = FakeRemoteTransport(
+        {"apatch_spec_run_multi": {"ok": True, "intaken": 1, "source_content_mutated": False}}
+    )
+    plan = {
+        "single_source_intake": True,
+        "specs": ["SPEC-ONE"],
+        "requirements": {"SPEC-ONE": {"R1": {"needles": [{
+            "action": "intake", "target_file": "manifests/SPEC-ONE.run.json",
+            "sha256": "0" * 64,
+        }]}}},
+        "execution_mode": "shared_maintenance",
+    }
+    result = remote_task_run(
+        "ssh://example-search-host/srv/example/search-workspace/opensearch/search",
+        intent="Admit one existing exact source",
+        plan=plan,
+        transport=transport,
+    )
+    assert result["ok"] is True
+    assert [call["operation"] for call in transport.calls] == [
+        "apatch_doctor", "apatch_spec_run_multi",
+    ]
 
 
 def test_remote_task_routes_single_spec_without_dummy_peer():

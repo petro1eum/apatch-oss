@@ -35,6 +35,8 @@ Specs live here as `SPEC-<ID>.md`. **Fresh agent:** [agent-onboarding.md](../age
 | [SPEC-AVATAR-EVIDENCE-1](./SPEC-AVATAR-EVIDENCE-1.md) | RFP-037 Phase 4 capability_evidence bundle + `apatch avatar` CLI + status embed | implemented |
 | [SPEC-PATH-LEASES-1](./SPEC-PATH-LEASES-1.md) | RFP-042 path-scoped writer leases, rollback isolation, ordered TrustChain commits | implemented; attestation pending |
 | [SPEC-GOVERNED-WORK-BINDINGS-1](./SPEC-GOVERNED-WORK-BINDINGS-1.md) | RFP-043 TrustChain Change/source binding/evidence/outbox integration | implemented |
+| [SPEC-AVATAR-SELECTIVE-PUBLICATION-1](./SPEC-AVATAR-SELECTIVE-PUBLICATION-1.md) | RFP-048 exact governed evidence publication to Avatar | implemented |
+| [SPEC-OSS-BUNDLED-AVATAR-CONTRACT-1](./SPEC-OSS-BUNDLED-AVATAR-CONTRACT-1.md) | RFP-049 bundled canonical Avatar contract and measured contribution time | attested |
 
 ### RFP-021 Agent reliability (design partner)
 

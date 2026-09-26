@@ -60,6 +60,7 @@ escalation (`fix_forward` vs `rollback`), async verify, parallel lanes (English)
 0b. **≥2 спеки с interference** → `apatch_spec_run_multi` (§3L Phase 3), не N× ручной `spec_run` между спеками.
 0c. **SPEC-owned files** require `spec_run/execute_next` with the exact `SPEC#Rk`; generic `generate_batch/remote_task` receives `SPEC_WORKFLOW_REQUIRED` before JSONL generation. Ownership is opt-in: a SPEC file owns itself; an existing slug contract protects bounded legacy category paths and explicitly declared category files (RFP-039), not shared dependencies or a slug word in a filename. Strict `> **ownership mode:** strict` plus an `owns:` line declares exact files or bounded prefixes and takes precedence. Files outside these surfaces are unowned, but still require the normal governed, sandboxed, signed workflow.
 0d. **Независимое массовое обслуживание нескольких SPEC** → `spec_run_multi(execution_mode="shared_maintenance")`: один физический apply, точные native verify каждого Rk параллельно и одна attestation с подписанным `SPEC#Rk → files`. Каждый файл принадлежит ровно одному Rk; shared target блокируется до мутации.
+0e. **Один существующий untracked run manifest** → `apatch_remote_task_run(plan={"single_source_intake": true, "specs": ["SPEC-X"], "requirements": {"SPEC-X": {"Rk": {"needles": [{"action": "intake", "target_file": "manifests/SPEC-X.run.json", "sha256": "<exact SHA-256>"}]}}}, "execution_mode": "shared_maintenance"}, dry_run=false)`. Тот же hash/owner/native-verify/attest; без фиктивной второй спеки и переписи файла. Старый контроллер, который маршрутизирует одну спеку через `execute_next`, может передать `plan={"execute_next": true, "single_source_intake": true, "spec": "SPEC-X", "requirement": "SPEC-X#Rk", "needles": [{"action": "intake", "target_file": "manifests/SPEC-X.run.json", "sha256": "<exact SHA-256>"}]}`; worker выполняет тот же проверенный intake.
 1. **Одно Rk** → `apatch_execute_next(needles=[…])` или §3I вручную.
 2. Цикл §3I на Rk: `spec_next` → `session_start(requirement)` → **`apatch_generate_batch`** → `simulate` → `apply_session` → **`verify_run` (из спеки)** → `attest` → `session_end`.
 
@@ -734,6 +735,7 @@ CLI = то же имя без префикса `apatch_` / `apatch ` (`apatch --
 | `apatch_verify_notarization` | staged/working tree vs notarized index |
 | `apatch_attest` | TrustChain commit; подписанные `intent` + `artifacts[]` сессии |
 | `apatch_commit_attested` | Commit/push exact current hashes from explicit attested `session_ids`; rejects drift and unrelated staged files |
+| `apatch_git_untrack_runtime` | Fixed four-path cleanup only: preview with `dry_run=true`, then signed index-only deletion and commit with `dry_run=false`; working files remain; remote broker plan `{"git_untrack_runtime": true, "dry_run": false}` |
 | `apatch_noop_attest` | RFP-027: re-anchor `Rk` дрейфнувшего общего файла через `covered_by="Rk"` (без фиктивного marker) |
 | `apatch_attestation_show` | mode, HEAD, recent events |
 | `apatch_attestation_export` | audit bundle JSON |
@@ -793,6 +795,8 @@ CLI = то же имя без префикса `apatch_` / `apatch ` (`apatch --
 | `apatch_governed_work_accept_execution_proposal` | Explicitly accept the exact proposal into a local Change and queue canonical Work Item acceptance |
 | `apatch_governed_work_preview_evidence` | Preview the exact metadata-only evidence selection before any publication |
 | `apatch_governed_work_publish_evidence` | Explicitly publish only the confirmed evidence selection |
+| `apatch_governed_work_preview_avatar` | Preview the exact bundle-referenced Avatar facts, recipient, scope and plan hash without writes or network |
+| `apatch_governed_work_publish_avatar` | Publish only the unchanged explicitly confirmed Avatar plan; never account-wide sync |
 | `apatch_governed_work_disconnect` | Fence further sharing while preserving local history and pending evidence |
 | `apatch_governed_work_sync` | Deliver the durable governed-work outbox and require an exact signed Platform receipt as ACK |
 | `apatch_governed_work_retire_outbox` | Preserve and sign retirement of a rejected request only after an exact same-scope replacement is acknowledged |

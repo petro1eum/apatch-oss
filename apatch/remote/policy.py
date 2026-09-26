@@ -8,6 +8,7 @@ import os
 from typing import Any, Dict, Iterable, Mapping, Optional, Tuple
 
 from apatch.remote.errors import RemoteTaskError
+from apatch.remote.jump import normalize_jump_hosts, ssh_args_declare_jump
 from apatch.remote.target import RemoteTarget, build_remote_target, parse_remote_target
 
 
@@ -27,6 +28,7 @@ DEFAULT_REMOTE_TASK_OPERATIONS: Tuple[str, ...] = (
     "apatch_noop_attest",
     "apatch_attest",
     "apatch_commit_attested",
+    "apatch_git_untrack_runtime",
     "apatch_session_end",
 )
 
@@ -105,6 +107,15 @@ def resolve_remote_target(
             recommended_action="Set host and path for the alias in .apatch/remote.json.",
         )
 
+    ssh_args = _optional_str_tuple(entry.get("ssh_args"))
+    jump_hosts = _jump_hosts(cfg, entry)
+    if jump_hosts and ssh_args_declare_jump(ssh_args):
+        raise RemoteTaskError(
+            "REMOTE_POLICY_INVALID",
+            "jump_host conflicts with a ProxyJump flag already present in ssh_args.",
+            recoverable=True,
+            recommended_action="Keep the bastion in jump_host and drop -J / -o ProxyJump from ssh_args.",
+        )
     target = build_remote_target(
         host,
         path,
@@ -113,13 +124,15 @@ def resolve_remote_target(
         redact=bool(entry.get("redact", True)),
         python=_optional_str(entry.get("python")),
         runtime_path=_runtime_path(entry),
-        ssh_args=_optional_str_tuple(entry.get("ssh_args")),
+        ssh_args=ssh_args,
+        jump_hosts=jump_hosts,
         timeout_sec=_optional_int(entry.get("timeout_sec")),
         allow_transport_overrides=bool(entry.get("allow_transport_overrides", False)),
         allowed_operations=_allowed_operations(cfg, entry),
     )
     _validate_allowed_host(target, cfg, entry)
     _validate_allowed_root(target, cfg, entry)
+    _validate_jump_hosts(target, cfg, entry)
     return target
 
 
@@ -171,6 +184,45 @@ def _validate_allowed_root(
         recoverable=True,
         recommended_action="Choose an allowed alias or update allowed_roots.",
     )
+
+
+def _jump_hosts(cfg: Mapping[str, Any], entry: Mapping[str, Any]) -> Optional[Tuple[str, ...]]:
+    """Per-alias ``jump_host`` wins; an explicit null/false opts out of the policy default."""
+
+    for source in (entry, cfg):
+        for key in ("jump_host", "jump_hosts"):
+            if key in source:
+                return normalize_jump_hosts(source.get(key))
+    return None
+
+
+def _validate_jump_hosts(
+    target: RemoteTarget,
+    cfg: Mapping[str, Any],
+    entry: Mapping[str, Any],
+) -> None:
+    required = bool(entry.get("require_jump_host", cfg.get("require_jump_host", False)))
+    if required and not target.jump_hosts:
+        raise RemoteTaskError(
+            "REMOTE_JUMP_HOST_REQUIRED",
+            "Remote policy requires a bastion hop for this alias.",
+            recoverable=True,
+            recommended_action=(
+                "Add jump_host to the alias (or a policy-level default) so the "
+                "workspace host stays behind the bastion."
+            ),
+        )
+    allowed = entry.get("allowed_jump_hosts", cfg.get("allowed_jump_hosts"))
+    if not allowed or not target.jump_hosts:
+        return
+    for hop in target.jump_hosts:
+        if not _matches_any(hop, allowed):
+            raise RemoteTaskError(
+                "REMOTE_JUMP_HOST_DENIED",
+                "Remote jump host is outside policy allowlist.",
+                recoverable=True,
+                recommended_action="Use an allowed bastion or update allowed_jump_hosts.",
+            )
 
 
 def _matches_any(value: str, patterns: Any) -> bool:

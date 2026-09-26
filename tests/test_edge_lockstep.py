@@ -3,12 +3,8 @@
 No-mock: imports the real apatch emitter and the real avatar-contract schema and
 asserts the sentinel's verdict on the *current* tree.
 """
-import pytest
-
-# The lockstep edge verifies against the sibling avatar-contract repo. It is not
-# pip-installable, so these cross-repo tests self-skip when it is absent (CI).
-pytest.importorskip("avatar_contract")
-
+# The canonical avatar-contract is bundled byte-identical as
+# apatch._vendor.avatar_contract, so the lockstep edge always runs (no skip).
 from apatch.edge_lockstep import lockstep_verdict, contribution_lockstep, tracker_lockstep
 
 

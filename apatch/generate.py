@@ -593,6 +593,9 @@ def generate_patches(
             continue
         # Use first span as TargetContent anchor (unique per file for matcher)
         target_content = spans[0] if match_mode != "literal" else find
+        from apatch.csv_scope import validate_csv_replacement
+        preview = text.replace(target_content, replace, -1 if replace_all else 1)
+        validate_csv_replacement(rel, text, preview, replace)
         patches.append(
             {
                 "step_index": step,

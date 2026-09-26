@@ -63,7 +63,15 @@ def contribution_event():
 def test_contribution_event_wire_bytes_keep_the_existing_golden_hash():
     event = contribution_event()
     canonical = C._canonical(event).encode("utf-8")
+    # SPEC-OSS-BUNDLED-AVATAR-CONTRACT-1 R9 adds the measured active time (60 s here);
+    # the same event without it keeps the previous golden bytes, so stored events do not move.
+    assert event["session"]["active_sec"] == 60.0
     assert hashlib.sha256(canonical).hexdigest() == (
+        "5574372fc338963ccfdec0564d505387e94c9d044d3fa103bc8d8307f541c2c8"
+    )
+    legacy = copy.deepcopy(event)
+    legacy["session"]["active_sec"] = None
+    assert hashlib.sha256(C._canonical(legacy).encode("utf-8")).hexdigest() == (
         "e4ab24aa3ccbc071d9e1d723350bedc4f8aa38f48cdbebc8d2b9bce8a95573c2"
     )
     assert event["schema_version"] == 3

@@ -13,7 +13,9 @@ import json
 import os
 import shutil
 import hashlib
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
+
+from apatch.avatar_identity_gate import identity_gate_error, identity_gate_refusal
 
 from apatch.contribution import contribution_store_dir
 
@@ -219,6 +221,12 @@ def _reconcile_with_trustchain_avatar(
         except Exception as exc:
             result["errors"].append(str(exc))
             continue
+        refusal = identity_gate_refusal(response)
+        if refusal is not None:
+            result["remote_status"] = refusal["status"]
+            result["retryable"] = refusal["retryable"]
+            result["errors"].append(identity_gate_error(refusal))
+            break
         if response.status_code < 200 or response.status_code >= 300:
             result["errors"].append(
                 f"TrustChain reconciliation HTTP {response.status_code}: "
@@ -323,16 +331,47 @@ def sync_to_trustchain_avatar(
     timeout: float = 15.0,
     dry_run: bool = False,
     avatar_id: Optional[str] = None,
+    event_ids: Optional[Sequence[str]] = None,
     http_client: Any = None,
 ) -> Dict[str, Any]:
     """Upload local signed ContributionEvents with an owner-scoped Avatar sync token."""
     base_url = (platform_url or os.environ.get("APATCH_PLATFORM_URL") or "").strip()
     bearer = (token or os.environ.get("APATCH_AVATAR_TOKEN") or "").strip()
     receipts = receipt_dir or default_sync_receipt_dir()
-    events = [
+    inventory = [
         event for event in iter_store_events(store_dir)
         if not avatar_id or _event_avatar_id(event) == str(avatar_id)
     ]
+    selection_errors: List[str] = []
+    if event_ids is None:
+        events = inventory
+    else:
+        if (
+            isinstance(event_ids, (str, bytes))
+            or not isinstance(event_ids, Sequence)
+            or not event_ids
+            or any(not isinstance(event_id, str) or not event_id for event_id in event_ids)
+        ):
+            requested_ids: List[str] = []
+            selection_errors.append(
+                "event_ids must be a nonempty sequence of nonempty strings"
+            )
+        else:
+            requested_ids = list(event_ids)
+            if len(set(requested_ids)) != len(requested_ids):
+                selection_errors.append("event_ids must be duplicate-free")
+        by_id: Dict[str, List[Dict[str, Any]]] = {}
+        for event in inventory:
+            by_id.setdefault(str(event.get("event_id") or ""), []).append(event)
+        events = []
+        for event_id in requested_ids:
+            matches = by_id.get(event_id, [])
+            if len(matches) != 1:
+                selection_errors.append(
+                    f"ContributionEvent {event_id} must exist exactly once"
+                )
+                continue
+            events.append(matches[0])
     pending = [event for event in events if not _read_synced(receipts, event)]
     batch_size = max(1, min(int(limit), 100))
     result: Dict[str, Any] = {
@@ -348,9 +387,11 @@ def sync_to_trustchain_avatar(
             _read_quarantined(receipts, event) for event in events
         ),
         "rejections": [],
-        "errors": [],
+        "errors": list(selection_errors),
         "dry_run": dry_run,
     }
+    if selection_errors:
+        return result
     if dry_run:
         result["ok"] = True
         result["would_attempt"] = len(pending)
@@ -414,6 +455,7 @@ def sync_to_trustchain_avatar(
         result["pending"] = len(pending)
         delivered_event_ids: set[str] = set()
         quarantined_event_ids: set[str] = set()
+        deferred_receipts: Dict[str, tuple[Dict[str, Any], Dict[str, Any]]] = {}
         for offset in range(0, len(pending), batch_size):
             selected = pending[offset : offset + batch_size]
             response = client.post(
@@ -425,6 +467,14 @@ def sync_to_trustchain_avatar(
                 json={"events": selected},
             )
             result["attempted"] += len(selected)
+            refusal = identity_gate_refusal(response)
+            if refusal is not None:
+                # The owner is not resolved on trust-chain.ai: stop this lane,
+                # keep every event in the outbox, and name the action.
+                result["remote_status"] = refusal["status"]
+                result["retryable"] = refusal["retryable"]
+                result["errors"].append(identity_gate_error(refusal))
+                break
             if response.status_code < 200 or response.status_code >= 300:
                 result["errors"].append(
                     f"TrustChain HTTP {response.status_code}: {response.text[:300]}"
@@ -448,7 +498,10 @@ def sync_to_trustchain_avatar(
                 event_id = str(event.get("event_id") or "")
                 failure = failures.get(event_id)
                 if failure is None:
-                    _write_synced(receipts, event, ack)
+                    if event_ids is None:
+                        _write_synced(receipts, event, ack)
+                    else:
+                        deferred_receipts[event_id] = (event, ack)
                     delivered_event_ids.add(event_id)
                     continue
                 status = str(failure.get("status") or "")
@@ -523,6 +576,16 @@ def sync_to_trustchain_avatar(
         )
         if reconciliation_errors:
             result["errors"].extend(reconciliation_errors)
+        selected_reconciliation_complete = bool(
+            reconciliation_after.get("complete")
+        )
+        if event_ids is not None and selected_reconciliation_complete:
+            for event, ack in deferred_receipts.values():
+                _write_synced(receipts, event, ack)
+            normal_pending_ids = {
+                str(event.get("event_id") or "") for event in events
+                if not _read_synced(receipts, event)
+            }
         result["pending"] = len(
             normal_pending_ids
             | remaining_missing_ids
@@ -593,7 +656,10 @@ def sync_to_trustchain_avatar(
         result["ok"] = not result["errors"] and reconciliation_complete
         return result
     except Exception as exc:
-        result["errors"].append(str(exc))
+        message = str(exc)
+        if bearer:
+            message = message.replace(bearer, "[redacted]")
+        result["errors"].append(message)
         return result
     finally:
         if close_client:

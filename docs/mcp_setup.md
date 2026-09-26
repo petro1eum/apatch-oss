@@ -33,7 +33,7 @@ apatch mcp check --target-dir . --json # configured-command bootstrap + stdio ch
 ```
 
 **Default:** projects get the **17-tool intent-level profile** (`APATCH_MCP_PROFILE=compact`). Use `core`, `spec`, or `full` only for work that needs those specialist surfaces.
-**Opt-in expansion:** set `core` (28 tools), `spec` (38), or `full` (129) only when the task needs those specialist operations.
+**Opt-in expansion:** set `core` (28 tools), `spec` (38), or `full` (132) only when the task needs those specialist operations.
 
 ### Two-layer model
 
@@ -44,15 +44,16 @@ apatch mcp check --target-dir . --json # configured-command bootstrap + stdio ch
 
 **Why two layers?** IDEs start MCP with unpredictable `cwd` (often `$HOME`). The stub finds the project via `APATCH_WORKSPACE` (or `CURSOR_PROJECT_DIR`), then replaces itself with the exact interpreter, arguments, and env from `.apatch/mcp.json`. The canonical child starts Python in isolated mode and ignores inherited `PYTHONPATH`, so a stale source checkout cannot shadow the installed APatch wheel.
 
-**Avatar runtime parity.** Isolated mode also means that an editable `avatar-contract`
-visible in a normal shell may be invisible to MCP. For governed-work/Avatar releases,
-install the APatch wheel and the matching immutable `avatar-contract` wheel into the
-same canonical interpreter in one transaction, then restart MCP. Verify the actual
-runtime with `apatch_doctor → avatar_contract`: `ok=true`, the expected
-`installed_version`, and a non-editable `module_path` must all be visible before
-delivery is considered operational. A stale installed contract is reported as
-`AVATAR CONTRACT INCOMPATIBLE` with its exact interpreter, module path, and missing
-symbols; queued evidence remains durable.
+**Avatar runtime parity.** The canonical `avatar-contract` ships inside the APatch
+wheel as `apatch._vendor.avatar_contract`, so the MCP interpreter needs no separate
+install and an editable or stale `avatar-contract` elsewhere cannot shadow it. Verify
+the actual runtime with `apatch_doctor → avatar_contract`: `ok=true`,
+`source: bundled`, the `installed_version` and `upstream_commit` from the bundled
+`UPSTREAM.json`, and a `module_path` inside the APatch installation. A separately
+installed distribution is only named in `external_installed_version` and is never
+used. A damaged APatch installation is reported as `AVATAR CONTRACT INCOMPATIBLE`
+with its exact interpreter, module path and missing symbols; reinstall APatch and
+restart MCP. Queued evidence remains durable.
 
 **IDE entry point** (same for Cursor, Antigravity, VS Code, …):
 
@@ -295,7 +296,7 @@ Consumer scaffold (`init-consumer --with-mcp`): `docs/specs/SPEC-TEMPLATE.md`, `
 
 #### IDE MCP tool count vs server catalog
 
-Cursor normally shows the 17-tool compact profile. With `APATCH_MCP_PROFILE=full`, it may still show fewer tools than `apatch_doctor` → `mcp_health.mcp_tool_catalog.count` (**129**) because of client descriptor caching. Treat `apatch_doctor` as authoritative; do not ask the user to restart Cursor solely for tool count if the required tool works.
+Cursor normally shows the 17-tool compact profile. With `APATCH_MCP_PROFILE=full`, it may still show fewer tools than `apatch_doctor` → `mcp_health.mcp_tool_catalog.count` (**132**) because of client descriptor caching. Treat `apatch_doctor` as authoritative; do not ask the user to restart Cursor solely for tool count if the required tool works.
 
 **Performance:** full diagnostics run only on explicit `apatch_doctor` (~1–3 s on typical consumers). Other MCP tools use a lightweight policy snapshot. Apply emits one Ed25519 notarization receipt per chunk and validates only the appended ledger object + HEAD; full history is explicit audit/recovery. Benchmarks: [mcp_performance.md](./mcp_performance.md). No-regression contract: [governed-runtime-invariants.md](./governed-runtime-invariants.md).
 
@@ -303,7 +304,7 @@ The launcher redirects **stderr to `.apatch/mcp_stderr.log`** so Rich output can
 
 ## Tools (CLI parity)
 
-**17 MCP tools by default; 129 in `full`** — бизнес-логика через `MutationRuntime` / `apatch.workflows`, как в CLI.
+**17 MCP tools by default; 132 in `full`** — бизнес-логика через `MutationRuntime` / `apatch.workflows`, как в CLI.
 Актуальное число: `apatch_doctor` → `mcp_health.tool_count`.
 
 Every MCP response includes **`state_update`** (R53), **`invariant`**, **`core_invariant`**, and formal **`error_type`** on failure (R56). State file: `.apatch/session_state.json`.
@@ -329,7 +330,7 @@ Every MCP response includes **`state_update`** (R53), **`invariant`**, **`core_i
 | **Sandbox** | `apatch_sandbox_status`, `apatch_sandbox_audit` | Policy и lease |
 | **Product views (RFP-020/RFP-033)** | `apatch_project_status`, `apatch_knowledge_graph`, `apatch_slug_cockpit` | Unified DTO, session graph, and slug diagnostics cockpit; CLI: `apatch status`, `apatch report`, `apatch spec list`, `apatch slug cockpit` |
 | **Contribution (RFP-026)** | `apatch_timesheet` | Per-identity, cross-project timesheet over signed ContributionEvent receipts; `--by identity/project/spec/day`, `--verify`; CLI: `apatch timesheet` |
-| **TrustChain governed work (RFP-043/RFP-047, full)** | `apatch_governed_work_configure`, `apatch_governed_work_transition_endpoint`, `apatch_governed_work_prepare_change`, `apatch_governed_work_store_binding`, `apatch_governed_work_build_evidence`, `apatch_governed_work_read_execution_proposal`, `apatch_governed_work_accept_execution_proposal`, `apatch_governed_work_preview_evidence`, `apatch_governed_work_publish_evidence`, `apatch_governed_work_sync`, `apatch_governed_work_disconnect`, `apatch_governed_work_retire_outbox`, `apatch_governed_work_status` | ProjectGroup WorkProgram → signed Change/binding/local evidence → explicit preview/confirm/publish → receipt; disconnect fences sharing without deleting history; [onboarding](./governed-work-trustchain.md) |
+| **TrustChain governed work (RFP-043/RFP-047, full)** | `apatch_governed_work_configure`, `apatch_governed_work_transition_endpoint`, `apatch_governed_work_prepare_change`, `apatch_governed_work_store_binding`, `apatch_governed_work_build_evidence`, `apatch_governed_work_read_execution_proposal`, `apatch_governed_work_accept_execution_proposal`, `apatch_governed_work_preview_evidence`, `apatch_governed_work_publish_evidence`, `apatch_governed_work_preview_avatar`, `apatch_governed_work_publish_avatar`, `apatch_governed_work_sync`, `apatch_governed_work_disconnect`, `apatch_governed_work_retire_outbox`, `apatch_governed_work_status` | ProjectGroup WorkProgram → signed Change/binding/local evidence → explicit preview/confirm/publish → receipt; disconnect fences sharing without deleting history; [onboarding](./governed-work-trustchain.md) |
 | **Consumer** | `apatch_doctor`, `apatch_init_consumer` | Диагностика и scaffold |
 | **Scan / logs** | `apatch_scan`, `apatch_view` | Транскрипты IDE |
 
@@ -401,19 +402,20 @@ For governed remote work, prefer a local alias over a direct SSH URI:
 {
   "allowed_hosts": ["yc-*"],
   "allowed_roots": ["/home/ubuntu/projects/*"],
+  "allowed_jump_hosts": ["bastion"],
   "targets": {
     "search-example": {
       "host": "example-search-host",
       "path": "/srv/example/search-workspace",
       "redact": true,
       "python": "/opt/remote/bin/python",
-      "ssh_args": ["-J", "bastion"]
+      "jump_host": "bastion"
     }
   }
 }
 ```
 
-`apatch_remote_task_run(remote_target="search-example", target_dir=".")` resolves the alias from local `.apatch/remote.json`, enforces host/root/operation policy, keeps SSH details out of the MCP response, and then uses the internal SSH transport. Agents should not call raw `ssh` for governed work.
+`apatch_remote_task_run(remote_target="search-example", target_dir=".")` resolves the alias from local `.apatch/remote.json`, enforces host/root/bastion/operation policy, keeps SSH details (host, path, jump host) out of the MCP response, and then uses the internal SSH transport — dialing through `jump_host` when the policy sets one, so developer machines never need the workspace host's address (see [remote-onboarding.md](./remote-onboarding.md#hiding-server-addresses-from-developers-bastion--proxyjump)). Agents should not call raw `ssh` for governed work.
 
 ### Remote finalization
 
@@ -455,7 +457,7 @@ credential topology stay inside the local broker.
 | `apatch_spec_interference` | `apatch spec interference` | Cross-spec L1/L2 conflicts, `safe_order`, `risk_score` (RFP-014 Phase 1) |
 | `apatch_spec_schedule` | `apatch spec schedule` | Enriched schedule view over interference; `risk_per_step` (RFP-014 Phase 1.5) |
 | `apatch_spec_cross_verify` | `apatch spec cross-verify` | Level-3 sandbox: apply source needles → run victim verify → rollback (RFP-014 Phase 2) |
-| `apatch_spec_run_multi` | `apatch spec run-multi` | **Phase 3:** N specs in `safe_order`; each explicit per-spec `requirements` map is a bounded work list (unrelated open Rk are skipped/reported); `cross_verify` gate; auto-stop + rollback. Prefer over N× manual `spec_run`. See AGENTS.template §3L |
+| `apatch_spec_run_multi` | `apatch spec run-multi` | **Phase 3:** N specs in `safe_order`; each explicit per-spec `requirements` map is a bounded work list (unrelated open Rk are skipped/reported); `cross_verify` gate; auto-stop + rollback. Prefer over N× manual `spec_run`. Remote one-file intake uses `plan.single_source_intake=true` with one SPEC and exact SHA-256 intake needle. See AGENTS.template §3L |
 | `apatch_spec_next` | `apatch spec next` | Next open requirement + its `verify` command |
 | `apatch_spec_plan_lint` | — (MCP) | Lint inline `plan` dict vs `SPEC.md` requirements (RFP-011) |
 | `apatch_spec_plan_register` | — (MCP) | Register signed plan → `.apatch/plans/` + ledger op `plan:SPEC-X@vN` |
@@ -472,6 +474,7 @@ credential topology stay inside the local broker.
 | `apatch_attestation_show` | `attestation show` | mode, HEAD |
 | `apatch_attest` | `attestation commit` | TrustChain commit |
 | `apatch_commit_attested` | `commit-attested` | Exact `session_ids`, `message`, optional `push`/`remote`, `dry_run`; rejects drift and unrelated staged scope |
+| `apatch_git_untrack_runtime` | `git-untrack-runtime` | Preview by default in MCP; untracks and commits only four fixed ignored APatch runtime paths, preserving working files. Remote: `plan={"git_untrack_runtime": true, "dry_run": false}`. |
 | `apatch_verify_status` | `verify status` | без `job_id`: policy + recommended verify; **с `job_id`:** poll async verify job |
 
 Every enriched MCP response includes `invariant`, `core_invariant`, `state_update.next_action` (MCP tool names).

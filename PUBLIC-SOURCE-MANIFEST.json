@@ -1,33 +1,12 @@
 {
   "schema": "apatch.public-source.v1",
-  "version": "0.8.45",
+  "version": "0.8.48",
   "status": "public_release_candidate",
-  "baseline_commit": "3846465860d44222029ebe7d8f9de8ff5f596415",
+  "baseline_commit": "3561c67961f80703621a6d224673d6f2070a5d66",
   "private_git_history_included": false,
-  "runtime_files_total": 241,
-  "runtime_files_unchanged": 221,
-  "runtime_files_modified": [
-    "apatch/agent_guidance.py",
-    "apatch/cli.py",
-    "apatch/cli_conformance.py",
-    "apatch/consumer_profiles.py",
-    "apatch/doctor.py",
-    "apatch/execution_proposal.py",
-    "apatch/governed_work_delivery.py",
-    "apatch/governed_work_mcp.py",
-    "apatch/mcp/runtime_probe.py",
-    "apatch/mcp/server.py",
-    "apatch/mcp_health.py",
-    "apatch/path_leases.py",
-    "apatch/runtime/runtime.py",
-    "apatch/spec_coverage.py",
-    "apatch/spec_ownership.py",
-    "apatch/spec_rebind.py",
-    "apatch/spec_reverification.py",
-    "apatch/spec_run.py",
-    "apatch/work_item_acceptance.py",
-    "apatch_search_workflows/slug_ratify.py"
-  ],
+  "runtime_files_total": 266,
+  "runtime_files_unchanged": 266,
+  "runtime_files_modified": [],
   "reviewed_source_commits": [
     "42b79172e3072e337ba82feef69a7751b76140f4",
     "30b8f8e0b3e93edd65b4b8405110238d4eaae6e5",
@@ -44,7 +23,29 @@
     "666e882c8a7d35c359fcdb6d9beccd17bd616804",
     "a885f9b0acd1a5d03656bd545ad70ec77363a6c8",
     "4c230f019697a204d3a145dc80160377a696a0c7",
-    "74a271ec2acd21c1b975bb2b930a1972c6109725"
+    "74a271ec2acd21c1b975bb2b930a1972c6109725",
+    "efae30fcb135a045b22083ae35cc3160a3a61dfd",
+    "fa07b67bbdaab7bb9525aa58bea88afdae831341",
+    "8ad6e8b5df55e43befe57534913663de25e08543",
+    "4a001108e49a48b6b2310f5a0816eafe380685f2",
+    "b518b7c1ca15a5346b469a7924d3348d7c8e61a0",
+    "f27733933cf673fd59a2093e59e445c471cead2b",
+    "a1dbc4afa00dd3e46a31b1b14326623ef1ab605e",
+    "07345f62588ce65a96305d000f6ada7a8599f341",
+    "1528d52f97e7ffa8ed66820407c6284e5307f007",
+    "3f4cc8b3f63b4de6810b328a2608d6f2366f7f56",
+    "8e213127059d6ae42e896f4f0fb032fba927a76c",
+    "06c3f43e3614707a4c2f4a6c83906fd2453c4873",
+    "6b7b26d9ae986a83e7539cc7fb0cafcea8f23a2b",
+    "28444491c2a64fe2c78dc4d26714e2849d1e1b8e",
+    "18f13a01a094ecb3d38cb4cb5d339e37c4e63457",
+    "4ca7e66d457d335681f60b637fb3a88afdd652e4",
+    "8f85b5416cc1111d9f26eb5e89e0bbf2a6d4673c",
+    "192e91f6a6bcca154be195c33adad4fcc2898ed7",
+    "c40fcdff8f0ad844bdcdf7281e17fbce4591d7b3",
+    "195daa34f381a8803b530df9c02a6e012b23f4cf",
+    "c87cb67a622a77bfaaa48e96051fe631b39510d0",
+    "eb18fcb93b78d26714aa6d500a948478acb6d878"
   ],
   "self_excluded": "PUBLIC-SOURCE-MANIFEST.json",
   "generated_artifacts_excluded": true,
@@ -156,15 +157,15 @@
     },
     {
       "path": "AGENTS.md",
-      "sha256": "bd418e0f90a051c6de9c9e0d6cc709ca65ddf059893903e764f212ec06504db7",
+      "sha256": "d3f7001d9d04ef9842647fcda08d0d80f7ed47e59357c2299562c0e4c308dec5",
       "bytes": 25181,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "d205111bfe13563a7895dcb077735f89739352feb68afb0f258f2f67e3249e77",
-      "bytes": 58774,
+      "sha256": "612dc3430c44e16634e9851c7d64c2fa0bd337ce20dee808798b969393a7131b",
+      "bytes": 63365,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -191,15 +192,15 @@
     },
     {
       "path": "README.md",
-      "sha256": "2a350271ea3b4c26517b2b653f0834a3f164a2dc194f9850f8e3d90407df3a3e",
-      "bytes": 16370,
+      "sha256": "6a0d2a8662f046d78864d9e2b7f0a06da180111b7838866de14f672c6e29e92e",
+      "bytes": 16562,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
     {
       "path": "README.pypi.md",
-      "sha256": "2a350271ea3b4c26517b2b653f0834a3f164a2dc194f9850f8e3d90407df3a3e",
-      "bytes": 16370,
+      "sha256": "6a0d2a8662f046d78864d9e2b7f0a06da180111b7838866de14f672c6e29e92e",
+      "bytes": 16562,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -219,8 +220,8 @@
     },
     {
       "path": "SOURCE-EXPORT.md",
-      "sha256": "70bb9380de3868bcae5995c93e62983cc8b2b115f15301aebbdb9f3be268f7ea",
-      "bytes": 4039,
+      "sha256": "876d534d749cf1e7a8b8fc2ccd99f5826b245595e17484658d8998c7d2e9952e",
+      "bytes": 4338,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -232,11 +233,151 @@
       "runtime_baseline_unchanged": true
     },
     {
+      "path": "apatch/_vendor/__init__.py",
+      "sha256": "28370d1cc48f94cd79da6539e0023e3c6f0a274e2aa1537bc6932e58dfa4bc01",
+      "bytes": 601,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/_vendor/avatar_contract/LICENSE",
+      "sha256": "20c02baf3d0e544cc3e70d2bbfc263be0ca6341a5d342921dd8fee65a68ccc8b",
+      "bytes": 1069,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/_vendor/avatar_contract/UPSTREAM.json",
+      "sha256": "d9317a3f0de932e7a858513cc0dd64a76463dc8eb12dba44f7df727c61a89fcc",
+      "bytes": 2823,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/_vendor/avatar_contract/__init__.py",
+      "sha256": "87158f5b82fe9e7e521c09fb68c1090f10fd7d992341a29f2c8d3eea14429f40",
+      "bytes": 6499,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/_vendor/avatar_contract/capability_evidence.py",
+      "sha256": "e7e0fb6e949b560768ce6b4954943a463bec227b6b52a546d18d3411d493d063",
+      "bytes": 26838,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/_vendor/avatar_contract/contribution_event.py",
+      "sha256": "d07655c8bcc3b11c675e39bebb9d98bc9cfd0ec183706a3fbad56d775a281391",
+      "bytes": 13739,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/_vendor/avatar_contract/identity.py",
+      "sha256": "ead13c6dce1271fe746319e06b831b4e11434f309ff09c467e2059385d654be6",
+      "bytes": 4443,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/_vendor/avatar_contract/outcome_attestation.py",
+      "sha256": "8f304e7588e9fb17cae2407296dee0c51627f45686bcc049bfe85921ec006fa8",
+      "bytes": 15246,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/_vendor/avatar_contract/ownership.py",
+      "sha256": "beec974ba491a8586e2e84cd1fe20b83950a01f8821cff4c5af131002074ec94",
+      "bytes": 6522,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/_vendor/avatar_contract/schema/capability_evidence.v2.json",
+      "sha256": "7d885b81a2bebc029307efa2fa1d91a14e01f48f04a9120bb1fff3546813c048",
+      "bytes": 2400,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/_vendor/avatar_contract/schema/contribution_event.v2.json",
+      "sha256": "065b348f72c13a40c53c72709efac850281454d5aeae55f71f8d611dc358d230",
+      "bytes": 2978,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/_vendor/avatar_contract/schema/contribution_event.v3.json",
+      "sha256": "21feadd2815b54c32e840bd9f6cdd7a8de35b3ba78c8999d96cfef1287ecf623",
+      "bytes": 1916,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/_vendor/avatar_contract/schema/work_asset_use_event.v1.json",
+      "sha256": "517f91b005fed8d7719e121e5e9f57676ddd209e1354a1c0ea53e97fc4ab66c1",
+      "bytes": 2219,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/_vendor/avatar_contract/schema/work_review_package.v1.json",
+      "sha256": "2dc24184f1b87eebdbfe270131ffe2874f672c6f9a1e23c5588719beb12500cc",
+      "bytes": 2422,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/_vendor/avatar_contract/taxonomy_decision.py",
+      "sha256": "e1e714c92c3103cb3e9385f55bf9c185c6ef3204089f9ba9f65b2ea277d9a916",
+      "bytes": 16599,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/_vendor/avatar_contract/transport/__init__.py",
+      "sha256": "d06e95c2d3c7504498d3ab94457e4baf173730dec07ca7b1a21ed62194c602b4",
+      "bytes": 7569,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/_vendor/avatar_contract/transport/avatar_bff.v1.json",
+      "sha256": "a1b4c2157ef37593a5535588a9ec86ebddfa9eaadd22848874e80b4bd4a930cc",
+      "bytes": 12198,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/_vendor/avatar_contract/transport/hc_tracker_internal.v1.json",
+      "sha256": "42ebe4b789618ac47e771bbe4f897ead6e49b7a5e96f0fdc322d1fd782b7c621",
+      "bytes": 9659,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/_vendor/avatar_contract/work_asset_use_event.py",
+      "sha256": "38ae563065d15f5ea896c764995ef031d47733286d54e6c66787176e42df7c49",
+      "bytes": 12601,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/_vendor/avatar_contract/work_review.py",
+      "sha256": "f3b082a554c17b2718cc39589cfbca075fcfa7951c46ebf171734ca9445bbbaf",
+      "bytes": 9709,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
       "path": "apatch/agent_guidance.py",
       "sha256": "7c82f21868537a12d5f4503538102b634b610ae36c038530afc7b7398a0f2035",
       "bytes": 46145,
       "mode": "0o644",
-      "runtime_baseline_unchanged": false
+      "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/agent_playbooks.py",
@@ -310,15 +451,22 @@
     },
     {
       "path": "apatch/avatar_delivery.py",
-      "sha256": "29b2ef4a21df8f5b1acd402a5efa898f8fb2fbd5f52f72ee28fe80a25b7d4f40",
-      "bytes": 27191,
+      "sha256": "c69e90b95c829b359566a9a11dff3daca60c4fce7d8fe72db892043764912f0d",
+      "bytes": 30548,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/avatar_evidence.py",
-      "sha256": "564fc27a346a7603d93103880719aa3dc616e811853e28b3e7429dec5641e231",
-      "bytes": 8347,
+      "sha256": "a929671a39a128514b17fcef3e2f0d16f7ed0c4558d1406ccea1ac14177a646d",
+      "bytes": 8392,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/avatar_identity_gate.py",
+      "sha256": "fe470954ce58bef1393c4a9627d389a5f67941afa2f4c836a6677c07a09825ae",
+      "bytes": 2574,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
@@ -387,10 +535,10 @@
     },
     {
       "path": "apatch/cli.py",
-      "sha256": "66c0b64d1bf85b51332785049c6a8d8a03efe173769f26a666011f7f8a4dd6fb",
-      "bytes": 218067,
+      "sha256": "c0cea240c47b4aea7ff320108205177aa1216146a1ebb2c96f828b0497f4ef5c",
+      "bytes": 220092,
       "mode": "0o644",
-      "runtime_baseline_unchanged": false
+      "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/cli_concept.py",
@@ -404,7 +552,7 @@
       "sha256": "584f4aa648b562c75b0f64e18ad8d892dbdd4ccd85f1a368b076d575f4a59bce",
       "bytes": 7673,
       "mode": "0o644",
-      "runtime_baseline_unchanged": false
+      "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/cli_extension.py",
@@ -457,15 +605,15 @@
     },
     {
       "path": "apatch/concept_verify.py",
-      "sha256": "76cd06eaf13b6bdba4813d8e83ce54278c310062774112283232f29160eaa3a0",
-      "bytes": 3506,
+      "sha256": "88e4cb5f2e7b28e58f57f6d036bcc3aab25c22fb16691024c836a35d36315d64",
+      "bytes": 3398,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/conformance.py",
-      "sha256": "ae4b9714a627165099563c22a10b8ff25f4c2e50421887a5bbbcbdc487a1e59f",
-      "bytes": 31780,
+      "sha256": "957b74b989410270437d3db079e5030a5642572c31b6e167131c55af6276d2d9",
+      "bytes": 31876,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
@@ -492,15 +640,15 @@
     },
     {
       "path": "apatch/consumer_profiles.py",
-      "sha256": "26f9e16b8e7260fe828f950fee3a500d7f4324f8af8b1a4a142c0bb50658d623",
-      "bytes": 12584,
+      "sha256": "b831071f483de7c374ed0bb76b2dcb7b3a7963431b6a370e8da82e1eaf47b058",
+      "bytes": 13092,
       "mode": "0o644",
-      "runtime_baseline_unchanged": false
+      "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/contribution.py",
-      "sha256": "0773097380eb5db606e36af449c23db1ec282216e37fc31c361f0fbcfa51ee48",
-      "bytes": 19733,
+      "sha256": "cedf6f692af16ae86eff4485d8185bbc6d04d00d7b20e4e65f91439826ed8a4b",
+      "bytes": 20564,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
@@ -513,8 +661,8 @@
     },
     {
       "path": "apatch/contribution_export.py",
-      "sha256": "fa2ea01cfda7ce23bd30f972aff7f2913f3f46b5c9a8434d23a7d2428cd4ae3f",
-      "bytes": 22862,
+      "sha256": "766c2e149590c238edea43e482744e45146ba6aac8772f82ca8161cae4242601",
+      "bytes": 25797,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
@@ -536,6 +684,13 @@
       "path": "apatch/converters/ts_module.py",
       "sha256": "2516a34a738fcc2d79aa7df6e6b9d94d37c5815318aba2454f8ed8679d311b76",
       "bytes": 33817,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/csv_scope.py",
+      "sha256": "edbcc8fadb7653febe993d63a310c005468d0b0889b651dbda9301a993c133b2",
+      "bytes": 2436,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
@@ -667,15 +822,15 @@
     },
     {
       "path": "apatch/doctor.py",
-      "sha256": "caf64fb7ceacc8d3f24721b87db3c43f7817477438129b687d7a305dcc29d389",
-      "bytes": 42419,
+      "sha256": "fb59b7ad53ebec18b78db2ee6bce48124663a73316c6d41b08e2faa4b0f4828a",
+      "bytes": 42590,
       "mode": "0o644",
-      "runtime_baseline_unchanged": false
+      "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/edge_lockstep.py",
-      "sha256": "0fb155715c89b8604dcff7f59394c877edaff21c622ebdc4b44ec34f47e7a030",
-      "bytes": 6002,
+      "sha256": "91202e276e4e8dc87294f17715478dd6d62ede43a69bd83e06b6d85a20601cac",
+      "bytes": 6083,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
@@ -695,8 +850,8 @@
     },
     {
       "path": "apatch/episode.py",
-      "sha256": "f4314a438410dde69deee2946c01061083936acd16f28b86b7cc2cff5827b048",
-      "bytes": 20967,
+      "sha256": "ba552fd93d56d53832c608ee58a12d8f7816b294fc307b4011827061878228e6",
+      "bytes": 21027,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
@@ -705,7 +860,14 @@
       "sha256": "ff0649a448c8b13739c8ca5875aca1920d0eaa2f45047bf3ea9a4712ae366f88",
       "bytes": 8334,
       "mode": "0o644",
-      "runtime_baseline_unchanged": false
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/existing_source_intake.py",
+      "sha256": "d15c821660665794a78b777da378f1aefb90d79695625fa5dc5d82512df0b6c9",
+      "bytes": 9620,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/extensions/__init__.py",
@@ -807,8 +969,8 @@
     },
     {
       "path": "apatch/generate.py",
-      "sha256": "8f025b3644fc4d6977dacac938706982f0c8de0a05188b2fb7fbbee3a77bb54b",
-      "bytes": 28994,
+      "sha256": "af7f184e5ac956da739ae1efdf8d2fa7c3a601c11f8dc9dc2079e493e5b10817",
+      "bytes": 29200,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
@@ -816,6 +978,13 @@
       "path": "apatch/git_commit.py",
       "sha256": "5892a9eb68d51b7c8d67f7b2dcb9ce2294bfeaa3b4df68de4b583af4b57d1089",
       "bytes": 18306,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/git_hygiene.py",
+      "sha256": "a1d05ffa6012f4572ffd859b4901f23429dbebef67383ba07c60eb2eef4713ae",
+      "bytes": 7117,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
@@ -838,14 +1007,14 @@
       "sha256": "0f0e9aff091fc205d4166011ab07897fd3e705f0f4230d10a6658ba9a67e6bcd",
       "bytes": 43267,
       "mode": "0o644",
-      "runtime_baseline_unchanged": false
+      "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/governed_work_mcp.py",
-      "sha256": "706bb92b053e2d5cdb06b976d8a0f0e914e757e325a7ea1f4e86560252f803e7",
-      "bytes": 29290,
+      "sha256": "5927a4089574811a502282e629c79bf3a7e9c2c4a9604ff8774fcffd799181b8",
+      "bytes": 43049,
       "mode": "0o644",
-      "runtime_baseline_unchanged": false
+      "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/governed_work_transport.py",
@@ -968,8 +1137,8 @@
     },
     {
       "path": "apatch/matcher.py",
-      "sha256": "ef097e4e5a380b0bf9014dab4c8019a2289e85075e825519414588b0512736bc",
-      "bytes": 26144,
+      "sha256": "864d5bead1ae7019e00c81a69a1faae248bc9062271b0a2318c3b89a1816306a",
+      "bytes": 26847,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
@@ -1034,7 +1203,7 @@
       "sha256": "05decc92c614c6f21e8b064da13fe5be474e13050e6842f3f88e9d844653f464",
       "bytes": 9955,
       "mode": "0o644",
-      "runtime_baseline_unchanged": false
+      "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/mcp/sanitize.py",
@@ -1045,10 +1214,10 @@
     },
     {
       "path": "apatch/mcp/server.py",
-      "sha256": "0645068781d2e0e52cb702d0cb16c07453d1b82e7070872ea59e9d94119f9659",
-      "bytes": 179176,
+      "sha256": "7600a24d14b3a7532cd01577b671d5418b542bc1384c586ffab9de28498d58e1",
+      "bytes": 184178,
       "mode": "0o644",
-      "runtime_baseline_unchanged": false
+      "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/mcp/stdio_guard.py",
@@ -1076,7 +1245,7 @@
       "sha256": "9c900eb817b1e4b0bd899e01cbb0660990ff22305777d607cf0e5f3e1f638faf",
       "bytes": 34900,
       "mode": "0o644",
-      "runtime_baseline_unchanged": false
+      "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/native_converter.py",
@@ -1101,8 +1270,8 @@
     },
     {
       "path": "apatch/outcome_delivery.py",
-      "sha256": "6f9ee0cf1a55ccbd3690150c9f627381d8a0b93c42876d112b998bf29e30bf31",
-      "bytes": 12879,
+      "sha256": "b15e7672fd33c55b99f37a436c863088dd1529dca7beb2dbcd1d3382d3042f9c",
+      "bytes": 12776,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
@@ -1118,7 +1287,7 @@
       "sha256": "f204e5f984c6446a813d3230933d167c71dc3beb1d6e0d8a8a8dcc1d5111980e",
       "bytes": 21447,
       "mode": "0o644",
-      "runtime_baseline_unchanged": false
+      "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/pipeline_run.py",
@@ -1143,8 +1312,8 @@
     },
     {
       "path": "apatch/platform_client.py",
-      "sha256": "b7fb1fe6656c150de93d2de30fabaf19325127f889f7a39d7d2d7b7f7a7fd27b",
-      "bytes": 4352,
+      "sha256": "5795188cc2c10417de82ad2ae9165c1ebce2d468862b54759ada9f06d465ab94",
+      "bytes": 13907,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
@@ -1206,57 +1375,64 @@
     },
     {
       "path": "apatch/remote/errors.py",
-      "sha256": "f53562ca1bf9d0840c6a3b2926dbbe3d18ef3f8ef6dd4c7fcd23aff8a6645290",
-      "bytes": 1853,
+      "sha256": "c3039c7eabb55e92af170aab3839303868b2e7fadf2d4f4a7671aa16effd43da",
+      "bytes": 2086,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/remote/handoff.py",
-      "sha256": "48036bceadb1f78d0722ff023f6e9b51e533266fd5a72d25c2e6f80dc627cbf8",
-      "bytes": 26221,
+      "sha256": "6d75855bdb8a987e22d38b138d224ad33bda3e70c56c40335ff4a55ed4cce822",
+      "bytes": 26352,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": true
+    },
+    {
+      "path": "apatch/remote/jump.py",
+      "sha256": "ec6c3b8755a244ddfafcbe11d9cbdfb7ceadca9e1e28d9ad1076d22abf6de8f3",
+      "bytes": 3285,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/remote/onboarding.py",
-      "sha256": "072959114173b9d77c6c1c49703aadc4e1b7f0e542adead032bcfe6fdb335e46",
-      "bytes": 6734,
+      "sha256": "d24df6119db7b82315d172e9cc28e8112ceae6b45a18826c12e79859cfac8a36",
+      "bytes": 8106,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/remote/orchestrator.py",
-      "sha256": "71d48dc69aa317b1f36b1906851c68a1a9023a526b0a96619c69a7ff8d60dae9",
-      "bytes": 47274,
+      "sha256": "fd7d06798790565aac61019525f2a35f50de24a8251886018f86b650a4555b5a",
+      "bytes": 48629,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/remote/policy.py",
-      "sha256": "b898e97a87e792f9b34a6590fccea7e8dc1877a283ac19d7242be7cce5c061a3",
-      "bytes": 7652,
+      "sha256": "a8826f7039b3649b06b37d4344966aea4664a39686f71751236b743b806e959b",
+      "bytes": 9757,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/remote/services.py",
-      "sha256": "313f9400d78df79704950c9fb97e5698960314462663ecea424a9cc15ed70495",
-      "bytes": 18318,
+      "sha256": "474a5ab181ee1656afd182a1838cdc4014b0cc0a61398716445dc1a2728b4173",
+      "bytes": 18418,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/remote/ssh.py",
-      "sha256": "8a21a54aecc795c6e02bc4165902a5c24747dca5c502f9050179560a32238265",
-      "bytes": 11867,
+      "sha256": "c2ea1ecb4870601f80cf23cbc7f5b9a8b0dd4ab1dfbc7753ae6ec94e8afccf23",
+      "bytes": 11939,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/remote/target.py",
-      "sha256": "c52fb101476770a2ac8cafe0954ed8db25a6cb07b16b39c2ecdbea4a1da34b27",
-      "bytes": 6089,
+      "sha256": "7323ac7a0a3997eb3b90b634c937b8a8a5c285a65c08c6cbbc62eddc1af4a295",
+      "bytes": 6584,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
@@ -1276,8 +1452,8 @@
     },
     {
       "path": "apatch/remote/worker.py",
-      "sha256": "f825ffe91273507e5e0207a82d644ce95f65d1396a7cb4bc6bbb19fe3b912b1f",
-      "bytes": 31990,
+      "sha256": "fbe7da258629f5626c9c153b2a3276bfebdb5dfb50864412223f6777d26fcf5c",
+      "bytes": 36242,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
@@ -1412,7 +1588,7 @@
       "sha256": "928ca2a3c985755dfcf03d64b8fbf197a4226dba2eda69722339f88d88850cbb",
       "bytes": 51047,
       "mode": "0o644",
-      "runtime_baseline_unchanged": false
+      "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/runtime/session.py",
@@ -1507,8 +1683,8 @@
     },
     {
       "path": "apatch/session_state.py",
-      "sha256": "4cc5dea0741db9137ec6603e0b331a2895957309c80967ae0bf93fc18a8d527c",
-      "bytes": 27635,
+      "sha256": "a968940aeb5d48f12d1116f7869c5fe08a417318a6ed02194fc75d516e6a73b6",
+      "bytes": 27697,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
@@ -1521,8 +1697,8 @@
     },
     {
       "path": "apatch/shared_maintenance.py",
-      "sha256": "4bb8af69bf1d8c2abccfa97653fdbdb2e891b3dcd6cbfe0d3f93ad2a312389dc",
-      "bytes": 16990,
+      "sha256": "73249aa738e54cd01bdd4818a9ce8f09c28f2b3dc1b7824659aed42f5db97062",
+      "bytes": 18204,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
@@ -1587,7 +1763,7 @@
       "sha256": "c38f88edc6a74876c0035b8ece920671d0a835a61b1cd1aa566682a0fad2309d",
       "bytes": 17533,
       "mode": "0o644",
-      "runtime_baseline_unchanged": false
+      "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/spec_cross_verify.py",
@@ -1626,10 +1802,10 @@
     },
     {
       "path": "apatch/spec_ownership.py",
-      "sha256": "c1b4db42a2248fa003f5fd8f3ded3dcc341de552ac06433703f0ff04443858a5",
-      "bytes": 24824,
+      "sha256": "4e90482772d373860682c4464808c9a6954ae4475dd2d0180069e860e68762ad",
+      "bytes": 25263,
       "mode": "0o644",
-      "runtime_baseline_unchanged": false
+      "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/spec_plan.py",
@@ -1643,7 +1819,7 @@
       "sha256": "3e6fb64f0f6fcdfc34936714043bc4cd7a5e8f74a2e4d50622075a45177d2c3c",
       "bytes": 12899,
       "mode": "0o644",
-      "runtime_baseline_unchanged": false
+      "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/spec_registry.py",
@@ -1657,14 +1833,14 @@
       "sha256": "32539496311b954fe3bd21e756e4ed1ab19ebb2aba079fed221a800cb3d16279",
       "bytes": 10437,
       "mode": "0o644",
-      "runtime_baseline_unchanged": false
+      "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/spec_run.py",
       "sha256": "352442870c15ef3e253c0b8fd54538ddc5ee55e63396cf86519bc16f270befe5",
       "bytes": 57125,
       "mode": "0o644",
-      "runtime_baseline_unchanged": false
+      "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/spec_run_multi.py",
@@ -1710,22 +1886,22 @@
     },
     {
       "path": "apatch/taxonomy_delivery.py",
-      "sha256": "ca699ae6b3a11c1c7a1b4ce99a4bd2754677126b4b08ffa15cafa0e92f2938bc",
-      "bytes": 12165,
+      "sha256": "16fdd204034f4e9f366982ae4f87249307ea7a66d4674e196f3bb3aa7dc9da06",
+      "bytes": 12277,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/timesheet.py",
-      "sha256": "c8caf0518c171302feaf28f0db188e02fcc0bf3397edfb53aaf0e46878a1ae62",
-      "bytes": 10423,
+      "sha256": "3887c9e8d47c5185efa5ed7408b0f71a516860ab4ff7d0b7aee8f69b5eca83c2",
+      "bytes": 9963,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/tool_paths.py",
-      "sha256": "9a450a4a6b640bce039a38f7aeb1e9475c5f81193c4f0598b76daceadddabf72",
-      "bytes": 13232,
+      "sha256": "6d03acfd4b6f8d6809b7ab169a4362f7fe632b24f56902e65e4f5132b3833da0",
+      "bytes": 13939,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
@@ -1752,8 +1928,8 @@
     },
     {
       "path": "apatch/trustchain_helper.py",
-      "sha256": "67aaf58ec81375797c5bcac067b538e6157be7f458eaa57c219a468b5a81c638",
-      "bytes": 45727,
+      "sha256": "bf820d0f7297f2718405540b64af4a6c34841a886d34401ecc1f78caebf64bff",
+      "bytes": 48280,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
@@ -1832,12 +2008,12 @@
       "sha256": "11f4896c7854076146bbf64c0de4ef059df0653bc4671631a367112e7bf9d02b",
       "bytes": 6944,
       "mode": "0o644",
-      "runtime_baseline_unchanged": false
+      "runtime_baseline_unchanged": true
     },
     {
       "path": "apatch/workflows.py",
-      "sha256": "ffbd605e5bdcb6683acf13b692fb0e68e738f5aca0c67b18bf5f10d90c7b1285",
-      "bytes": 57647,
+      "sha256": "2f77fcd0b66977d7d10f65b408b421a8c39b38366cd49cf19865d58f06f84d6e",
+      "bytes": 58074,
       "mode": "0o644",
       "runtime_baseline_unchanged": true
     },
@@ -1909,12 +2085,12 @@
       "sha256": "6aebc3cdb317531ebea20eb399f125c8f0a7cde8479c42976a66fcba580d6cba",
       "bytes": 21946,
       "mode": "0o644",
-      "runtime_baseline_unchanged": false
+      "runtime_baseline_unchanged": true
     },
     {
       "path": "docs/AGENTS.template.md",
-      "sha256": "152fbb576f5459ed3cdbfbd7627b16775223db586353fad6a4d194c98f4359c4",
-      "bytes": 62988,
+      "sha256": "11d36c22506788a66ec180e1bc55b9e4fea051b2107d8e6501e45007655f79a8",
+      "bytes": 64437,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -1941,8 +2117,8 @@
     },
     {
       "path": "docs/README.md",
-      "sha256": "a53b91505dfa33c324e3fecce5cd190777ccffe6bf3143413270c0763509a293",
-      "bytes": 4269,
+      "sha256": "b025d23644e80a44c1a8f5c6c0a35077c3465603621fbbae1cea2bfc48a38846",
+      "bytes": 4494,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -1962,21 +2138,21 @@
     },
     {
       "path": "docs/RFP-007-executable-specifications.md",
-      "sha256": "0a4b61431f5c6c1f1779a649059ae4c6afe07c395c98c411dbf8e684bdaa8bb1",
+      "sha256": "9d086de76b98cbd1e79d2a8b67f2a2e89f7357e1eff504a6882a1ec750caaee2",
       "bytes": 5669,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
     {
       "path": "docs/RFP-008-spec-executor.md",
-      "sha256": "ed7b55e0ce2e0d8ff7f680d40400c9c9b5a455ae3e4729b374d68c97754cc41e",
+      "sha256": "a705aba5f6a15941ceab7d30f41e2e9d03678fce797fb4cf3c1241ce51d88920",
       "bytes": 8256,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
     {
       "path": "docs/RFP-009-spec-run.md",
-      "sha256": "539f4a1175f1868eee2c8a018c9b3a3f7e96c4fedffce10a0d25c80665d60b85",
+      "sha256": "8ba1b3a6d60d1a4ccc04b3d9757859da90f93f685e6518d3048f94732a43f81b",
       "bytes": 16462,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
@@ -2011,7 +2187,7 @@
     },
     {
       "path": "docs/RFP-019-mcp-scale-lifecycle.md",
-      "sha256": "d6459139d10b12b5b765d3d5d72d809eb6760909e0d62306aa9fbf94cde72f3d",
+      "sha256": "f6362b2bb259e2c159cf042a79d69e885618bbc272edcca2950f5add9d019719",
       "bytes": 16082,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
@@ -2074,8 +2250,8 @@
     },
     {
       "path": "docs/RFP-028-avatar-wiring.md",
-      "sha256": "2989401f5e87742bb874ba88d63a727c05f35137ca0b98efd6b453b9ff3e6897",
-      "bytes": 21819,
+      "sha256": "54c5116a2c4909c5ccd36d590a150f2edb2117eb98dd36afb4039e79b37465ec",
+      "bytes": 22150,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -2088,8 +2264,8 @@
     },
     {
       "path": "docs/RFP-030-opaque-ssh-broker.md",
-      "sha256": "52003a96685857ba5bd3fa3f74b83ca87075a42459c8b5f6729d61d74c10c8ca",
-      "bytes": 6785,
+      "sha256": "32eccb1935716f368ae03d75d6266a9bdba99b6bef2047e83d12f122d142d5be",
+      "bytes": 7228,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -2213,6 +2389,20 @@
       "runtime_baseline_unchanged": false
     },
     {
+      "path": "docs/RFP-048-AVATAR-SELECTIVE-PUBLICATION.md",
+      "sha256": "8d876b7927eaa08908440548bad0a87b3c1b26b5a8aa009e09ea6eb9359f2627",
+      "bytes": 8640,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
+      "path": "docs/RFP-049-OSS-BUNDLED-AVATAR-CONTRACT.md",
+      "sha256": "bda88f6fc117bb67e650f1a51256e9c31dfb91e2db30d00c88209d99749b1d5c",
+      "bytes": 6569,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
       "path": "docs/adr/ADR-001_Enterprise_Scale_Gaps.md",
       "sha256": "7974d5f49fe3a774a8c841e08821d1f8e807c1ddccdb157b6b50d0d913e5ff4a",
       "bytes": 14153,
@@ -2235,14 +2425,14 @@
     },
     {
       "path": "docs/agent-onboarding.md",
-      "sha256": "bdb95a67d9e67e5bd160e935a335697de84ca6402cb7650d072e5628ea78ec9a",
+      "sha256": "60401e757a52da8c659be3c4b8205d3e4dde481460537095bee6661ffb5b1359",
       "bytes": 11913,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
     {
       "path": "docs/apatch-studio.md",
-      "sha256": "bf3765b79e078a52e36f5a42c181bde7c7b4f9ad21fc52223827352d9f05003e",
+      "sha256": "4053e8ef446bdf0afb3945c5da0abaae6772da98b64a22499384bf4f8064dea2",
       "bytes": 2814,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
@@ -2438,8 +2628,8 @@
     },
     {
       "path": "docs/cookbook.md",
-      "sha256": "557a8a03c774212fb5a97e06e060993185edc03b8d1261bfc81399dd435cb916",
-      "bytes": 18753,
+      "sha256": "c79e03555af055c3ef5909c6ba92b533afc04417a3301bb71b11a077b6471280",
+      "bytes": 19331,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -2447,6 +2637,13 @@
       "path": "docs/cpp_refactoring_guide.md",
       "sha256": "be3ef5319ab0feea26d5e28f69cd3d6236e84795460950337a3712c4a4f877d5",
       "bytes": 8135,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
+      "path": "docs/csv-scope-preservation.md",
+      "sha256": "e1f159574ee63a8b49c3ffb266a581907d53d609d972a086e03cb59dc26e0854",
+      "bytes": 932,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -2592,15 +2789,15 @@
     },
     {
       "path": "docs/mcp_performance.md",
-      "sha256": "cff22d7ef877ba661039fac53a831a96648c145cf1a38b67e4786796db6d72ea",
+      "sha256": "d29c01d4681d6429895d30eae4df0cd1caf3f5ce3a2c1fd3e0b5075a685dc9d2",
       "bytes": 13888,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
     {
       "path": "docs/mcp_setup.md",
-      "sha256": "b3eaf0c7c34d87c287ba338c86ff144c09227718a08c69c8bce1e5d62447f86a",
-      "bytes": 53336,
+      "sha256": "379a58bf5a4fbe0092b9b136a7f678d09f8f1cb3d65557dddb79cb261d04dc52",
+      "bytes": 54140,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -2620,15 +2817,15 @@
     },
     {
       "path": "docs/oss-verification-profiles.json",
-      "sha256": "d589deecf79d8a41cfaab061bcac524b67e0a75b3751fc93c89b57c81fe03f38",
-      "bytes": 53116,
+      "sha256": "83f1ef14fdb02e9664ab70efda59d7646e7dd7a3980a4d855d07c46095e9c205",
+      "bytes": 28402,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
     {
       "path": "docs/oss-verification.md",
-      "sha256": "220ca25b847a029481b5d7c297ad66e0393f4e2767261d4ba185f654357386c3",
-      "bytes": 6535,
+      "sha256": "c6ebdf8827ced61cd8a63be2fec241735dedbf45b649a2822a068c3401e650df",
+      "bytes": 7312,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -2641,8 +2838,8 @@
     },
     {
       "path": "docs/product-matrix.md",
-      "sha256": "b415aaab3ded321fd86ada26c461c1f726761bce1715ee223986bc4092ed399c",
-      "bytes": 2249,
+      "sha256": "2981ab0284343e9d694d7a56e6a7e3d3f763b46ca4b0f603267143f9e447de50",
+      "bytes": 2274,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -2697,8 +2894,8 @@
     },
     {
       "path": "docs/public-release-readiness.md",
-      "sha256": "fb7c5ecadd43c3131de0e0a7ffa004f177cace2a522f49518bb2ff40741babe5",
-      "bytes": 7529,
+      "sha256": "3e98a6a6a2cc563e94fe47c3afc7561c27dd7a403d3191e3c7e8de557d2acb75",
+      "bytes": 8359,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -2732,8 +2929,8 @@
     },
     {
       "path": "docs/remote-onboarding.md",
-      "sha256": "51945cd31c3f8c46c925d931d5f843a684f47af27f60df6d538cb3025f51f805",
-      "bytes": 10856,
+      "sha256": "81c80d85cb20b3ba526323d009d9f03784a16cf1aa2825b2bba92f8dfac29e86",
+      "bytes": 13078,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -2753,7 +2950,7 @@
     },
     {
       "path": "docs/security-one-pager.md",
-      "sha256": "8a987dc345978d31207ee070a306a4da743b6551a5146965a43e98c427dd1c33",
+      "sha256": "1596f9c6d965f738a844e7c6106d70eca444ef4ab890ddb6279986b0cc756e65",
       "bytes": 4589,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
@@ -2767,8 +2964,8 @@
     },
     {
       "path": "docs/specs/README.md",
-      "sha256": "98e3582bde2898ffde29fa6f384aeee83b59c328c75aba9f29c2347055a1588e",
-      "bytes": 9425,
+      "sha256": "029360ffb814c35e89eab7e5e8676101aa95e2ba1a863704a7f8dc51cdf558f8",
+      "bytes": 9747,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -2844,8 +3041,8 @@
     },
     {
       "path": "docs/specs/SPEC-AVATAR-CONTRACT-1.md",
-      "sha256": "bc62aca2deb1fed6b91ed05a463155b1361a9d7df6018289d372dd152940b865",
-      "bytes": 4149,
+      "sha256": "b375fe307613f9fc03a0ae6c7e3d00d29b96969f5b4bea8a87927b3fd36df836",
+      "bytes": 4150,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -2860,6 +3057,13 @@
       "path": "docs/specs/SPEC-AVATAR-FOUNDATION-1.md",
       "sha256": "feb393542f3941851281b1bfdc89fe01de2d9e0a5de94048741ab676541bf649",
       "bytes": 3521,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
+      "path": "docs/specs/SPEC-AVATAR-SELECTIVE-PUBLICATION-1.md",
+      "sha256": "c4a454f70aead64cced36dbc02b08f2dcd4127917bb57bbe4c3aae7a42c6e84c",
+      "bytes": 8021,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -3214,6 +3418,13 @@
       "runtime_baseline_unchanged": false
     },
     {
+      "path": "docs/specs/SPEC-OSS-BUNDLED-AVATAR-CONTRACT-1.md",
+      "sha256": "e0564eaa6ab42dc059eb3ee8d4b6b9c409d83b37ff87c4ecabd5524b8db8c112",
+      "bytes": 8255,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
       "path": "docs/specs/SPEC-OSS-VERIFICATION-PROFILES-1.md",
       "sha256": "497e8bcc0c7019ba4d8be7a71ad4fb0e2e1ca4d6505e9dee5f16e1fd7d1a9bf4",
       "bytes": 3172,
@@ -3369,8 +3580,8 @@
     },
     {
       "path": "docs/specs/SPEC-SPEC-OWNERSHIP-GATE-1.md",
-      "sha256": "b04c0afd7c5cbc34e9394c92743a9bdd518c0f8587fdd6000f5322ae5fc25d0a",
-      "bytes": 12071,
+      "sha256": "c0fb9a01062f034f54e2ab8c3ad7ff3dc31be73934557ec051d8b3808f4f3271",
+      "bytes": 12220,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -3628,8 +3839,8 @@
     },
     {
       "path": "pyproject.toml",
-      "sha256": "953659cb2302a9dc9d9b20bd264a13efb38cf74b374e6c48ea048b28a677eb89",
-      "bytes": 3669,
+      "sha256": "41fe12e1be0da72d9823ea25c61ff3fbe819c57873342dc63186af2d0fdbdfb4",
+      "bytes": 3778,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -3740,8 +3951,15 @@
     },
     {
       "path": "scripts/qualify_oss.py",
-      "sha256": "c9efb7aa797f0431567a27d86758125b9ab24394c054a59790e7159d1cbaeee3",
-      "bytes": 52773,
+      "sha256": "668e7f5c56b1ff76240f9748bb452981fa6c5fb574907d1cdd7aeb8e242cb30f",
+      "bytes": 48017,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
+      "path": "scripts/vendor_avatar_contract.py",
+      "sha256": "d8d93885b1f866d89a875cf63600fb3d72e4d28930834e32c1a2d1d61c440a5e",
+      "bytes": 12935,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -5560,29 +5778,36 @@
     },
     {
       "path": "tests/test_avatar_contract_optional.py",
-      "sha256": "2352df0dc0fa48d20031b0dafbc4157de5ff0cb3ea1677490d2ba33776475e4d",
-      "bytes": 3288,
+      "sha256": "2093c2481c85a81dd5f2636c579e25fff83afbce15e7e015c23d8c63d7111fed",
+      "bytes": 5633,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
     {
       "path": "tests/test_avatar_delivery.py",
-      "sha256": "bea10b965379c23646534087cc9f65a2937719123d60c6f1bb0500354967a3de",
-      "bytes": 18411,
+      "sha256": "f5c58cd9e1d787e9584fb5fdb404623456c6a7813b8b052601cd6add58b7eff2",
+      "bytes": 23696,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
     {
       "path": "tests/test_avatar_docs_contract.py",
-      "sha256": "b78a908cb3750e36cb4289de32e69caf77b83a08ea4e8b280f9c2736535f8ee9",
-      "bytes": 1786,
+      "sha256": "fbb068a8f689d34fc0c37624fe80c025b6c8516b39b8b3cd4861c9eddad8eb1e",
+      "bytes": 3114,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
     {
       "path": "tests/test_avatar_evidence.py",
-      "sha256": "8a5b57ca2d299fca159ed0470a82373a665ffe01041f10fcad3d1fddab6729ba",
-      "bytes": 6336,
+      "sha256": "512a4940e632f78909c51ec09c4132f1bc8dbdbe87cdf70aef76eeb36b7d1e48",
+      "bytes": 6351,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
+      "path": "tests/test_avatar_identity_gate.py",
+      "sha256": "7195155baf04a63286e3e1aa872a71645145fa2fbed504eade2a14fbc16de5ee",
+      "bytes": 6969,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -5597,6 +5822,13 @@
       "path": "tests/test_avatar_scope.py",
       "sha256": "3eefa7d80eb485dbf57b76c038165b96d837abd3157a831d787dafd425913bfe",
       "bytes": 1485,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
+      "path": "tests/test_avatar_selective_publication.py",
+      "sha256": "08955a64a6a3af0a772f4102f64aaeb950c3d0b055c9d3a8f24d3bdff12e67f8",
+      "bytes": 45980,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -5658,8 +5890,8 @@
     },
     {
       "path": "tests/test_cli_commit_attested.py",
-      "sha256": "070df4d57da497094f71052ec7444ec78e64209934015a7df916612317c4702c",
-      "bytes": 1300,
+      "sha256": "265e5f8750a326dbbd2e104aa9f83f0c3c44e0c5290b40d03b93f3ae4529271a",
+      "bytes": 2077,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -5700,8 +5932,8 @@
     },
     {
       "path": "tests/test_concept_cli.py",
-      "sha256": "c60b8ac1cded0515db901cf6b97876b40b66db2abe281986d2605fd1345d3cc1",
-      "bytes": 1578,
+      "sha256": "3d071a2db618734739f6ccfc6067d290363d896fef0e56afc8a6fa7252d246ed",
+      "bytes": 1500,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -5756,15 +5988,15 @@
     },
     {
       "path": "tests/test_concept_status.py",
-      "sha256": "37f269bcce5ee86a5cdf741bb36f0d5786be8f711026cf7b9afacf1df3948ca9",
-      "bytes": 1882,
+      "sha256": "b7463018ef615f322270114e05f08aca0f71a87a15d91ddcf8f7b82f512593dc",
+      "bytes": 1804,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
     {
       "path": "tests/test_concept_verify.py",
-      "sha256": "e7464c04ac36960deaed1b327fee25e99bf7c9ee1f6bf6753a13c33c666ed644",
-      "bytes": 2210,
+      "sha256": "fa5bdfa6214461bd7a19e50528c1c5820026f81b261025a9f45fe9e1a2e2a6be",
+      "bytes": 2132,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -5804,6 +6036,13 @@
       "runtime_baseline_unchanged": false
     },
     {
+      "path": "tests/test_contribution_active_time.py",
+      "sha256": "7c300d84f34419c342c0daf1eb35eaae0676e40032e74f6b4040b9a296a95bdf",
+      "bytes": 4875,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
       "path": "tests/test_contribution_delivery.py",
       "sha256": "0e5151c373b80548aa443dd60553f58e219b2f88c20558c9e915dc141e8bae26",
       "bytes": 11471,
@@ -5812,8 +6051,8 @@
     },
     {
       "path": "tests/test_contribution_event.py",
-      "sha256": "a6773fb50f983db4437ba477b2cea73c48466a14fd2d063d5c6d3b3179d312de",
-      "bytes": 14027,
+      "sha256": "9fa2c8ea5826810109818bb9a7246490f48026d0ae4d2334808b3a0e9c10c5f0",
+      "bytes": 14022,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -5835,6 +6074,13 @@
       "path": "tests/test_cowork_selective_delivery.py",
       "sha256": "5f49a0b2e8fb44712bac80618498af9b24fb54e6dfb9d668a1c003370aa5d31b",
       "bytes": 27685,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
+      "path": "tests/test_csv_scope_preservation.py",
+      "sha256": "76c25f313ff14858bc108abd3ae5f1251d22abb63e74afcf80b0047fa49b7905",
+      "bytes": 3043,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -5868,8 +6114,8 @@
     },
     {
       "path": "tests/test_distribution.py",
-      "sha256": "97971b7d56c043bc5ff47f8c176c027a76e2c9b12fbe3e9e428cdd5da7a9cd7a",
-      "bytes": 13319,
+      "sha256": "a2ea5595bf60de55c0a2aad38d6836b6c3b3b728376a31a9087a8e4950c21623",
+      "bytes": 15698,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -5889,15 +6135,15 @@
     },
     {
       "path": "tests/test_doctor.py",
-      "sha256": "3dab03a84169235b0ab5e4b93eec3fed408f5cb43201fa724a9a1bdf55ce03d4",
-      "bytes": 7544,
+      "sha256": "cda0f2f9d5048b56896c03d0430b2cec56bd2713e909998ceef96c7bfd84c0ef",
+      "bytes": 8652,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
     {
       "path": "tests/test_edge_lockstep.py",
-      "sha256": "54d868abe642e3f4105468fc5301404ce0c224bb2c100a3d18ac3127043921c8",
-      "bytes": 4039,
+      "sha256": "aa597012fcf3c007909866cf090990caf7b1edbeab48bb2f8b912c7fae269af8",
+      "bytes": 3963,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -5917,8 +6163,8 @@
     },
     {
       "path": "tests/test_episode.py",
-      "sha256": "25ffd8e3b9bc285739ba872c107991f9eda754d59b22c819ea6d20dad8223a91",
-      "bytes": 11339,
+      "sha256": "28a11905b2878c7cf3597d11810b3554b66d9afab36c9dab13d8a91a7e1b3f77",
+      "bytes": 11354,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -5926,6 +6172,13 @@
       "path": "tests/test_execution_proposal.py",
       "sha256": "8b355966de4412f13a0715d542c5cacf7a8143fdf29c88ebcad67f435927247a",
       "bytes": 5302,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
+      "path": "tests/test_existing_source_intake.py",
+      "sha256": "c8de44c7bc5a92b585c32511bb8f1c9bb714ed6879a7b2b1126366baffa7f1ea",
+      "bytes": 9651,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -6028,6 +6281,13 @@
       "runtime_baseline_unchanged": false
     },
     {
+      "path": "tests/test_git_hygiene.py",
+      "sha256": "bce948a7b3b411ba6a2c89e0c3d58f40965d6aa0fd327b79b40b8054d48aee61",
+      "bytes": 2944,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
       "path": "tests/test_git_worktree_roots.py",
       "sha256": "df2dc0a91d6967f133058552d8ac1fb224f6e463ad3f7de8e27af3f1df98fff6",
       "bytes": 2021,
@@ -6071,8 +6331,8 @@
     },
     {
       "path": "tests/test_governed_work_compatibility.py",
-      "sha256": "04248dfd0fec778230054f6f69651470f3e2e090b5dad44aca76ab6f0e166411",
-      "bytes": 6316,
+      "sha256": "545ae84065a01231ed51a690cafee57e0a26856e18ffe2fb3947da6f2cd41b39",
+      "bytes": 6787,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -6246,8 +6506,8 @@
     },
     {
       "path": "tests/test_mcp.py",
-      "sha256": "cbd2e458e0aae24a4f36f3fd65a3cf6a158b74cdc7ad73ecc1ae6e3ed1b9ac98",
-      "bytes": 21364,
+      "sha256": "ed8d113e7bff14699c41c656170d71c2b3cddf42d97e5a9a243ce24800f41ff7",
+      "bytes": 22415,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -6267,8 +6527,8 @@
     },
     {
       "path": "tests/test_mcp_health.py",
-      "sha256": "e1074b8302ed2e0e9574f6b9ba7a7836ce9dc7ca2e17ce62efb825404e7c0e86",
-      "bytes": 7495,
+      "sha256": "b8e983f4ac5354cdcbc90324b6e8b6b79b606fd0e45928beae5df68fc445b53d",
+      "bytes": 7664,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -6309,7 +6569,7 @@
     },
     {
       "path": "tests/test_mcp_runtime_wheel.py",
-      "sha256": "6fec3bf6268dbb3fa75baeb130a66f85b40c5d93d473e4d989007d2bc1244222",
+      "sha256": "f1a679d221fdc04895eb6af2fb8dc0f72088756dd8b36b394887d9603036e400",
       "bytes": 10883,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
@@ -6421,15 +6681,15 @@
     },
     {
       "path": "tests/test_oss_verification_profiles.py",
-      "sha256": "fa3476fd9d5a1a0e1aeb623de69c87f2b1ca3dd5cf64c4de53ec8063b5943217",
-      "bytes": 41729,
+      "sha256": "0151fc4996d30f726be13e5662236a3a342584a48c123c624f967e81feb83685",
+      "bytes": 42021,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
     {
       "path": "tests/test_outcome_delivery.py",
-      "sha256": "2a75096680306c4b990ad02a99fd5b56a6fadd790f3777f2ec1244eacb7e94d7",
-      "bytes": 16121,
+      "sha256": "da9206bebc9ee44185e2ae42e4454d3c80e503991e2fe77444f966f160949bf6",
+      "bytes": 16384,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -6504,6 +6764,13 @@
       "runtime_baseline_unchanged": false
     },
     {
+      "path": "tests/test_platform_durable_evidence.py",
+      "sha256": "87f14e485dfc1acf77bc6736dc9ce56f57a0cea77740a2e61af87036a5cea193",
+      "bytes": 8800,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
       "path": "tests/test_policy_lock.py",
       "sha256": "489321b608e8dfb9c699ed5a10136f127b9913654d68ece9d8d4dd332f8db7ab",
       "bytes": 6094,
@@ -6561,8 +6828,8 @@
     },
     {
       "path": "tests/test_public_source_boundary.py",
-      "sha256": "beacac1bb035b62ea5806382955030af4ff60bdc5fa738f1f42b95f4137b40c2",
-      "bytes": 4342,
+      "sha256": "d1ed4b0a352ca642fda9cd14b8067ee237550e50da435ff7184b5bc0c5f70916",
+      "bytes": 3933,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -6644,9 +6911,16 @@
       "runtime_baseline_unchanged": false
     },
     {
+      "path": "tests/test_remote_jump_host.py",
+      "sha256": "4b8aae5fa7be0245d36100c29da3e2a5b8e6233ca37ce8f45f73300b241ef7b6",
+      "bytes": 12834,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
       "path": "tests/test_remote_mcp_routing.py",
-      "sha256": "824e87144ff3f06605b7ad06fbd658e3a2fab3019fc81fda6d08a512c8bed930",
-      "bytes": 71117,
+      "sha256": "874a132c22f35c61991d1effd6861f57605797a7a90a6358417043734ab3b10a",
+      "bytes": 73061,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -6687,8 +6961,8 @@
     },
     {
       "path": "tests/test_remote_worker_protocol.py",
-      "sha256": "9dbee4645f5cf31b0f1ff0db3c397be3c815dccde4d56d14cce756cba463c229",
-      "bytes": 24157,
+      "sha256": "f5e56b242617719cfb2859d495e0250a6b700c0011693e5624a1ca03d5206022",
+      "bytes": 25163,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -7044,8 +7318,8 @@
     },
     {
       "path": "tests/test_spec_executor.py",
-      "sha256": "7b07e9ca8da048f5bff0efa809a8159e8eda9bd461deceee66807f570b791147",
-      "bytes": 18523,
+      "sha256": "d5dc8b61c0ca962ac8107b93947984c6a27d87a210b7cc74e9f2cda75820f7ab",
+      "bytes": 20436,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -7100,8 +7374,8 @@
     },
     {
       "path": "tests/test_spec_owned_mutation_gate.py",
-      "sha256": "9937c03b5ebed62c89c9551177d1730aab650ebbf557b705db77751b31351f06",
-      "bytes": 32704,
+      "sha256": "3c174310a839898a6f46a266b979a8f3e1baeaba0bf12dcae25fa84a57da9efa",
+      "bytes": 35487,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -7128,8 +7402,8 @@
     },
     {
       "path": "tests/test_spec_run.py",
-      "sha256": "b95c7dec01193f47e01b9b02b35b78741f9c00fe6c1c82dfb1b11723850183a5",
-      "bytes": 22994,
+      "sha256": "63a0973a39e6aba1340b14b3e4fc83a520bc86b2413d46c118e1c6d11d5334e5",
+      "bytes": 24326,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -7254,8 +7528,8 @@
     },
     {
       "path": "tests/test_taxonomy_delivery.py",
-      "sha256": "792682ce6b1c76ebd9a0090b2ce9a2fb68918dc1d1c1bf9bb87fce14de5c6b7f",
-      "bytes": 11959,
+      "sha256": "a0ae0416af0fb9e9a6fff0c08b77b2262c638abbb0cf041f0a33be03c61822ee",
+      "bytes": 13260,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -7275,8 +7549,8 @@
     },
     {
       "path": "tests/test_tool_paths.py",
-      "sha256": "73d225c2254e27a217e4f78766cea546c59f4c3dfc7dd46cafdba130e8d07277",
-      "bytes": 3378,
+      "sha256": "2fc79588649c4b025343d9afc7665a4486f180081be870aa07564b67e12645e0",
+      "bytes": 4063,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -7291,6 +7565,13 @@
       "path": "tests/test_transactional_sessions.py",
       "sha256": "ebd283a0db69cdeda805ef80ee769e397f693f869c93a2c7dd3be47b7f4d17af",
       "bytes": 16464,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
+      "path": "tests/test_transport_contract_avatar_bff.py",
+      "sha256": "3fb3b859d459a8d9ca3e6c217b74e943b1ce2324e53a544c56fd95b09b14cf1f",
+      "bytes": 11309,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -7333,6 +7614,13 @@
       "path": "tests/test_ux_specialist.py",
       "sha256": "4dfc149dfae0a738d9c2b01a705eca298d68b3d2f3ed32e6f41a6a06b4862718",
       "bytes": 4634,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
+      "path": "tests/test_vendored_avatar_contract.py",
+      "sha256": "94f2ba298461614c8f88d4c97e8fc187f7a6ac67666300d6ea5ce2d8d19299e0",
+      "bytes": 13616,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },

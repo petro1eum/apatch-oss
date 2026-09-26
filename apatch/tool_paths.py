@@ -8,6 +8,7 @@ from __future__ import annotations
 import os
 import re
 import shutil
+import sys
 import subprocess
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
@@ -226,6 +227,12 @@ def resolve_executable(name: str, *, workspace: Optional[str] = None) -> Optiona
     if not name:
         return None
 
+    # APatch's own SPEC tests must run in the interpreter hosting APatch itself.
+    # Consumer workspaces keep their independently configured Python toolchain.
+    if name in {"python", "python3"} and workspace:
+        if Path(workspace).resolve() == Path(__file__).resolve().parents[1]:
+            return sys.executable
+
     for path in _collect_candidates(name, workspace):
         if _is_tool_shim(path, name) and os.access(path, os.X_OK):
             return path
@@ -266,9 +273,21 @@ def build_subprocess_env(
     """Augment PATH so verify subprocesses find npm/node and other toolchain binaries."""
     env = dict(base_env or os.environ)
     _sanitize_pythonpath(env, workspace)
-    # This policy belongs to the MCP server boundary. Verify children must be able
-    # to create and address their isolated test workspaces normally.
-    env.pop("APATCH_MCP_TARGET_POLICY", None)
+    # These variables belong to the MCP server boundary. Verify children must
+    # behave like ordinary local processes: they create isolated workspaces,
+    # probe fresh runtimes and choose their own profile/lane in test fixtures.
+    for name in (
+        "APATCH_MCP_TARGET_POLICY",
+        "APATCH_CANONICAL_RUNTIME",
+        "APATCH_MCP_BOOTSTRAPPED",
+        "APATCH_MCP_BOUND",
+        "APATCH_MCP_GUIDANCE",
+        "APATCH_MCP_PROFILE",
+        "APATCH_MCP_STDIO",
+        "APATCH_MCP_STDIO_ACTIVE",
+        "APATCH_LANE",
+    ):
+        env.pop(name, None)
     prefix = build_path_prefix(workspace)
     for name in TOOL_NAMES:
         path = resolve_executable(name, workspace=workspace)

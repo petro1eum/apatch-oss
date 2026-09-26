@@ -21,20 +21,13 @@ from apatch.contribution import (
 _VOLUME_KEYS = ("ops", "files_touched", "insertions", "deletions")
 # Event-key allowlist. Source of truth is the shared avatar-contract package
 # (covers v1 `attestation` + v2 `proof_ref`/`methodology_tags`/`payload`/
-# `cv_delta`/`declares_for`/`created_at` — Avatar Architecture Canon §7), but the
-# import must not be hard: a bare apatch install (no `avatar` extra) still reads
-# timesheets, so fall back to the frozen literal mirror of RECOMMENDED_ALLOWED_KEYS.
-try:
-    from avatar_contract import RECOMMENDED_ALLOWED_KEYS as _CONTRACT_ALLOWED_KEYS
+# `cv_delta`/`declares_for`/`created_at` — Avatar Architecture Canon §7), bundled
+# with APatch as `apatch._vendor.avatar_contract`; no local mirror can drift from it.
+from apatch._vendor.avatar_contract import (  # noqa: E402
+    RECOMMENDED_ALLOWED_KEYS as _CONTRACT_ALLOWED_KEYS,
+)
 
-    _ALLOWED_EVENT_KEYS = set(_CONTRACT_ALLOWED_KEYS)
-except ImportError:  # avatar extra not installed — reading receipts stays possible
-    _ALLOWED_EVENT_KEYS = {
-        "schema_version", "kind", "event_id", "idempotency_key", "avatar_id",
-        "source", "trust_level", "identity", "project", "session", "volume",
-        "proof_ref", "attestation", "payload", "cv_delta", "declares_for",
-        "methodology_tags", "created_at", "signature",
-    }
+_ALLOWED_EVENT_KEYS = set(_CONTRACT_ALLOWED_KEYS)
 
 
 def load_events(store_dir: Optional[str] = None) -> List[Dict[str, Any]]:

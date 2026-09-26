@@ -152,6 +152,26 @@ def test_declared_slug_surface_is_exact_and_not_shared_dependencies(tmp_path):
     assert {row["spec"] for row in result["owned"]} == {"SPEC-FILTER-1"}
 
 
+def test_canonical_schema_owner_beats_cross_slug_dependency(tmp_path):
+    _surface_contract(
+        tmp_path, slug="mufta",
+        atomics={"schema_sources": ["config/agent_schemas/mufta.json"]},
+    )
+    _surface_contract(
+        tmp_path, slug="gilza",
+        atomics={"schema_sources": [
+            "config/agent_schemas/gilza.json",
+            "config/agent_schemas/mufta.json",
+        ]},
+    )
+    result = resolve_spec_owned_targets(
+        str(tmp_path),
+        [{"target_file": "config/agent_schemas/mufta.json"}],
+    )
+    assert result["ok"] is True
+    assert {row["spec"] for row in result["owned"]} == {"SPEC-MUFTA-1"}
+
+
 def test_declared_slug_surface_conflict_is_not_hidden_by_longest_slug(tmp_path):
     _surface_contract(tmp_path, atomics={"category_sources": ["data/common.json"]})
     _surface_contract(tmp_path, slug="long_filter",
@@ -182,6 +202,58 @@ def test_strict_owner_precedes_slug_surface_for_shared_file(tmp_path):
     assert result["ok"] is True
     assert {row["spec"] for row in result["owned"]} == {"SPEC-SHARED-1"}
     assert {row["via"] for row in result["owned"]} == {"strict_requirement"}
+
+
+def test_malformed_slug_surface_blocks_related_paths_not_unrelated_manifests(tmp_path):
+    _surface_contract(tmp_path, runtime_pipeline={"query_builder": "../outside.py"},
+                      atomics={"category_sources": ["adapters/owned.py"]})
+    unrelated = resolve_spec_owned_targets(
+        str(tmp_path), [{"target_file": "manifests/SPEC-OTHER-1.run.json"}]
+    )
+    assert unrelated == {"ok": True, "owned": []}
+
+    save_session_state(str(tmp_path), {
+        "session_id": "session-intake", "intent": "admit unrelated manifests",
+        "artifacts": [
+            {"kind": "spec", "id": "SPEC-OTHER-1#R0"},
+            {"kind": "spec", "id": "SPEC-ANOTHER-1#R0"},
+        ],
+        "artifact_files": {
+            "spec:SPEC-OTHER-1#R0": ["manifests/SPEC-OTHER-1.run.json"],
+            "spec:SPEC-ANOTHER-1#R0": ["manifests/SPEC-ANOTHER-1.run.json"],
+        },
+        "ended_at": None,
+    }, force=True)
+    admitted = authorize_spec_owned_needles(
+        str(tmp_path),
+        [{"target_file": "manifests/SPEC-OTHER-1.run.json"},
+         {"target_file": "manifests/SPEC-ANOTHER-1.run.json"}],
+        created_by_tool="apatch_spec_run_multi:shared_maintenance",
+    )
+    assert admitted["ok"] is True
+
+    for path in ("categories/filter/query.py", "adapters/owned.py"):
+        related = resolve_spec_owned_targets(str(tmp_path), [{"target_file": path}])
+        assert related["ok"] is False
+        assert related["error_type"] == ERROR_SPEC_OWNERSHIP_UNRESOLVED
+        assert related["ownership_errors"][0]["path"] == path
+
+
+def test_null_optional_category_hook_claims_no_path(tmp_path):
+    _surface_contract(
+        tmp_path,
+        runtime_pipeline={"category_preprocessor": None, "query_builder": None},
+        atomics={"category_sources": ["adapters/owned.py"]},
+    )
+    result = resolve_spec_owned_targets(
+        str(tmp_path),
+        [{"target_file": "adapters/owned.py"},
+         {"target_file": "categories/filter/query.py"}],
+    )
+    assert result["ok"] is True
+    assert {row["path"] for row in result["owned"]} == {
+        "adapters/owned.py", "categories/filter/query.py",
+    }
 
 
 def test_malformed_declared_slug_surface_fails_closed(tmp_path):

@@ -37,7 +37,6 @@ def test_r2_default_coverage_unchanged():
 def test_r3_cli_graph_verify():
     """R3: `apatch concept graph --verify` colours by the live verify run — the
     ContributionEvent node is green because its invariants pass."""
-    pytest.importorskip("avatar_contract")  # cross-repo anchor, absent in CI
     r = CliRunner().invoke(cli, ["concept", "graph", "--verify"])
     assert r.exit_code == 0, r.output
     assert "Verify:" in r.output and "classDef green" in r.output

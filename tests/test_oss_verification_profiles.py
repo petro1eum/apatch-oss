@@ -47,29 +47,34 @@ def test_traceability():
 
 
 @pytest.mark.parametrize('change', [
-    'none', 'unknown_key', 'unknown_dependency', 'wildcard', 'whole_module',
-    'duplicate_failure', 'duplicate_skip', 'duplicate_requirement', 'unknown_collection_skip',
-    'missing_reason', 'missing_message', 'missing_hash', 'bad_hash', 'missing_file', 'changed_file',
-    'runtime_changed', 'runtime_added', 'runtime_removed', 'symlink', 'parent_symlink',
-    'wrong_command', 'wrong_test', 'unknown_requirement', 'timeout', 'invalid_exit_type',
-    'unknown_unproven', 'ambiguous_skip', 'claim_acceptance', 'duplicate_json', 'malformed_json',
+    'none', 'unknown_key', 'unknown_dependency', 'avatar_dependency', 'wildcard', 'whole_module',
+    'duplicate_skip', 'reintroduced_peer_failures', 'reintroduced_peer_requirements',
+    'collection_skip_field', 'missing_reason', 'missing_hash', 'bad_hash', 'missing_file',
+    'changed_file', 'runtime_changed', 'runtime_added', 'runtime_removed', 'vendored_changed',
+    'vendored_record_invalid', 'symlink', 'parent_symlink', 'wrong_test', 'unknown_unproven',
+    'claim_acceptance', 'old_schema', 'duplicate_json', 'malformed_json',
 ])
 def test_inventory_is_exact_and_hash_bound(tmp_path, change):
     q = qualifier()
     inv = inventory()
-    assert len(inv['absent_peer_failures']) == 40
-    assert len(inv['peer_requirements']) == 22
-    assert len(inv['runtime_files']) == 241
-    assert len(inv['source_files']) == 19
+    # Owner decision 2026-09-26: the Avatar contract is bundled, so the inventory
+    # declares no absent-peer failures, peer requirements or Avatar skips.
+    assert inv['schema'] == 'apatch.oss-verification-inventory.v2'
+    assert 'absent_peer_failures' not in inv and 'peer_requirements' not in inv
+    assert len(inv['runtime_files']) == 266
+    assert len(inv['source_files']) == 2
+    assert [row['dependency'] for row in inv['existing_optional_skips']] == ['tree_sitter_java']
     source = source_fixture(tmp_path, inv)
-    first = inv['absent_peer_failures'][0]
+    first = inv['existing_optional_skips'][0]
     path = first['node'].split('::')[0]
+    vendored = 'apatch/_vendor/avatar_contract/UPSTREAM.json'
     if change == 'none':
         report = q.verify_inventory_source(inv, source)
         assert report['inventory_validated'] is True
         assert report['profile_passed'] is False
         assert report['release_authorized'] is False
         assert report['external_acceptance'] == 'not_checked'
+        assert q.bundled_contract_pin(source) == '44c8f9ada8a50fb8b7c94346a4103c09a19f15c2'
         return
     if change in {'duplicate_json', 'malformed_json'}:
         raw = tmp_path / 'inventory.json'
@@ -81,22 +86,24 @@ def test_inventory_is_exact_and_hash_bound(tmp_path, change):
         inv['exclude_modules'] = ['tests/test_avatar_delivery.py']
     elif change == 'unknown_dependency':
         first['dependency'] = 'private_unreviewed_peer'
+    elif change == 'avatar_dependency':
+        first['dependency'] = 'avatar_contract'
     elif change == 'wildcard':
-        first['node'] = 'tests/test_avatar_*.py::test_anything'
+        first['node'] = 'tests/test_*.py::test_anything'
     elif change == 'whole_module':
         first['node'] = path
-    elif change == 'duplicate_failure':
-        inv['absent_peer_failures'].append(copy.deepcopy(first))
     elif change == 'duplicate_skip':
-        inv['existing_optional_skips'].append(copy.deepcopy(inv['existing_optional_skips'][0]))
-    elif change == 'duplicate_requirement':
-        inv['peer_requirements'].append(copy.deepcopy(inv['peer_requirements'][0]))
-    elif change == 'unknown_collection_skip':
-        inv['existing_optional_skips'][0].update(node=path, collection_skip=True)
+        inv['existing_optional_skips'].append(copy.deepcopy(first))
+    elif change == 'reintroduced_peer_failures':
+        inv['absent_peer_failures'] = [{'node': 'tests/test_avatar_delivery.py::test_x',
+                                        'dependency': 'avatar_contract', 'reason': 'absent peer',
+                                        'observed_message': 'No module named avatar_contract'}]
+    elif change == 'reintroduced_peer_requirements':
+        inv['peer_requirements'] = []
+    elif change == 'collection_skip_field':
+        first['collection_skip'] = True
     elif change == 'missing_reason':
         first['reason'] = ''
-    elif change == 'missing_message':
-        first['observed_message'] = ''
     elif change == 'missing_hash':
         inv['source_files'].pop(path)
     elif change == 'bad_hash':
@@ -111,6 +118,13 @@ def test_inventory_is_exact_and_hash_bound(tmp_path, change):
         (source / 'apatch/unreviewed.py').write_text('changed = True\n')
     elif change == 'runtime_removed':
         (source / 'apatch/__init__.py').unlink()
+    elif change == 'vendored_changed':
+        (source / 'apatch/_vendor/avatar_contract/contribution_event.py').write_text('SCHEMA_VERSION = 9\n')
+    elif change == 'vendored_record_invalid':
+        record = json.loads((source / vendored).read_text())
+        record['commit'] = 'not-a-commit'
+        (source / vendored).write_text(json.dumps(record))
+        inv['runtime_files'][vendored] = q.sha256((source / vendored).read_bytes())
     elif change == 'symlink':
         original = source / path
         other = tmp_path / 'other.py'
@@ -119,22 +133,14 @@ def test_inventory_is_exact_and_hash_bound(tmp_path, change):
     elif change == 'parent_symlink':
         (source / 'tests').rename(tmp_path / 'outside-tests')
         (source / 'tests').symlink_to(tmp_path / 'outside-tests', target_is_directory=True)
-    elif change == 'wrong_command':
-        inv['peer_requirements'][0]['command'] += ' -k nothing'
     elif change == 'wrong_test':
         first['node'] = path + '::test_not_present'
-    elif change == 'unknown_requirement':
-        inv['peer_requirements'][0]['requirement'] = 'SPEC-AVATAR-EVIDENCE-1#R999'
-    elif change == 'timeout':
-        inv['peer_requirements'][0]['observed_exit_code'] = 'timeout'
-    elif change == 'invalid_exit_type':
-        inv['peer_requirements'][0]['observed_exit_code'] = True
     elif change == 'unknown_unproven':
         inv['unproven_external_specs'][0]['spec'] = 'SPEC-LOCAL-REGRESSION-1'
-    elif change == 'ambiguous_skip':
-        inv['existing_optional_skips'][0]['node'] = first['node']
     elif change == 'claim_acceptance':
         inv['qualification_scope'] = 'full_contract_accepted'
+    elif change == 'old_schema':
+        inv['schema'] = 'apatch.oss-verification-inventory.v1'
     with pytest.raises(q.InventoryError):
         q.verify_inventory_source(inv, source)
 
@@ -325,117 +331,97 @@ def test_full_run_is_unfiltered_and_isolated(tmp_path, monkeypatch, case):
 
 
 def _standalone_evidence():
-    import fnmatch
-    import shlex
     inv = inventory()
-    failures = {row['node']: {'outcome': 'failed', 'phase': 'call',
-                             'message': row['observed_message']} for row in inv['absent_peer_failures']}
-    outcomes = dict(failures, **{'tests/test_avatar_delivery.py::test_local_without_peer': {'outcome': 'passed'}})
-    collection = {}
+    outcomes = {'tests/test_avatar_delivery.py::test_runtime_reports_bundled_contract_and_ignores_stale_external_module': {'outcome': 'passed'},
+                'tests/test_local.py::test_local': {'outcome': 'passed'}}
     for row in inv['existing_optional_skips']:
-        marker = 'avatar_contract' if row['dependency'] == 'avatar_contract' else 'tree-sitter-java'
-        if row['collection_skip']: collection[row['node']] = 'could not import ' + marker
-        else: outcomes[row['node']] = {'outcome': 'skipped', 'message': 'missing ' + marker}
-    specs = {}
-    for declaration in inv['peer_requirements']:
-        spec_id, req_id = declaration['requirement'].split('#')
-        row = specs.setdefault(spec_id, {'spec': spec_id, 'conformance': 'drifted', 'verify_details': []})
-        detail = {'id': req_id, 'cmd': declaration['command'], 'kind': declaration['kind'],
-                  'exit_code': declaration['observed_exit_code'], 'stderr_tail': ''}
-        selectors = [arg for arg in shlex.split(declaration['command']) if arg.startswith('tests/')]
-        if declaration['kind'] == 'broken':
-            row['conformance'] = 'broken'
-            detail.update(stdout_tail='1 skipped in 0.03s\n',
-                          stderr_tail='ERROR: found no collectors for /snapshot/' + selectors[0] + '\n')
-        else:
-            selected = [node for node in failures if any(
-                node == selector or ('::' not in selector and fnmatch.fnmatchcase(node.split('::')[0], selector))
-                for selector in selectors)]
-            detail['stdout_tail'] = '\n'.join('FAILED ' + node + ' - observed missing peer' for node in selected)
-            detail['stdout_tail'] += '\n' + str(len(selected)) + ' failed, 3 passed in 0.05s\n'
-        row['verify_details'].append(detail)
-    specs['SPEC-LOCAL-ONLY-1'] = {'spec': 'SPEC-LOCAL-ONLY-1', 'conformance': 'conformant'}
+        outcomes[row['node']] = {'outcome': 'skipped', 'message': 'tree-sitter-java grammar not installed'}
+    specs = [{'spec': 'SPEC-LOCAL-ONLY-1', 'conformance': 'conformant'},
+             {'spec': 'SPEC-OSS-BUNDLED-AVATAR-CONTRACT-1', 'conformance': 'conformant'}]
     for declaration in inv['unproven_external_specs']:
-        specs[declaration['spec']] = {'spec': declaration['spec'], 'conformance': 'unproven'}
+        specs.append({'spec': declaration['spec'], 'conformance': 'unproven'})
     evidence = {'complete': True, 'source_files': {**inv['runtime_files'], **inv['source_files']},
         'suite': {'dependencies': {'avatar_contract': False, 'tree_sitter_java': False,
                                   'trustchain': True, 'mcp': True, 'cryptography': True},
-                  'outcomes': outcomes, 'collection_skips': collection},
-        'contract': {'contract_holds': False, 'per_spec': list(specs.values())}}
+                  'outcomes': outcomes, 'collection_skips': {}},
+        'contract': {'contract_holds': True, 'per_spec': specs}}
     return inv, evidence
 
 
 @pytest.mark.parametrize('case', [
     'reviewed', 'java_installed', 'incomplete', 'source_changed', 'peer_present',
-    'public_dependency_missing', 'dependency_unknown', 'failure_added', 'failure_missing',
-    'failure_changed', 'setup_failure', 'skip_added', 'skip_missing', 'skip_unexplained',
-    'collection_unexplained', 'requirement_added', 'requirement_missing', 'requirement_changed',
-    'requirement_extra_failure', 'requirement_missing_failure', 'requirement_count_forged',
-    'requirement_skips', 'requirement_error', 'broken_unexplained', 'unproven_added',
-    'duplicate_spec', 'unknown_status', 'missing_raw_verdict',
+    'public_dependency_missing', 'dependency_unknown', 'failure_added', 'avatar_failure',
+    'skip_added', 'avatar_skip', 'skip_missing', 'skip_unexplained', 'collection_skip',
+    'requirement_drifted', 'requirement_broken', 'hidden_requirement_failure',
+    'unproven_added', 'unproven_missing', 'duplicate_spec', 'unknown_status',
+    'missing_raw_verdict', 'red_raw_verdict',
 ])
 def test_standalone_fails_closed(case):
     q = qualifier()
     inv, evidence = _standalone_evidence()
     suite, contract = evidence['suite'], evidence['contract']
-    first = inv['absent_peer_failures'][0]['node']
     node = inv['existing_optional_skips'][0]['node']
-    detail = next(d for s in contract['per_spec'] for d in s.get('verify_details', []) if d['kind'] == 'failure')
     if case == 'java_installed':
         suite['dependencies']['tree_sitter_java'] = True
-        suite['outcomes']['tests/test_matcher.py::test_evaluate_java_body_match'] = {'outcome': 'passed'}
+        suite['outcomes'][node] = {'outcome': 'passed'}
     if case in {'reviewed', 'java_installed'}:
         result = q.qualify_standalone(inv, evidence)
         assert result['profile_passed'] is True
-        assert result['raw_suite_passed'] is False and result['raw_contract_holds'] is False
-        assert result['avatar_acceptance'] == 'unavailable'
+        assert result['raw_suite_passed'] is True and result['raw_contract_holds'] is True
+        assert result['canonical_contract_checked'] is False
         assert result['release_authorized'] is False and result['external_acceptance'] == 'not_checked'
-        assert len(result['classified_failures']) == 40
+        assert result['classified_skips'] == ([] if case == 'java_installed' else [node])
+        assert result['unproven_external_specs'] == ['SPEC-AVATAR-CONTRACT-1']
+        assert 'classified_failures' not in result and 'classified_requirements' not in result
         return
     if case == 'incomplete': evidence['complete'] = False
     elif case == 'source_changed': evidence['source_files']['apatch/__init__.py'] = '0' * 64
     elif case == 'peer_present': suite['dependencies']['avatar_contract'] = True
     elif case == 'public_dependency_missing': suite['dependencies']['trustchain'] = False
     elif case == 'dependency_unknown': suite['dependencies']['avatar_contract'] = None
-    elif case == 'failure_added': suite['outcomes']['tests/test_local.py::test_regression'] = dict(suite['outcomes'][first])
-    elif case == 'failure_missing': suite['outcomes'][first] = {'outcome': 'passed'}
-    elif case == 'failure_changed': suite['outcomes'][first]['message'] = 'unrelated regression'
-    elif case == 'setup_failure': suite['outcomes'][first]['phase'] = 'setup'
+    elif case == 'failure_added':
+        suite['outcomes']['tests/test_local.py::test_regression'] = {
+            'outcome': 'failed', 'phase': 'call', 'message': 'regression'}
+    elif case == 'avatar_failure':
+        suite['outcomes']['tests/test_avatar_evidence.py::test_bundle_is_signed_shared_contract'] = {
+            'outcome': 'failed', 'phase': 'call', 'message': "ModuleNotFoundError: No module named 'avatar_contract'"}
     elif case == 'skip_added': suite['outcomes']['tests/test_local.py::test_skipped'] = {'outcome': 'skipped'}
+    elif case == 'avatar_skip':
+        suite['outcomes']['tests/test_concept_verify.py::test_r1_runs_real_checks_green'] = {
+            'outcome': 'skipped', 'message': "could not import 'avatar_contract'"}
     elif case == 'skip_missing': suite['outcomes'][node] = {'outcome': 'passed'}
     elif case == 'skip_unexplained': suite['outcomes'][node]['message'] = 'disabled by author'
-    elif case == 'collection_unexplained': suite['collection_skips']['tests/test_contribution_event.py'] = 'disabled'
-    elif case == 'requirement_added':
-        contract['per_spec'].append({'spec': 'SPEC-REGRESSION-1', 'conformance': 'drifted',
-                                     'verify_details': [copy.deepcopy(detail)]})
-    elif case == 'requirement_missing':
-        next(s for s in contract['per_spec'] if s.get('verify_details'))['verify_details'].pop()
-    elif case == 'requirement_changed': detail['exit_code'] = 2
-    elif case == 'requirement_extra_failure': detail['stdout_tail'] += 'FAILED tests/test_local.py::test_regression - not peer\n'
-    elif case == 'requirement_missing_failure': detail['stdout_tail'] = '1 failed in 1s\n'
-    elif case == 'requirement_count_forged': detail['stdout_tail'] += '\n999 failed in 1s\n'
-    elif case == 'requirement_skips': detail['stdout_tail'] += '1 skipped in 1s\n'
-    elif case == 'requirement_error': detail['stderr_tail'] = 'ERROR: cannot load plugin'
-    elif case == 'broken_unexplained':
-        next(d for s in contract['per_spec'] for d in s.get('verify_details', []) if d['kind'] == 'broken')['stderr_tail'] = 'ImportError: unrelated'
+    elif case == 'collection_skip': suite['collection_skips']['tests/test_contribution_event.py'] = "could not import 'avatar_contract'"
+    elif case == 'requirement_drifted':
+        contract['per_spec'][0].update(conformance='drifted', verify_details=[
+            {'id': 'R1', 'cmd': 'python3 -m pytest tests/test_local.py -q', 'kind': 'failure', 'exit_code': 1}])
+    elif case == 'requirement_broken':
+        contract['per_spec'][0].update(conformance='broken', verify_details=[
+            {'id': 'R1', 'cmd': 'python3 -m pytest tests/test_local.py -q', 'kind': 'broken', 'exit_code': 4}])
+    elif case == 'hidden_requirement_failure':
+        contract['per_spec'][0]['verify_details'] = [{'id': 'R1', 'cmd': 'true', 'kind': 'failure', 'exit_code': 1}]
     elif case == 'unproven_added': contract['per_spec'].append({'spec': 'SPEC-UNPROVEN-1', 'conformance': 'unproven'})
+    elif case == 'unproven_missing': contract['per_spec'][-1]['conformance'] = 'conformant'
     elif case == 'duplicate_spec': contract['per_spec'].append(copy.deepcopy(contract['per_spec'][0]))
     elif case == 'unknown_status': contract['per_spec'][-1]['conformance'] = 'unknown'
     elif case == 'missing_raw_verdict': contract.pop('contract_holds')
+    elif case == 'red_raw_verdict': contract['contract_holds'] = False
     else: raise AssertionError(case)
     with pytest.raises(q.InventoryError):
         q.qualify_standalone(inv, evidence)
 
 
 def _canonical_fixture(tmp_path):
+    """A canonical peer repository plus a public source vendoring it at its commit."""
     import subprocess
-    import sys
-    import venv
     checkout, source = tmp_path / 'canonical', tmp_path / 'public'
-    (checkout / 'avatar_contract').mkdir(parents=True)
+    (checkout / 'avatar_contract/schema').mkdir(parents=True)
     (checkout / 'tests').mkdir()
     source.mkdir()
-    (checkout / 'avatar_contract/__init__.py').write_text('SCHEMA = 3\n')
+    (checkout / 'avatar_contract/__init__.py').write_text('from avatar_contract.core import SCHEMA\n')
+    (checkout / 'avatar_contract/core.py').write_text('SCHEMA = 3\n')
+    (checkout / 'avatar_contract/schema/event.v3.json').write_text('{"schema": "avatar_contract.event.v3"}\n')
+    (checkout / 'LICENSE').write_text('MIT License\n\nCopyright (c) 2026 Fixture\n')
     (checkout / 'tests/test_schema.py').write_text('from avatar_contract import SCHEMA\ndef test_schema(): assert SCHEMA == 3\n')
     (checkout / 'pyproject.toml').write_text('[project]\nname="avatar-contract"\nversion="0.0.1"\n')
     for args in (['init', '-b', 'main'], ['add', '.'],
@@ -443,24 +429,22 @@ def _canonical_fixture(tmp_path):
                   '-c', 'commit.gpgsign=false', '-c', 'core.hooksPath=/dev/null', 'commit', '-qm', 'fixture']):
         subprocess.run(['git', '-C', str(checkout), *args], check=True, capture_output=True)
     pin = subprocess.check_output(['git', '-C', str(checkout), 'rev-parse', 'HEAD'], text=True).strip()
-    (source / 'pyproject.toml').write_text('# avatar-contract @ git+https://github.com/petro1eum/avatar-contract.git@' + pin + '\n')
-    runtime = tmp_path / 'venv'
-    venv.EnvBuilder(with_pip=False).create(runtime)
-    python = runtime / 'bin/python'
-    site = Path(subprocess.check_output([str(python), '-I', '-c',
-        'import sysconfig; print(sysconfig.get_path("purelib"))'], text=True).strip())
-    shutil.copytree(checkout / 'avatar_contract', site / 'avatar_contract')
-    dist = site / 'avatar_contract-0.0.1.dist-info'
-    dist.mkdir()
-    (dist / 'METADATA').write_text('Metadata-Version: 2.1\nName: avatar-contract\nVersion: 0.0.1\n')
-    return source, checkout, python, site, pin
+    spec = importlib.util.spec_from_file_location('vendor_fixture', ROOT / 'scripts/vendor_avatar_contract.py')
+    vendor = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(vendor)
+    vendored = source / 'apatch/_vendor/avatar_contract'
+    vendor.vendor(checkout, pin, vendored)
+    assert vendor.check(vendored, checkout)['canonical_checkout_checked'] is True
+    return source, checkout, vendored, pin
 
 
 @pytest.mark.parametrize('case', [
-    'canonical', 'missing_checkout', 'missing_pin', 'ambiguous_pin', 'wrong_commit', 'dirty',
-    'hidden_tracked_change', 'missing_install', 'wrong_install_version', 'changed_install',
-    'extra_installed_module', 'installed_symlink',
-    'profile_passes', 'profile_missing_shared', 'profile_missing_peer', 'profile_failed_test',
+    'canonical', 'canonical_with_external_install', 'missing_checkout', 'missing_record',
+    'malformed_pin', 'wrong_commit', 'dirty', 'hidden_tracked_change', 'vendored_changed',
+    'vendored_extra', 'vendored_missing', 'vendored_symlink', 'unrewritten_import',
+    'record_hash_mismatch', 'record_version_mismatch',
+    'profile_passes', 'profile_passes_with_external_install', 'profile_missing_shared',
+    'profile_dependency_unobserved', 'profile_failed_test',
     'profile_avatar_skip', 'profile_collection_skip', 'profile_red_contract', 'profile_broken_contract',
     'profile_missing_tests', 'profile_unknown_outcome', 'profile_unbound', 'profile_empty_gate',
     'profile_empty_shared', 'shared_pass', 'shared_failed', 'shared_skipped',
@@ -472,18 +456,23 @@ def test_avatar_requires_canonical_peer(tmp_path, monkeypatch, case):
         source, peer = tmp_path / 'public', tmp_path / 'private-peer'
         (source / 'docs/specs').mkdir(parents=True)
         (peer / 'tests').mkdir(parents=True)
+        (peer / 'avatar_contract').mkdir()
+        (peer / 'avatar_contract/__init__.py').write_text('CANONICAL_FIXTURE = True\n')
         body = 'def test_schema(): assert True\n'
         if case == 'shared_failed': body = 'def test_schema(): assert False\n'
         if case == 'shared_skipped': body = 'import pytest\ndef test_schema(): pytest.skip("not allowed")\n'
         (peer / 'tests/test_schema.py').write_text(body)
-        command = 'python3 -c "raise SystemExit(' + ('1' if case == 'shared_requirement_failed' else '0') + ')"'
+        # The canonical requirement imports the verified peer copy, never an installed one.
+        command = ('python3 -c "import avatar_contract; assert avatar_contract.CANONICAL_FIXTURE"'
+                   if case != 'shared_requirement_failed' else 'python3 -c "raise SystemExit(1)"')
         name = 'docs/specs/SPEC-AVATAR-CONTRACT-1.md'
         (source / name).write_text('# SPEC-AVATAR-CONTRACT-1\n\n## R1 Canonical check\n\n(verify: ' + command + ')\n')
         manifest = {'private_git_history_included': False, 'files': [
             {'path': name, 'sha256': q.sha256((source / name).read_bytes())}]}
         (source / 'PUBLIC-SOURCE-MANIFEST.json').write_text(json.dumps(manifest))
         prerequisite = {'pin': 'b' * 40, 'checkout': str(peer), 'source_files': {
-            'tests/test_schema.py': q.sha256((peer / 'tests/test_schema.py').read_bytes())}}
+            relative: q.sha256((peer / relative).read_bytes())
+            for relative in ('tests/test_schema.py', 'avatar_contract/__init__.py')}}
         monkeypatch.setattr(q, 'avatar_prerequisite', lambda *args: prerequisite)
         output = tmp_path / 'shared'
         if case == 'shared_inside_public': output = source / 'private-evidence'
@@ -502,25 +491,20 @@ def test_avatar_requires_canonical_peer(tmp_path, monkeypatch, case):
     if case.startswith('profile_'):
         inv, evidence = _standalone_evidence()
         suite, contract = evidence['suite'], evidence['contract']
-        suite['dependencies']['avatar_contract'] = True
-        suite['collection_skips'] = {}
+        suite['dependencies']['avatar_contract'] = case == 'profile_passes_with_external_install'
         suite['outcomes'] = {node: {'outcome': 'passed'} for node in suite['outcomes']}
         suite['outcomes']['tests/test_matcher.py::test_evaluate_java_body_match'] = {
             'outcome': 'skipped', 'message': 'tree-sitter-java grammar not installed'}
-        contract['contract_holds'] = True
-        for row in contract['per_spec']:
-            row['conformance'] = 'unproven' if row['spec'] == 'SPEC-AVATAR-CONTRACT-1' else 'conformant'
-            row.pop('verify_details', None)
         shared = {'shared_contract_passed': True, 'pin': 'b' * 40,
                   'requirements': ['R0', 'R1', 'R2', 'R3', 'R4', 'R5']}
-        if case == 'profile_passes':
+        if case in {'profile_passes', 'profile_passes_with_external_install'}:
             result = q.qualify_avatar(inv, evidence, shared)
             assert result['profile_passed'] and result['raw_suite_passed']
-            assert result['canonical_shared_contract_passed']
+            assert result['canonical_shared_contract_passed'] and result['canonical_contract_checked']
             assert result['release_authorized'] is False and result['external_acceptance'] == 'not_checked'
             return
         if case == 'profile_missing_shared': shared['shared_contract_passed'] = False
-        elif case == 'profile_missing_peer': suite['dependencies']['avatar_contract'] = False
+        elif case == 'profile_dependency_unobserved': suite['dependencies']['avatar_contract'] = None
         elif case == 'profile_failed_test': suite['outcomes']['tests/test_avatar.py::test_failed'] = {'outcome': 'failed'}
         elif case == 'profile_avatar_skip': suite['outcomes']['tests/test_avatar.py::test_skipped'] = {'outcome': 'skipped'}
         elif case == 'profile_collection_skip': suite['collection_skips']['tests/test_contribution_event.py'] = 'missing avatar_contract'
@@ -534,28 +518,40 @@ def test_avatar_requires_canonical_peer(tmp_path, monkeypatch, case):
         with pytest.raises(q.InventoryError): q.qualify_avatar(inv, evidence, shared)
         return
     import subprocess
-    source, checkout, python, site, pin = _canonical_fixture(tmp_path)
-    monkeypatch.setattr(q.sys, 'executable', str(python))
-    if case == 'canonical':
+    source, checkout, vendored, pin = _canonical_fixture(tmp_path)
+    record = vendored / 'UPSTREAM.json'
+    if case in {'canonical', 'canonical_with_external_install'}:
+        if case == 'canonical_with_external_install':
+            # A stale top-level install cannot influence the bundled comparison.
+            monkeypatch.setattr(q.sys, 'executable', '/nonexistent/python-with-stale-avatar-contract')
         result = q.avatar_prerequisite(source, checkout)
         assert result['prerequisite_passed'] and result['pin'] == pin
-        assert result['installed']['version'] == '0.0.1'
+        assert result['version'] == '0.0.1' and result['bundled_files'] == 4
+        assert 'installed' not in result
         return
     if case == 'missing_checkout': checkout = None
-    elif case == 'missing_pin': (source / 'pyproject.toml').write_text('[project]\nname="apatch"\n')
-    elif case == 'ambiguous_pin':
-        path = source / 'pyproject.toml'; path.write_text(path.read_text() * 2)
+    elif case == 'missing_record': record.unlink()
+    elif case == 'malformed_pin':
+        data = json.loads(record.read_text()); data['commit'] = 'main'; record.write_text(json.dumps(data))
     elif case == 'wrong_commit':
-        path = source / 'pyproject.toml'; path.write_text(path.read_text().replace(pin, '0' * 40))
+        data = json.loads(record.read_text()); data['commit'] = '0' * 40; record.write_text(json.dumps(data))
     elif case == 'dirty': (checkout / 'untracked.py').write_text('dirty')
     elif case == 'hidden_tracked_change':
-        subprocess.run(['git', '-C', str(checkout), 'update-index', '--assume-unchanged', 'avatar_contract/__init__.py'], check=True)
-        (checkout / 'avatar_contract/__init__.py').write_text('SCHEMA = 0\n')
-    elif case == 'missing_install': (site / 'avatar_contract').rename(site / 'unrelated_package')
-    elif case == 'wrong_install_version': (site / 'avatar_contract-0.0.1.dist-info/METADATA').write_text('Metadata-Version: 2.1\nName: avatar-contract\nVersion: 999\n')
-    elif case == 'changed_install': (site / 'avatar_contract/__init__.py').write_text('SCHEMA = 0\n')
-    elif case == 'extra_installed_module': (site / 'avatar_contract/unreviewed.py').write_text('unknown = True\n')
-    elif case == 'installed_symlink': (site / 'avatar_contract/foreign.py').symlink_to(checkout / 'avatar_contract/__init__.py')
+        subprocess.run(['git', '-C', str(checkout), 'update-index', '--assume-unchanged', 'avatar_contract/core.py'], check=True)
+        (checkout / 'avatar_contract/core.py').write_text('SCHEMA = 0\n')
+    elif case == 'vendored_changed': (vendored / 'core.py').write_text('SCHEMA = 0\n')
+    elif case == 'vendored_extra': (vendored / 'unreviewed.py').write_text('unknown = True\n')
+    elif case == 'vendored_missing': (vendored / 'schema/event.v3.json').unlink()
+    elif case == 'vendored_symlink':
+        (vendored / 'core.py').unlink()
+        (vendored / 'core.py').symlink_to(checkout / 'avatar_contract/core.py')
+    elif case == 'unrewritten_import':
+        (vendored / '__init__.py').write_text('from avatar_contract.core import SCHEMA\n')
+    elif case == 'record_hash_mismatch':
+        data = json.loads(record.read_text()); data['files']['avatar_contract/core.py'] = '0' * 64
+        record.write_text(json.dumps(data))
+    elif case == 'record_version_mismatch':
+        data = json.loads(record.read_text()); data['version'] = '9.9.9'; record.write_text(json.dumps(data))
     else: raise AssertionError(case)
     with pytest.raises(q.InventoryError): q.avatar_prerequisite(source, checkout)
 
@@ -668,7 +664,7 @@ def test_report_never_claims_global_acceptance(tmp_path, monkeypatch, capsys, ca
     (source / 'docs').mkdir(parents=True)
     inv, evidence = _standalone_evidence()
     (source / 'docs/oss-verification-profiles.json').write_text(json.dumps(inv))
-    evidence['suite_process'] = {'exit_code': 1}
+    evidence['suite_process'] = {'exit_code': 0}
     evidence['source_files']['PUBLIC-SOURCE-MANIFEST.json'] = 'a' * 64
     calls = []
     before = {'ok': True, 'versions': {'apatch': 'fixture'}}
@@ -691,6 +687,7 @@ def test_report_never_claims_global_acceptance(tmp_path, monkeypatch, capsys, ca
     monkeypatch.setattr(q, 'avatar_prerequisite', peer)
     if case == 'report_new_failure':
         evidence['suite']['outcomes']['tests/test_new.py::test_regression'] = {'outcome': 'failed'}
+        evidence['suite_process'] = {'exit_code': 1}
     if case == 'report_reused_output':
         output.mkdir()
         (output / 'qualification.json').write_text('preserve existing evidence')
@@ -711,4 +708,9 @@ def test_report_never_claims_global_acceptance(tmp_path, monkeypatch, capsys, ca
     else:
         assert (output / 'complete/raw-failure.stdout').read_text() == 'original raw evidence'
         if case != 'report_timeout':
-            assert report['raw_suite_passed'] is False and report['raw_contract_holds'] is False
+            # Raw verdicts are reported as measured; a new failure is never classified away.
+            assert report['raw_suite_passed'] is (case != 'report_new_failure')
+            assert report['raw_contract_holds'] is True
+        if case == 'report_pass':
+            assert report['canonical_contract_checked'] is False
+            assert report['classified_skips'] == ['tests/test_matcher.py::test_evaluate_java_body_match']

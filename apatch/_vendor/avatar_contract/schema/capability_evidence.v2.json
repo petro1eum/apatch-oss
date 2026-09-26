@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trust-chain.ai/schemas/capability_evidence.v2.json",
+  "title": "CapabilityEvidence v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "bundle_id",
+    "avatar_id",
+    "source",
+    "trust_level",
+    "generated_at",
+    "evidence_scope",
+    "episodes",
+    "capability_estimates",
+    "exclusions"
+  ],
+  "properties": {
+    "schema_version": {"const": 2},
+    "kind": {"const": "capability_evidence"},
+    "bundle_id": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "avatar_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "source": {"const": "apatch"},
+    "trust_level": {"enum": ["claimed", "attested", "verified"]},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "evidence_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_count", "project_count", "from", "to"],
+      "properties": {
+        "event_count": {"type": "integer", "minimum": 0},
+        "project_count": {"type": "integer", "minimum": 0},
+        "from": {"type": ["string", "null"], "format": "date-time"},
+        "to": {"type": ["string", "null"], "format": "date-time"}
+      }
+    },
+    "episodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "review_package": {
+            "$ref": "work_review_package.v1.json",
+            "description": "Optional for backward compatibility; incomplete or absent packages cannot be accepted as work."
+          }
+        }
+      }
+    },
+    "capability_estimates": {"type": "array", "items": {"type": "object"}},
+    "exclusions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "reasons"],
+      "properties": {
+        "count": {"type": "integer", "minimum": 0},
+        "reasons": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "key_id", "public_key", "value"],
+      "properties": {
+        "algorithm": {"const": "ed25519"},
+        "key_id": {"type": "string"},
+        "public_key": {"type": "string"},
+        "value": {"type": "string"}
+      }
+    }
+  }
+}

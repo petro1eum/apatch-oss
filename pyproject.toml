@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "apatch"
-version = "0.8.45"
+version = "0.8.48"
 description = "Executable contracts for AI agents: scoped changes, frozen verification, and signed evidence"
 readme = "README.pypi.md"
 license = "MIT"
@@ -48,18 +48,16 @@ Issues = "https://github.com/petro1eum/apatch-oss/issues"
 # part of APatch itself, not an optional service integration.
 trustchain = []
 # Contribution / Avatar emission — the ONE shared canonical ContributionEvent
-# schema (Avatar Architecture Canon §7, Rule 1). Every avatar_contract import is
-# inside a function, so bare apatch neither needs nor imports it.
-#
-# There is deliberately no `avatar` extra: avatar-contract is not in the package
-# index, and an extra can only reach it by a direct URL. A distribution whose
-# metadata carries a direct reference is refused at upload, which would keep apatch
-# unpublishable for the sake of an optional peer. Until a registry release exists,
-# install it explicitly next to apatch:
-#
-#   pip install "avatar-contract @ git+https://github.com/petro1eum/avatar-contract.git@e8cee1689e2b661b8b7258d9c939fa1a3839cefb"
-#
-# That commit is the pinned MIT contract; keep this comment in step with it.
+# schema (Avatar Architecture Canon §7, Rule 1) — is bundled, not a dependency
+# (owner decision 2026-09-26, RFP-049). The MIT avatar-contract package ships
+# inside this distribution as `apatch._vendor.avatar_contract`: canonical bytes at
+# the commit recorded in apatch/_vendor/avatar_contract/UPSTREAM.json, with only
+# its own imports rewritten to that private namespace. APatch never imports a
+# top-level `avatar_contract`, so a separately installed avatar-contract (as used
+# by HC_Platform) cannot collide with or change it. There is no `avatar` extra and
+# no direct-URL requirement. Regenerate or prove the copy with
+# `python scripts/vendor_avatar_contract.py --checkout <avatar-contract> --commit <sha>`
+# or `--check`.
 # YAML strip manifests.
 yaml = ["pyyaml>=6.0"]
 # Optional tree-sitter grammars for AST-fuzzy matching beyond the core six.
@@ -93,6 +91,7 @@ include = ["apatch", "apatch.*", "apatch_search_workflows", "apatch_search_workf
 
 [tool.setuptools.package-data]
 "apatch.extensions" = ["schemas/*.json"]
+"apatch._vendor.avatar_contract" = ["schema/*.json", "transport/*.json", "LICENSE", "UPSTREAM.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

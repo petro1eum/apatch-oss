@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/petro1eum/apatch/avatar-contract/contribution_event.v3.json",
+  "title": "ContributionEvent",
+  "description": "Canonical money-free Avatar contribution contract. v3 requires a signed producer creation time; certificate validity still requires a consumer-trusted time basis.",
+  "type": "object",
+  "required": ["schema_version", "kind", "event_id", "idempotency_key", "avatar_id", "source", "trust_level", "identity", "project", "session", "volume", "created_at"],
+  "properties": {
+    "schema_version": {"type": "integer", "const": 3},
+    "kind": {"type": "string", "enum": ["fact", "claim"]},
+    "event_id": {"type": "string", "minLength": 1},
+    "idempotency_key": {"type": "string", "minLength": 1},
+    "avatar_id": {"type": "string", "minLength": 1},
+    "source": {"type": "string", "enum": ["apatch", "witness", "tracker", "manual", "agent"]},
+    "trust_level": {"type": "string", "enum": ["claimed", "attested", "verified"]},
+    "identity": {
+      "type": "object",
+      "required": ["key_id"],
+      "properties": {
+        "key_id": {"type": "string"},
+        "cert_fingerprint": {"type": ["string", "null"]},
+        "ca": {"type": "string"}
+      }
+    },
+    "project": {"type": "object"},
+    "session": {"type": "object"},
+    "volume": {"type": "object"},
+    "proof_ref": {"type": ["object", "null"]},
+    "payload": {"type": ["object", "null"]},
+    "cv_delta": {"type": ["object", "null"]},
+    "declares_for": {"type": ["string", "null"]},
+    "methodology_tags": {"type": "array", "items": {"type": "string"}},
+    "created_at": {"type": "string", "format": "date-time"},
+    "signature": {"type": ["string", "null"]}
+  },
+  "$comment": "created_at is signed producer evidence, not a trusted timestamp authority. Economic-layer keys remain forbidden by avatar_contract.assert_economic_barrier."
+}

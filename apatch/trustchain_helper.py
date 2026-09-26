@@ -1,3 +1,4 @@
+import logging
 import hashlib
 import json
 import os
@@ -11,6 +12,8 @@ from apatch.path_index import prune_walk_dirs
 
 if TYPE_CHECKING:
     from apatch.backup import BackupManager
+
+_log = logging.getLogger(__name__)
 
 
 def _artifact_file_partition_valid(payload: Dict[str, Any]) -> bool:
@@ -65,6 +68,7 @@ class TrustChainHelper:
     _MARKER_FILES = ("pyproject.toml", "CMakeLists.txt", "go.mod", "package.json")
 
     def __init__(self, target_dir: str, auto_init: bool = True):
+        self.last_platform_push: Optional[dict] = None
         self.auto_init = auto_init
         self.target_dir = os.path.abspath(target_dir)
         self.workspace_root = self.resolve_workspace_root(self.target_dir)
@@ -930,9 +934,22 @@ class TrustChainHelper:
         return ok
 
     def _maybe_push_to_platform(self, tool_id: str, payload: dict) -> None:
-        """Best-effort push to Platform when APATCH_PLATFORM_* env is set."""
+        """Push to Platform when APATCH_PLATFORM_* env is set.
+
+        With a tenant binding and the agent certificate configured the step
+        goes through the durable execution-evidence lane (Platform PR #57)
+        and only a ``durable`` completion counts. Otherwise the best-effort
+        lane is used. Either way a failure is recorded on ``last_platform_push``
+        and logged; it is never swallowed silently.
+        """
         try:
-            from apatch.platform_client import platform_config_from_env, push_step
+            from apatch.platform_client import (
+                certificate_identity,
+                durable_lane_configured,
+                platform_config_from_env,
+                push_durable_step,
+                push_step,
+            )
             from cryptography.hazmat.primitives.serialization import load_pem_private_key
 
             cfg = platform_config_from_env()
@@ -943,6 +960,35 @@ class TrustChainHelper:
             meta: dict = {"source": "apatch", "workspace": self.workspace_root}
             if cfg.get("tenant_id"):
                 meta["tenant_id"] = cfg["tenant_id"]
+
+            if durable_lane_configured(cfg):
+                result = push_durable_step(
+                    tool=tool_id,
+                    data=payload,
+                    base_url=cfg["base_url"],
+                    agent_id=cfg["agent_id"],
+                    tenant_id=cfg["tenant_id"],
+                    private_key=private_key,
+                    certificate=certificate_identity(cfg["cert_path"]),
+                    metadata=meta,
+                )
+                self.last_platform_push = {"lane": "durable", "tool": tool_id, **result}
+                if result.get("ok"):
+                    from apatch.inclusion import record_inclusion
+
+                    # The durable log record, not the logical evidence id, is
+                    # what GET /api/pub/log/proof/{op_id} answers for.
+                    anchor = result.get("durable_log_op_id") or result.get("op_id")
+                    if anchor:
+                        record_inclusion(self.workspace_root, op_id=str(anchor), tool=tool_id)
+                else:
+                    _log.warning(
+                        "platform evidence push for %s is not durable: %s",
+                        tool_id,
+                        result.get("state"),
+                    )
+                return
+
             result = push_step(
                 tool=tool_id,
                 data=payload,
@@ -952,6 +998,12 @@ class TrustChainHelper:
                 metadata=meta,
                 return_op_id=True,
             )
+            self.last_platform_push = {
+                "lane": "best_effort",
+                "tool": tool_id,
+                "ok": bool(result),
+                "op_id": result if isinstance(result, str) else None,
+            }
             # Record the external anchor so CI can prove inclusion later
             # (RFP-005 §5.10). result is the op_id string on success.
             if isinstance(result, str):
@@ -960,8 +1012,17 @@ class TrustChainHelper:
                 record_inclusion(
                     self.workspace_root, op_id=result, tool=tool_id
                 )
-        except Exception:
-            pass
+            elif not result:
+                _log.warning("platform push for %s was not accepted", tool_id)
+        except Exception as exc:
+            self.last_platform_push = {
+                "lane": "unknown",
+                "tool": tool_id,
+                "ok": False,
+                "state": "error",
+                "detail": type(exc).__name__,
+            }
+            _log.warning("platform push for %s failed: %s", tool_id, type(exc).__name__)
 
     def _maybe_push_revert_to_platform(self, target_op_id: str, reason: str) -> None:
         try:

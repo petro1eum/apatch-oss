@@ -27,6 +27,20 @@ class WorkflowError(ValueError):
     """Invalid workflow arguments."""
 
 
+def git_untrack_runtime_workspace(
+    target_dir: str = ".",
+    *,
+    message: str = "Stop tracking APatch runtime files",
+    dry_run: bool = False,
+) -> Dict[str, Any]:
+    """Untrack only the fixed ignored runtime paths, without deleting files."""
+    from apatch.git_hygiene import untrack_runtime_files_workspace
+
+    return untrack_runtime_files_workspace(
+        target_dir, message=message, dry_run=dry_run
+    )
+
+
 def commit_attested_workspace(
     target_dir: str = ".",
     *,

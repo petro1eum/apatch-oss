@@ -13,6 +13,7 @@ import tarfile
 from typing import Any, Dict, Iterable, Mapping, Optional, Sequence
 
 from apatch.remote.errors import RemoteTaskError
+from apatch.remote.jump import jump_argv
 from apatch.remote.policy import load_remote_policy, resolve_remote_target
 from apatch.remote.target import RemoteTarget
 
@@ -428,7 +429,7 @@ class SshArchiveTransport:
         tar_cmd.extend(["-C", source_dir, "."])
 
         remote_cmd = "mkdir -p {root} && tar -xzf - -C {root}".format(root=shlex.quote(target.path))
-        ssh_cmd = ["ssh", *self.ssh_args, target.host, remote_cmd]
+        ssh_cmd = ["ssh", *self.ssh_args, *jump_argv(target.jump_hosts), target.host, remote_cmd]
         archive_env = dict(os.environ)
         archive_env["COPYFILE_DISABLE"] = "1"
         try:
@@ -486,7 +487,7 @@ class SshArchiveTransport:
             "[ \"$actual\" = {expected} ] || exit 74; "
             "tar --strip-components=1 -xzf \"$archive\" -C \"$root\""
         ).format(root=root, expected=expected)
-        ssh_cmd = ["ssh", *self.ssh_args, target.host, remote_cmd]
+        ssh_cmd = ["ssh", *self.ssh_args, *jump_argv(target.jump_hosts), target.host, remote_cmd]
         try:
             with open(bundle_path, "rb") as handle:
                 ssh_proc = subprocess.Popen(
@@ -626,7 +627,7 @@ def _redact_plan(target: RemoteTarget, value: Any, source: str, checksum: Option
     if isinstance(value, str):
         out = value
         label = target.display or target.alias or "remote"
-        for needle in (target.uri, target.path, target.host, source, checksum):
+        for needle in (target.uri, target.path, target.host, *(target.jump_hosts or ()), source, checksum):
             if needle:
                 out = out.replace(needle, "<local-source>" if needle == source else label)
         return out

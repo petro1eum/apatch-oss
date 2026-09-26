@@ -1,0 +1,42 @@
+{
+  "commit": "44c8f9ada8a50fb8b7c94346a4103c09a19f15c2",
+  "files": {
+    "LICENSE": "20c02baf3d0e544cc3e70d2bbfc263be0ca6341a5d342921dd8fee65a68ccc8b",
+    "avatar_contract/__init__.py": "3d60c855b5d2a7f88979b3b4b1aa96692f96ae90c9ce26a5b3643ff8aaa6d5d1",
+    "avatar_contract/capability_evidence.py": "519952ce46934b824482a739d8b55362a89ea5e91e4faf5706f44101a0626eb6",
+    "avatar_contract/contribution_event.py": "d07655c8bcc3b11c675e39bebb9d98bc9cfd0ec183706a3fbad56d775a281391",
+    "avatar_contract/identity.py": "ead13c6dce1271fe746319e06b831b4e11434f309ff09c467e2059385d654be6",
+    "avatar_contract/outcome_attestation.py": "8f304e7588e9fb17cae2407296dee0c51627f45686bcc049bfe85921ec006fa8",
+    "avatar_contract/ownership.py": "beec974ba491a8586e2e84cd1fe20b83950a01f8821cff4c5af131002074ec94",
+    "avatar_contract/schema/capability_evidence.v2.json": "7d885b81a2bebc029307efa2fa1d91a14e01f48f04a9120bb1fff3546813c048",
+    "avatar_contract/schema/contribution_event.v2.json": "065b348f72c13a40c53c72709efac850281454d5aeae55f71f8d611dc358d230",
+    "avatar_contract/schema/contribution_event.v3.json": "21feadd2815b54c32e840bd9f6cdd7a8de35b3ba78c8999d96cfef1287ecf623",
+    "avatar_contract/schema/work_asset_use_event.v1.json": "517f91b005fed8d7719e121e5e9f57676ddd209e1354a1c0ea53e97fc4ab66c1",
+    "avatar_contract/schema/work_review_package.v1.json": "2dc24184f1b87eebdbfe270131ffe2874f672c6f9a1e23c5588719beb12500cc",
+    "avatar_contract/taxonomy_decision.py": "e1e714c92c3103cb3e9385f55bf9c185c6ef3204089f9ba9f65b2ea277d9a916",
+    "avatar_contract/transport/__init__.py": "d06e95c2d3c7504498d3ab94457e4baf173730dec07ca7b1a21ed62194c602b4",
+    "avatar_contract/transport/avatar_bff.v1.json": "a1b4c2157ef37593a5535588a9ec86ebddfa9eaadd22848874e80b4bd4a930cc",
+    "avatar_contract/transport/hc_tracker_internal.v1.json": "42ebe4b789618ac47e771bbe4f897ead6e49b7a5e96f0fdc322d1fd782b7c621",
+    "avatar_contract/work_asset_use_event.py": "38ae563065d15f5ea896c764995ef031d47733286d54e6c66787176e42df7c49",
+    "avatar_contract/work_review.py": "f3b082a554c17b2718cc39589cfbca075fcfa7951c46ebf171734ca9445bbbaf"
+  },
+  "license": "MIT",
+  "name": "avatar-contract",
+  "package": "avatar_contract",
+  "repository": "https://github.com/petro1eum/avatar-contract",
+  "rewrite": {
+    "applies_to": "*.py",
+    "from_import": {
+      "pattern": "^(\\s*)from avatar_contract(\\.| )",
+      "replacement": "\\1from apatch._vendor.avatar_contract\\2"
+    },
+    "inverse": "exact: every rewritten line maps back to its upstream line",
+    "plain_import": {
+      "pattern": "^(\\s*)import avatar_contract(\\s*)$",
+      "replacement": "\\1from apatch._vendor import avatar_contract\\2"
+    }
+  },
+  "schema": "apatch.vendored-upstream.v1",
+  "vendored_as": "apatch._vendor.avatar_contract",
+  "version": "0.7.2"
+}

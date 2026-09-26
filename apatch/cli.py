@@ -694,6 +694,34 @@ def compile_cmd(file_path, out_dir, dry_run, no_trustchain):
     if result.get("trustchain_committed"):
         console.print("[bold green]🛡️ TrustChain[/bold green] compile session committed successfully")
 
+@cli.command("git-untrack-runtime")
+@click.option("--target-dir", default=".", type=click.Path(exists=True, file_okay=False))
+@click.option("-m", "--message", default="Stop tracking APatch runtime files")
+@click.option("--dry-run", is_flag=True, help="Validate exact Git scope without changes.")
+@click.option("--json", "as_json", is_flag=True, help="Emit machine-readable JSON.")
+def git_untrack_runtime_cmd(target_dir, message, dry_run, as_json):
+    """Untrack four fixed ignored APatch runtime files, preserving disk copies."""
+    from apatch.workflows import git_untrack_runtime_workspace
+
+    result = git_untrack_runtime_workspace(
+        target_dir, message=message, dry_run=dry_run
+    )
+    if as_json:
+        click.echo(json.dumps(result, indent=2, ensure_ascii=False))
+        if not result.get("ok"):
+            raise click.exceptions.Exit(1)
+        return
+    if not result.get("ok"):
+        raise click.ClickException(
+            f"{result.get('error_type', 'RUNTIME_UNTRACK_FAILED')}: "
+            f"{result.get('error', 'runtime untrack failed')}"
+        )
+    if dry_run:
+        console.print("[bold green]Validated[/bold green] four exact runtime paths; no Git change.")
+    else:
+        console.print(f"[bold green]Committed[/bold green] {result.get('commit')} (working files preserved).")
+
+
 @cli.command("commit-attested")
 @click.option("--target-dir", default=".", type=click.Path(exists=True, file_okay=False))
 @click.option("--session", "session_ids", multiple=True, required=True, help="Exact attested governed session id; repeat for multiple sessions.")
@@ -3871,6 +3899,14 @@ def remote_group():
 @click.option("--python", "python_path", default=None, help="Remote Python executable.")
 @click.option("--runtime-path", default=None, help="Absolute remote path containing apatch runtime source for PYTHONPATH.")
 @click.option("--ssh-arg", "ssh_args", multiple=True, help="SSH argv entry; repeat for each token.")
+@click.option(
+    "--jump-host",
+    "jump_hosts",
+    multiple=True,
+    help="Bastion (ProxyJump) hop dialed before --host; repeat for multi-hop. Keeps the target host unroutable from developer machines.",
+)
+@click.option("--allowed-jump-host", "allowed_jump_hosts", multiple=True, help="Allowed bastion pattern; default exact --jump-host.")
+@click.option("--require-jump-host", is_flag=True, help="Fail closed if this policy ever resolves an alias without a bastion hop.")
 @click.option("--timeout-sec", default=600, show_default=True, type=int)
 @click.option("--health-timeout-sec", default=60, show_default=True, type=int)
 @click.option("--allowed-host", "allowed_hosts", multiple=True, help="Allowed host pattern; default exact --host.")
@@ -3895,6 +3931,9 @@ def remote_init_cmd(
     python_path,
     runtime_path,
     ssh_args,
+    jump_hosts,
+    allowed_jump_hosts,
+    require_jump_host,
     timeout_sec,
     health_timeout_sec,
     allowed_hosts,
@@ -3925,6 +3964,9 @@ def remote_init_cmd(
             python=python_path,
             runtime_path=runtime_path,
             ssh_args=list(ssh_args) or None,
+            jump_host=list(jump_hosts) or None,
+            allowed_jump_hosts=list(allowed_jump_hosts) or None,
+            require_jump_host=require_jump_host,
             timeout_sec=timeout_sec,
             health_timeout_sec=health_timeout_sec,
             allowed_hosts=list(allowed_hosts) or None,

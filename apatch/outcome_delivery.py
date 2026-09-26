@@ -5,29 +5,20 @@ import json
 import os
 from typing import Any, Dict, Iterable, Optional
 
+from apatch.avatar_identity_gate import identity_gate_error, identity_gate_refusal
+
 try:
     import httpx
 except ImportError:  # pragma: no cover
     httpx = None  # type: ignore
 
-try:
-    from avatar_contract import (
-        OUTCOME_ACCEPTANCE_ROLES,
-        OutcomeAttestation,
-        OutcomeAttestationError,
-        assert_outcome_acceptance_authority,
-    )
-except ImportError:  # pragma: no cover - explicit optional-contract mode
-    OutcomeAttestation = None  # type: ignore
-    OUTCOME_ACCEPTANCE_ROLES = frozenset()  # type: ignore
-
-    class OutcomeAttestationError(ValueError):
-        pass
-
-    def assert_outcome_acceptance_authority(*_args, **_kwargs):  # type: ignore
-        raise OutcomeAttestationError(
-            "avatar-contract is required to authorize external outcomes"
-        )
+# The canonical contract is bundled with APatch (never a top-level import).
+from apatch._vendor.avatar_contract import (
+    OUTCOME_ACCEPTANCE_ROLES,
+    OutcomeAttestation,
+    OutcomeAttestationError,
+    assert_outcome_acceptance_authority,
+)
 
 
 def default_outcome_store_dir() -> str:
@@ -120,10 +111,6 @@ def validate_outcome_attestation(
     *,
     trusted_issuers: Optional[list[Dict[str, Any]]] = None,
 ) -> OutcomeAttestation:
-    if OutcomeAttestation is None:
-        raise OutcomeAttestationError(
-            "avatar-contract is required to consume external outcomes"
-        )
     issuers = (
         trusted_issuers
         if trusted_issuers is not None
@@ -375,6 +362,17 @@ def pull_outcome_attestations_from_platform(
     finally:
         if close:
             client.close()
+    refusal = identity_gate_refusal(response)
+    if refusal is not None:
+        return {
+            "ok": False,
+            "status": refusal["status"],
+            "retryable": refusal["retryable"],
+            "received": 0,
+            "stored": 0,
+            "duplicates": 0,
+            "errors": [identity_gate_error(refusal)],
+        }
     if (
         response.status_code != 200
         or not isinstance(body, dict)

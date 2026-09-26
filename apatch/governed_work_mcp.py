@@ -294,6 +294,396 @@ def _publication_documents(
     return change, bundle, timesheet
 
 
+
+
+AVATAR_SHARE_PLAN_SCHEMA = "apatch.avatar-share-plan.v1"
+_AVATAR_SHARE_SCOPE = "avatar.contribution_upload"
+_DEFAULT_AVATAR_ORIGIN = "https://trust-chain.ai"
+
+
+def _parse_https_origin(value: Any) -> str:
+    from urllib.parse import urlsplit
+
+    raw = G._required_text(value, "avatar_origin").strip()
+    if any(ord(character) > 127 for character in raw):
+        raise G.GovernedWorkError("avatar_origin must use an ASCII host")
+    try:
+        parsed = urlsplit(raw)
+        port = parsed.port
+    except ValueError as exc:
+        raise G.GovernedWorkError("avatar_origin is invalid") from exc
+    if (
+        parsed.scheme.casefold() != "https"
+        or not parsed.hostname
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.query
+        or parsed.fragment
+        or parsed.path not in {"", "/"}
+    ):
+        raise G.GovernedWorkError(
+            "avatar_origin must be an exact canonical HTTPS origin"
+        )
+    hostname = parsed.hostname.casefold()
+    if hostname.endswith(".") or not all(
+        character.isascii() and (character.isalnum() or character in ".-")
+        for character in hostname
+    ):
+        raise G.GovernedWorkError("avatar_origin host is invalid")
+    authority = hostname
+    if port not in {None, 443}:
+        authority = f"{hostname}:{port}"
+    return f"https://{authority}"
+
+
+def _allowed_avatar_origins() -> set[str]:
+    import os
+
+    allowed = {_DEFAULT_AVATAR_ORIGIN}
+    configured = os.environ.get("APATCH_AVATAR_ALLOWED_ORIGINS", "")
+    for item in configured.split(","):
+        if item.strip():
+            allowed.add(_parse_https_origin(item.strip()))
+    return allowed
+
+
+def _canonical_avatar_origin(value: Any) -> str:
+    canonical = _parse_https_origin(value)
+    if canonical not in _allowed_avatar_origins():
+        raise G.GovernedWorkError("avatar_origin is not in the local allowlist")
+    return canonical
+
+
+def _avatar_share_plan(
+    *,
+    avatar_origin: str,
+    change: Mapping[str, Any],
+    binding: Mapping[str, Any],
+    bundle: Mapping[str, Any],
+    events: Sequence[Mapping[str, Any]],
+) -> Dict[str, Any]:
+    identities = {
+        (
+            str(event.get("avatar_id") or event["identity"]["key_id"]),
+            str(event["identity"]["key_id"]),
+        )
+        for event in events
+    }
+    if len(identities) != 1:
+        raise G.GovernedWorkError(
+            "selected ContributionEvents must belong to one Avatar identity"
+        )
+    avatar_id, subject_key_id = next(iter(identities))
+    body = {
+        "schema": AVATAR_SHARE_PLAN_SCHEMA,
+        "avatar_origin": _canonical_avatar_origin(avatar_origin),
+        "avatar_id": G._required_text(avatar_id, "avatar_id"),
+        "subject_key_id": G._required_text(subject_key_id, "subject_key_id"),
+        "tenant_id": G._required_text(change["tenant_id"], "tenant_id"),
+        "project_group_id": G._required_text(
+            change["project_group_id"],
+            "project_group_id",
+        ),
+        "scope": _AVATAR_SHARE_SCOPE,
+        "project_source_binding_ref": {
+            "binding_id": G._required_text(binding["binding_id"], "binding_id"),
+            "binding_hash": G.document_hash(binding),
+        },
+        "evidence_bundle_ref": {
+            "bundle_id": G._required_text(bundle["bundle_id"], "bundle_id"),
+            "bundle_hash": G.document_hash(bundle),
+        },
+        "contribution_event_refs": [
+            {
+                "event_id": str(ref["event_id"]),
+                "event_hash": str(ref["event_hash"]),
+            }
+            for ref in bundle["contribution_event_refs"]
+        ],
+    }
+    return {**body, "plan_hash": G.value_hash(body)}
+
+
+def preview_avatar_contribution_publication(
+    target_dir: str,
+    *,
+    binding_id: str,
+    avatar_origin: str = _DEFAULT_AVATAR_ORIGIN,
+    contribution_store_dir: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Preview one exact Avatar publication without writes, credentials or network."""
+    try:
+        canonical_origin = _canonical_avatar_origin(avatar_origin)
+        change, binding, bundle, events = _avatar_publication_documents(
+            target_dir,
+            binding_id,
+            contribution_store_dir=contribution_store_dir,
+        )
+        return {
+            "ok": True,
+            "operation": "preview_avatar_contributions",
+            "plan": _avatar_share_plan(
+                avatar_origin=canonical_origin,
+                change=change,
+                binding=binding,
+                bundle=bundle,
+                events=events,
+            ),
+        }
+    except (G.GovernedWorkError, OSError, TypeError, ValueError) as exc:
+        return _failure(exc, operation="preview_avatar_contributions")
+
+
+
+_AVATAR_PLAN_KEYS = frozenset(
+    {
+        "schema",
+        "avatar_origin",
+        "avatar_id",
+        "subject_key_id",
+        "tenant_id",
+        "project_group_id",
+        "scope",
+        "project_source_binding_ref",
+        "evidence_bundle_ref",
+        "contribution_event_refs",
+        "plan_hash",
+    }
+)
+_AVATAR_BINDING_REF_KEYS = frozenset({"binding_id", "binding_hash"})
+_AVATAR_EVIDENCE_REF_KEYS = frozenset({"bundle_id", "bundle_hash"})
+_AVATAR_EVENT_REF_KEYS = frozenset({"event_id", "event_hash"})
+
+
+def _validated_avatar_share_plan(raw: Mapping[str, Any]) -> Dict[str, Any]:
+    plan = G._expect_exact_keys(dict(raw), _AVATAR_PLAN_KEYS, "Avatar share plan")
+    if plan["schema"] != AVATAR_SHARE_PLAN_SCHEMA:
+        raise G.GovernedWorkError("invalid Avatar share plan schema")
+    if plan["scope"] != _AVATAR_SHARE_SCOPE:
+        raise G.GovernedWorkError("invalid Avatar share plan scope")
+    for key in (
+        "avatar_origin",
+        "avatar_id",
+        "subject_key_id",
+        "tenant_id",
+        "project_group_id",
+        "plan_hash",
+    ):
+        G._required_text(plan[key], f"Avatar share plan {key}")
+    canonical_origin = _canonical_avatar_origin(plan["avatar_origin"])
+    if canonical_origin != plan["avatar_origin"]:
+        raise G.GovernedWorkError("Avatar share plan origin is not canonical")
+    binding_ref = G._expect_exact_keys(
+        plan["project_source_binding_ref"],
+        _AVATAR_BINDING_REF_KEYS,
+        "Avatar share plan binding ref",
+    )
+    evidence_ref = G._expect_exact_keys(
+        plan["evidence_bundle_ref"],
+        _AVATAR_EVIDENCE_REF_KEYS,
+        "Avatar share plan evidence ref",
+    )
+    G._required_text(binding_ref["binding_id"], "Avatar share plan binding_id")
+    G._matches(
+        binding_ref["binding_hash"],
+        G._HASH64_RE,
+        "Avatar share plan binding_hash",
+    )
+    G._required_text(evidence_ref["bundle_id"], "Avatar share plan bundle_id")
+    G._matches(
+        evidence_ref["bundle_hash"],
+        G._HASH64_RE,
+        "Avatar share plan bundle_hash",
+    )
+    raw_refs = plan["contribution_event_refs"]
+    if not isinstance(raw_refs, list) or not raw_refs:
+        raise G.GovernedWorkError(
+            "Avatar share plan contribution_event_refs must be nonempty"
+        )
+    refs = []
+    for index, raw_ref in enumerate(raw_refs):
+        ref = G._expect_exact_keys(
+            raw_ref,
+            _AVATAR_EVENT_REF_KEYS,
+            f"Avatar share plan contribution_event_refs[{index}]",
+        )
+        refs.append(
+            {
+                "event_id": G._required_text(
+                    ref["event_id"],
+                    "Avatar share plan event_id",
+                ),
+                "event_hash": G._matches(
+                    ref["event_hash"],
+                    G._HASH64_RE,
+                    "Avatar share plan event_hash",
+                ),
+            }
+        )
+    if refs != sorted(refs, key=lambda item: item["event_id"]):
+        raise G.GovernedWorkError(
+            "Avatar share plan contribution_event_refs must be sorted"
+        )
+    if len({item["event_id"] for item in refs}) != len(refs):
+        raise G.GovernedWorkError(
+            "Avatar share plan contribution_event_refs must be duplicate-free"
+        )
+    body = {key: value for key, value in plan.items() if key != "plan_hash"}
+    if plan["plan_hash"] != G.value_hash(body):
+        raise G.GovernedWorkError("Avatar share plan hash is invalid")
+    return plan
+
+
+def publish_avatar_contributions(
+    target_dir: str,
+    *,
+    plan: Mapping[str, Any],
+    confirmation: str,
+    token: Optional[str] = None,
+    contribution_store_dir: Optional[str] = None,
+    receipt_dir: Optional[str] = None,
+    http_client: Any = None,
+) -> Dict[str, Any]:
+    """Publish only the unchanged exact events named by a confirmed Avatar plan."""
+    try:
+        candidate = _validated_avatar_share_plan(plan)
+        if confirmation != f"publish:{candidate['plan_hash']}":
+            raise G.GovernedWorkError(
+                "exact publish:<plan_hash> confirmation required"
+            )
+        binding_id = str(
+            candidate["project_source_binding_ref"]["binding_id"]
+        )
+        change, binding, bundle, events = _avatar_publication_documents(
+            target_dir,
+            binding_id,
+            contribution_store_dir=contribution_store_dir,
+        )
+        current = _avatar_share_plan(
+            avatar_origin=str(candidate["avatar_origin"]),
+            change=change,
+            binding=binding,
+            bundle=bundle,
+            events=events,
+        )
+        if G.canonical_bytes(candidate) != G.canonical_bytes(current):
+            raise G.GovernedWorkError(
+                "Avatar share plan is stale or differs from current local state"
+            )
+
+        from apatch import contribution_export as contribution_transport
+
+        delivery = contribution_transport.sync_to_trustchain_avatar(
+            platform_url=str(current["avatar_origin"]),
+            token=token,
+            store_dir=contribution_store_dir,
+            receipt_dir=receipt_dir,
+            avatar_id=str(current["avatar_id"]),
+            event_ids=[
+                str(ref["event_id"])
+                for ref in current["contribution_event_refs"]
+            ],
+            http_client=http_client,
+        )
+        return {
+            "ok": bool(delivery.get("ok")),
+            "operation": "publish_avatar_contributions",
+            "plan_hash": str(current["plan_hash"]),
+            "contribution_event_refs": list(
+                current["contribution_event_refs"]
+            ),
+            "delivery": delivery,
+        }
+    except (G.GovernedWorkError, OSError, TypeError, ValueError) as exc:
+        return _failure(exc, operation="publish_avatar_contributions")
+
+
+def _avatar_publication_documents(
+    target_dir: str,
+    binding_id: str,
+    *,
+    contribution_store_dir: Optional[str] = None,
+) -> tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any], list[Dict[str, Any]]]:
+    """Resolve exactly the signed ContributionEvents committed by one evidence bundle."""
+    from apatch import contribution_export as contribution_transport
+
+    change, bundle, timesheet = _publication_documents(target_dir, binding_id)
+    binding = G.load_project_source_binding(target_dir, binding_id)
+    if (
+        binding.get("binding_id") != binding_id
+        or G.document_hash(binding) != bundle["project_source_binding_hash"]
+    ):
+        raise G.GovernedWorkError(
+            "evidence bundle and ProjectSourceBinding selection differ"
+        )
+
+    session_ids = {
+        str(ref["governed_session_id"])
+        for ref in timesheet["session_refs"]
+    }
+    verified_events = G._load_source_bound_contributions(
+        target_dir,
+        session_ids=session_ids,
+        binding=binding,
+        store_dir=contribution_store_dir,
+    )
+    inventory: Dict[str, list[Dict[str, Any]]] = {}
+    for event in contribution_transport.iter_store_events(contribution_store_dir):
+        event_id = str(event.get("event_id") or "")
+        if event_id:
+            inventory.setdefault(event_id, []).append(event)
+
+    selected = []
+    for ref in bundle["contribution_event_refs"]:
+        matches = inventory.get(str(ref["event_id"]), [])
+        if len(matches) != 1:
+            raise G.GovernedWorkError(
+                f"ContributionEvent {ref['event_id']} must exist exactly once"
+            )
+        event = matches[0]
+        if G.document_hash(event) != ref["event_hash"]:
+            raise G.GovernedWorkError(
+                f"ContributionEvent {ref['event_id']} hash differs from evidence"
+            )
+        selected.append(event)
+
+    selected_refs = {
+        (str(event["event_id"]), G.document_hash(event))
+        for event in selected
+    }
+    verified_refs = {
+        (str(event["event_id"]), G.document_hash(event))
+        for event in verified_events
+    }
+    expected_refs = {
+        (str(ref["event_id"]), str(ref["event_hash"]))
+        for ref in bundle["contribution_event_refs"]
+    }
+    if selected_refs != expected_refs or verified_refs != expected_refs:
+        raise G.GovernedWorkError(
+            "selected ContributionEvents are not the exact source-bound evidence set"
+        )
+
+    identities = set()
+    for event in selected:
+        identity = event.get("identity")
+        identity = identity if isinstance(identity, dict) else {}
+        subject_key_id = G._required_text(
+            identity.get("key_id"),
+            "ContributionEvent identity.key_id",
+        )
+        avatar_id = G._required_text(
+            event.get("avatar_id") or subject_key_id,
+            "ContributionEvent avatar_id",
+        )
+        identities.add((avatar_id, subject_key_id))
+    if len(identities) != 1:
+        raise G.GovernedWorkError(
+            "selected ContributionEvents must belong to one Avatar identity"
+        )
+    return change, binding, bundle, selected
+
+
 def _share_plan(
     *,
     config: Mapping[str, Any],

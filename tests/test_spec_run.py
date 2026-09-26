@@ -515,6 +515,37 @@ def test_spec_run_dependency_blocked(tmp_path):
     assert out["error_type"] == ERROR_SPEC_DEPENDENCY_UNMET
 
 
+def test_spec_run_completes_when_another_lane_is_active(tmp_path, monkeypatch):
+    """RFP-036: spec_run pins every internal step to its own lane session.
+
+    The MCP server binds the SPEC lane from the tool arguments; a sibling lane
+    that stays active in the registry must not make the cycle ambiguous.
+    """
+    from apatch.lane_context import active_lane_ids, bind_lane_from_kwargs, register_active_lane
+
+    _write_spec(tmp_path, "SPEC-TWO", SPEC_TWO)
+    monkeypatch.setattr(
+        "apatch.trustchain_helper.TrustChainHelper", lambda *_a, **_k: _FakeTrustChain()
+    )
+    register_active_lane(str(tmp_path), "sibling-lane", session_id="apatch_sess_sibling")
+    bind_lane_from_kwargs({"target_dir": str(tmp_path), "spec": "SPEC-TWO"})
+    try:
+        out = spec_run_enriched(
+            str(tmp_path),
+            spec="SPEC-TWO",
+            requirements=_manifest_two_rk(tmp_path)["requirements"],
+            reset=True,
+            chunk_rk_per_call=0,
+        )
+    finally:
+        bind_lane_from_kwargs({})
+    assert out["ok"] is True, out
+    assert out.get("done") is True
+    assert "AFTER" in (tmp_path / "marker-r1.txt").read_text(encoding="utf-8")
+    assert (tmp_path / ".apatch" / "lanes" / "SPEC-TWO" / "session_state.json").is_file()
+    assert active_lane_ids(str(tmp_path)) == ["sibling-lane"]
+
+
 def test_mcp_spec_run_registered():
     pytest.importorskip("mcp")
     from apatch.mcp import server as mcp_server

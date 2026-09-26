@@ -117,7 +117,7 @@ async def main():
         async with ClientSession(*streams) as session:
             await session.initialize()
             catalog=await session.list_tools()
-            assert len(catalog.tools)==129
+            assert len(catalog.tools)==132
             result=await session.call_tool('apatch_doctor',{'target_dir':'.'})
             assert not result.isError
             doctor=json.loads(result.content[0].text)
@@ -134,7 +134,7 @@ asyncio.run(asyncio.wait_for(main(),30))
 '''
     smoke = run(python, '-c', code, str(workspace), cwd=hostile, env=env)
     assert smoke.returncode == 0, smoke.stdout + smoke.stderr
-    assert json.loads(smoke.stdout)['tools'] == 129
+    assert json.loads(smoke.stdout)['tools'] == 132
     assert path.read_bytes() == before
 
 

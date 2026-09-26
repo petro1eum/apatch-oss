@@ -1325,7 +1325,15 @@ if mcp is not None:
         ``plan={"spec": "SPEC-X", "requirements": {...}}``; the worker runs
         ``apatch_spec_run`` directly. For cross-SPEC work, pass
         ``plan={"specs": [...], "requirements": {...}}``; the worker runs
-        ``apatch_spec_run_multi``. Neither route uses an outer generic session. For a
+        ``apatch_spec_run_multi``. For one pre-existing untracked source, use
+        ``plan={"single_source_intake": true, "specs": ["SPEC-X"],
+        "requirements": {"SPEC-X": {"Rk": {"needles": [{"action": "intake",
+        "target_file": "manifests/SPEC-X.run.json", "sha256": "<sha256>"}]}}},
+        "execution_mode": "shared_maintenance"}``: the worker checks exact hash,
+        owner, native verify and signed attestation without rewriting bytes or a
+        dummy peer. An older controller can use its existing ``execute_next`` route
+        with ``single_source_intake=true``, exact ``spec``, ``requirement`` and one
+        intake needle; the worker applies the same checks. Neither route uses an outer generic session. For a
         completed slug whose conformance enrollment is stale or missing, pass
         ``plan={"slug_ratify": true, "slug": "slug", "spec": "SPEC-X"}``; the remote
         worker runs verify-once, batch re-attestation, and the conformance gate. For shared-file
@@ -1451,6 +1459,12 @@ if mcp is not None:
             and bool((s.get("result") or {}).get("committed"))
             for s in (result.get("timeline") or [])
         )
+        git_untrack_ran = any(
+            s.get("operation") == "apatch_git_untrack_runtime"
+            and s.get("ok")
+            and bool((s.get("result") or {}).get("committed"))
+            for s in (result.get("timeline") or [])
+        )
         nested_results = [
             s.get("result") or {}
             for s in (result.get("timeline") or [])
@@ -1476,6 +1490,7 @@ if mcp is not None:
             or spec_run_ran
             or multi_run_ran
             or commit_attested_ran
+            or git_untrack_ran
         )
         noop_attest_ran = any(
             s.get("operation") == "apatch_noop_attest" and s.get("ok")
@@ -1521,6 +1536,21 @@ if mcp is not None:
         elif result.get("ok") is False:
             result.setdefault("message", "Remote task failed before a successful apply.")
             result.setdefault("next_action", result.get("recommended_action") or "Inspect failed_step and retry.")
+        elif plan_obj.get("git_untrack_runtime"):
+            untrack_result = next(
+                (
+                    s.get("result") or {}
+                    for s in reversed(result.get("timeline") or [])
+                    if s.get("operation") == "apatch_git_untrack_runtime"
+                ),
+                {},
+            )
+            if untrack_result.get("dry_run"):
+                result["message"] = "Remote runtime Git scope VALIDATED; no Git state changed."
+                result["next_action"] = "Re-run with plan.dry_run=false after reviewing exact paths."
+            else:
+                result["message"] = "Remote runtime paths UNTRACKED and COMMITTED; working files preserved."
+                result["next_action"] = "Confirm the exact commit and continue governed work."
         elif plan_obj.get("commit_attested"):
             commit_result = next(
                 (
@@ -3582,6 +3612,68 @@ if mcp is not None:
         )
 
     @mcp.tool()
+    def apatch_governed_work_preview_avatar(
+        binding_id: str = Field(
+            description="Exact local ProjectSourceBinding whose referenced contribution facts are proposed for Avatar publication.",
+        ),
+        avatar_origin: str = Field(
+            default="https://trust-chain.ai",
+            description="Exact allowlisted HTTPS Avatar origin shown in the publication plan.",
+        ),
+        contribution_store_dir: Optional[str] = Field(
+            default=None,
+            description="Optional local ContributionEvent store used only to resolve exact bundle refs.",
+        ),
+        target_dir: str = ".",
+    ) -> Dict[str, Any]:
+        """Preview exact bundle-referenced Avatar facts without writing or networking."""
+        from apatch.governed_work_mcp import (
+            preview_avatar_contribution_publication,
+        )
+
+        return preview_avatar_contribution_publication(
+            target_dir,
+            binding_id=binding_id,
+            avatar_origin=avatar_origin,
+            contribution_store_dir=contribution_store_dir,
+        )
+
+    @mcp.tool()
+    def apatch_governed_work_publish_avatar(
+        plan: Dict[str, Any] = Field(
+            description="Exact unchanged Avatar plan returned by the preview operation.",
+        ),
+        confirmation: str = Field(
+            description="Exact publish:<plan_hash> explicit owner confirmation.",
+        ),
+        token: Optional[str] = Field(
+            default=None,
+            description="Secret owner-scoped Avatar token; omitted to use APATCH_AVATAR_TOKEN. Never returned or persisted.",
+            json_schema_extra={"writeOnly": True},
+        ),
+        contribution_store_dir: Optional[str] = Field(
+            default=None,
+            description="Optional local ContributionEvent store used to resolve exact selected refs.",
+        ),
+        receipt_dir: Optional[str] = Field(
+            default=None,
+            description="Optional local digest-bound Avatar delivery receipt directory.",
+        ),
+        target_dir: str = ".",
+    ) -> Dict[str, Any]:
+        """Publish only the exact confirmed bundle-referenced contribution facts."""
+        from apatch.governed_work_mcp import publish_avatar_contributions
+
+        return publish_avatar_contributions(
+            target_dir,
+            plan=plan,
+            confirmation=confirmation,
+            token=token,
+            contribution_store_dir=contribution_store_dir,
+            receipt_dir=receipt_dir,
+        )
+
+    @mcp.tool()
     def apatch_governed_work_disconnect(
         target_dir: str = ".",
     ) -> Dict[str, Any]:
@@ -3826,6 +3918,25 @@ if mcp is not None:
             )
         except WorkflowError as e:
             return {"ok": False, "dry_run": True, "error": str(e)}
+
+    @mcp.tool()
+    def apatch_git_untrack_runtime(
+        target_dir: str = ".",
+        message: str = Field(
+            default="Stop tracking APatch runtime files",
+            description="Git commit message for the exact four runtime-only deletions.",
+        ),
+        dry_run: bool = Field(
+            default=True,
+            description="Validate the exact Git scope without opening a session or changing Git.",
+        ),
+    ) -> Dict[str, Any]:
+        """Untrack only four ignored APatch runtime paths; preserve working files."""
+        from apatch.workflows import git_untrack_runtime_workspace
+
+        return git_untrack_runtime_workspace(
+            target_dir, message=message, dry_run=dry_run
+        )
 
     @mcp.tool()
     def apatch_commit_attested(

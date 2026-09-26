@@ -17,7 +17,6 @@ def _graph():
 def test_r1_runs_real_checks_green():
     """R1: the avatar ContributionEvent invariants actually execute — the SCHEMA-LOCKSTEP
     sentinel runs and the economic barrier is asserted — and pass (status green)."""
-    pytest.importorskip("avatar_contract")  # cross-repo anchor, absent in CI
     ce = verify_concept_invariants(_graph(), ".")["cpt_contribution_event"]
     assert ce["status"] == "green", ce
     refs = {r["ref"]: r["verdict"] for r in ce["invariants"]}

@@ -55,6 +55,7 @@ def test_mcp_tools_registered():
         "apatch_verify_semantic",
         "apatch_verify_notarization",
         "apatch_commit_attested",
+        "apatch_git_untrack_runtime",
         "apatch_verify_anchor",
         "apatch_verify_inclusion",
         "apatch_trust_enroll",
@@ -111,6 +112,34 @@ def test_mcp_tools_registered():
         "apatch_scip",
     }
     assert expected.issubset(names)
+
+
+def test_git_untrack_runtime_mcp_preview_schema_and_route(monkeypatch):
+    from apatch.mcp.server import apatch_git_untrack_runtime
+
+    tm = getattr(mcp_server.mcp, "_tool_manager", None)
+    if tm is None or not hasattr(tm, "_tools"):
+        pytest.skip("FastMCP tool manager API unavailable")
+    props = tm._tools["apatch_git_untrack_runtime"].parameters["properties"]
+    assert props["dry_run"]["default"] is True
+
+    captured = {}
+
+    def fake_untrack(target_dir, **kwargs):
+        captured["target_dir"] = target_dir
+        captured.update(kwargs)
+        return {"ok": True, "dry_run": kwargs["dry_run"]}
+
+    monkeypatch.setattr("apatch.workflows.git_untrack_runtime_workspace", fake_untrack)
+    result = apatch_git_untrack_runtime(
+        target_dir=".", message="Stop tracking APatch runtime files", dry_run=True
+    )
+    assert result["ok"] is True
+    assert captured == {
+        "target_dir": ".",
+        "message": "Stop tracking APatch runtime files",
+        "dry_run": True,
+    }
 
 
 def test_session_start_exposes_explicit_lane():

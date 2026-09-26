@@ -9,6 +9,7 @@ import subprocess
 from typing import Any, Dict, Mapping, Optional
 
 from apatch.remote.errors import RemoteTaskError
+from apatch.remote.jump import jump_argv
 from apatch.remote.policy import load_remote_policy, resolve_remote_target
 from apatch.remote.target import RemoteTarget
 
@@ -207,7 +208,7 @@ class SshServiceTransport:
             shlex.quote(self.python),
             shlex.quote(_REMOTE_SERVICE_SCRIPT),
         )
-        argv = ["ssh", *self.ssh_args, target.host, command]
+        argv = ["ssh", *self.ssh_args, *jump_argv(target.jump_hosts), target.host, command]
         try:
             proc = subprocess.run(
                 argv,
@@ -392,7 +393,7 @@ def _redact_plan(target: RemoteTarget, value: Any) -> Any:
     label = target.display or target.alias or "remote"
     if isinstance(value, str):
         out = value
-        for needle in (target.uri, target.path, target.host):
+        for needle in (target.uri, target.path, target.host, *(target.jump_hosts or ())):
             if needle:
                 out = out.replace(needle, label)
         return out

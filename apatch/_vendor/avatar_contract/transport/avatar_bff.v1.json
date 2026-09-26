@@ -1,0 +1,286 @@
+{
+  "schema": "avatar_contract.transport.v1",
+  "name": "avatar_bff",
+  "version": "1.0.2",
+  "title": "trust-chain.ai Avatar BFF: the owner lane between a local apatch and HC Tracker",
+  "provider": {
+    "system": "TrustChain Agent backend",
+    "host": "trust-chain.ai",
+    "note": "The host is shared with TrustChain Platform. nginx routes /api/pub, /api/log, /api/enroll, /api/org, /api/licenses, /api/agents, /api/tenants, /api/ca, /api/owner, /api/embed-integrations to the Platform; every other /api/* path, /api/avatar included, reaches the Agent."
+  },
+  "consumers": ["apatch (apatch.avatar_delivery, apatch.contribution_export, apatch.taxonomy_delivery, apatch.outcome_delivery)", "trust-chain.ai browser client"],
+  "auth": {
+    "apatch": "Authorization: Bearer <tcav_...> — a revocable owner-scoped Avatar sync token minted on Avatar Home; accepted only by routes marked consumer=apatch",
+    "browser": "account JWT (tc_jwt cookie or Bearer)"
+  },
+  "owner_lane_order": ["taxonomy_decisions.pull", "outcomes.pull", "contributions.upload", "contributions.reconcile", "evidence.upload"],
+  "permanent_rejection_statuses": ["event_conflict", "tracker_rejected"],
+  "not_ready_statuses": ["identity_unbound", "hc_identity_unbound", "hc_identity_inactive", "identity_unavailable", "integration_misconfigured", "tracker_unavailable", "tracker_rejected", "invalid_response", "identity_invalid"],
+  "identity_gate": {
+    "statuses": ["hc_identity_unbound", "hc_identity_inactive", "integration_misconfigured", "identity_unavailable", "invalid_response"],
+    "http": {
+      "409": ["hc_identity_unbound", "hc_identity_inactive"],
+      "503": ["integration_misconfigured", "identity_unavailable", "invalid_response"]
+    },
+    "detail": "the refusing status is the response body's detail, verbatim",
+    "gated_routes": ["outcomes.pull", "contributions.upload", "evidence.upload", "identity.bind", "outcome_reviews.create", "outcome_reviews.resubmit"],
+    "answering_routes": ["taxonomy_decisions.pull", "contributions.reconcile", "home"],
+    "notes": "The BFF resolves the caller's HC professional on every owner operation; an earlier success never authorizes a later request. When the owner is not resolved, gated_routes refuse with the HTTP code above and answering_routes still answer 200 with available=false and the same status. A 409 says the person must connect or reactivate their HC profile: it is not retryable on its own, so a consumer stops the lane, keeps its outbox intact and reports the detail. A 503 is retryable."
+  },
+  "routes": [
+    {
+      "id": "taxonomy_decisions.pull",
+      "consumer": "apatch",
+      "method": "GET",
+      "path": "/api/avatar/taxonomy-decisions",
+      "query": {},
+      "request": null,
+      "success": {
+        "status_code": 200,
+        "required_keys": ["available", "status", "avatar_id", "decisions", "count"],
+        "status_values": ["ready"],
+        "notes": "decisions[] are TaxonomyDecision wires whose subject_avatar_id equals avatar_id; apatch verifies each against its pinned issuer keys"
+      },
+      "not_ready": {
+        "status_code": 200,
+        "required_keys": ["available", "status", "avatar_id", "decisions", "count"],
+        "notes": "available=false, avatar_id=null, decisions=[], count=0"
+      },
+      "upstream": {
+        "contract": "hc_tracker_internal",
+        "route": "avatar_taxonomy_decisions.by_avatar"
+      }
+    },
+    {
+      "id": "outcomes.pull",
+      "consumer": "apatch",
+      "method": "GET",
+      "path": "/api/avatar/outcomes",
+      "query": {},
+      "request": null,
+      "success": {
+        "status_code": 200,
+        "required_keys": ["available", "status", "avatar_id", "attestations", "count"],
+        "status_values": ["ready"]
+      },
+      "not_ready": {
+        "status_code": 200,
+        "required_keys": ["available", "status", "avatar_id", "attestations", "count"]
+      },
+      "upstream": {
+        "contract": "hc_tracker_internal",
+        "route": "avatar_outcomes.by_professional"
+      }
+    },
+    {
+      "id": "contributions.upload",
+      "consumer": "apatch",
+      "method": "POST",
+      "path": "/api/avatar/contributions/upload",
+      "request": {
+        "one_of": [
+          {
+            "events": "list[ContributionEvent], 1..100"
+          },
+          {
+            "event": "ContributionEvent"
+          }
+        ],
+        "rules": ["every event has source=apatch, event_id, idempotency_key, signature and proof_ref (or legacy attestation)", "one batch belongs to exactly one principal key_id"]
+      },
+      "success": {
+        "status_code": 200,
+        "required_keys": ["available", "status", "principal_key_id", "accepted", "duplicates", "failed"],
+        "status_values": ["ready", "partial_failure"],
+        "notes": "failed[] items are {event_id, status}; a status in permanent_rejection_statuses quarantines the event locally, anything else is retried"
+      },
+      "not_ready": {
+        "status_code": 200,
+        "required_keys": ["available", "status", "principal_key_id", "accepted"]
+      },
+      "upstream": {
+        "contract": "hc_tracker_internal",
+        "route": "contribution_events.single"
+      }
+    },
+    {
+      "id": "contributions.reconcile",
+      "consumer": "apatch",
+      "method": "POST",
+      "path": "/api/avatar/contributions/reconcile",
+      "request": {
+        "avatar_id": "key_id (8..64)",
+        "event_ids": "list[str], 1..5000"
+      },
+      "success": {
+        "status_code": 200,
+        "required_keys": ["available", "status", "avatar_id", "present_event_ids", "missing_event_ids", "conflict_event_ids"],
+        "optional_keys": ["verified_present_event_ids", "unverified_present_event_ids"],
+        "status_values": ["ready"],
+        "notes": "present/missing/conflict are a disjoint exact partition of the requested ids; if either verified key is present both must be and together they partition present_event_ids"
+      },
+      "not_ready": {
+        "status_code": 200,
+        "required_keys": ["available", "status", "avatar_id"],
+        "notes": "identity_unbound when avatar_id is not in the authenticated owner's portfolio"
+      },
+      "upstream": {
+        "contract": "hc_tracker_internal",
+        "route": "contribution_events.reconcile"
+      }
+    },
+    {
+      "id": "evidence.upload",
+      "consumer": "apatch",
+      "method": "POST",
+      "path": "/api/avatar/evidence/upload",
+      "request": {
+        "evidence": "CapabilityEvidence v2 bundle (kind=capability_evidence, source=apatch, bundle_id, avatar_id == signature.key_id)"
+      },
+      "success": {
+        "status_code": 200,
+        "required_keys": ["available", "status", "accepted", "principal_key_id", "bundle_id", "stored", "duplicate", "signature_verified"],
+        "status_values": ["ready"],
+        "notes": "apatch acknowledges only status_code 200 AND accepted=true AND signature_verified=true"
+      },
+      "not_ready": {
+        "status_code": 200,
+        "required_keys": ["available", "status", "accepted", "principal_key_id"]
+      },
+      "upstream": {
+        "contract": "hc_tracker_internal",
+        "route": "capability_evidence.ingest"
+      }
+    },
+    {
+      "id": "home",
+      "consumer": "browser",
+      "method": "GET",
+      "path": "/api/avatar/home",
+      "request": null,
+      "success": {
+        "status_code": 200,
+        "required_keys": ["available", "status", "owner", "avatar", "core"],
+        "status_values": ["ready"]
+      },
+      "not_ready": {
+        "status_code": 200,
+        "required_keys": ["available", "status", "owner", "avatar", "core"],
+        "notes": "hc_identity_unbound carries connect_url so the client can start the HC SSO binding (SPEC-HC-SSO-BINDING-1); identity_unbound means the HC professional has no principal key yet"
+      },
+      "upstream": {
+        "contract": "hc_tracker_internal",
+        "route": "avatar_home.by_professional"
+      }
+    },
+    {
+      "id": "identity.bind",
+      "consumer": "browser",
+      "method": "PUT",
+      "path": "/api/avatar/identity",
+      "request": {
+        "principal_key_id": "key_id (8..64)"
+      },
+      "success": {
+        "status_code": 200,
+        "required_keys": ["available", "status", "bound", "identity"],
+        "status_values": ["ready"]
+      },
+      "not_ready": {
+        "status_code": 200,
+        "required_keys": ["available", "status", "bound"]
+      },
+      "upstream": {
+        "contract": "hc_tracker_internal",
+        "route": "identity_binding.by_professional"
+      }
+    },
+    {
+      "id": "outcome_reviews.create",
+      "consumer": "browser",
+      "method": "POST",
+      "path": "/api/avatar/outcome-reviews",
+      "request": {
+        "work_episode_id": "40 chars",
+        "counterparty_company_id": "the contract counterparty that received the work (ADR-SEC-018 invariant 2)",
+        "submission_note": "optional, <= 2000"
+      },
+      "success": {
+        "status_code": 200,
+        "required_keys": ["created", "request"]
+      },
+      "errors": {
+        "409": "review_conflict, or an identity_gate status when the caller's HC profile is not connected or not active",
+        "422": "review_rejected",
+        "503": "tracker unavailable or misconfigured, or an identity_gate status"
+      },
+      "upstream": {
+        "contract": "hc_tracker_internal",
+        "route": "avatar_review_requests.create"
+      }
+    },
+    {
+      "id": "outcome_reviews.resubmit",
+      "consumer": "browser",
+      "method": "POST",
+      "path": "/api/avatar/outcome-reviews/{request_id}/resubmit",
+      "request": {
+        "clarification_response": "1..4000"
+      },
+      "success": {
+        "status_code": 200,
+        "required_keys": ["resubmitted", "request"]
+      },
+      "errors": {
+        "404": "review_not_found",
+        "409": "review_conflict, or an identity_gate status when the caller's HC profile is not connected or not active",
+        "422": "review_rejected"
+      },
+      "upstream": {
+        "contract": "hc_tracker_internal",
+        "route": "avatar_review_requests.resubmit"
+      }
+    },
+    {
+      "id": "sync_tokens.create",
+      "consumer": "browser",
+      "method": "POST",
+      "path": "/api/avatar/sync-tokens",
+      "request": {
+        "label": "1..80, default apatch"
+      },
+      "success": {
+        "status_code": 200,
+        "required_keys": ["created", "token", "sync_token", "trusted_outcome_public_keys"],
+        "notes": "token is the raw tcav_ secret shown exactly once; sync_token is the stored record (id, label, token_hint, created_at, expires_at, last_used_at, revoked_at); issuing a replacement revokes every earlier active token of the owner"
+      }
+    },
+    {
+      "id": "sync_tokens.list",
+      "consumer": "browser",
+      "method": "GET",
+      "path": "/api/avatar/sync-tokens",
+      "success": {
+        "status_code": 200,
+        "required_keys": ["tokens"]
+      }
+    },
+    {
+      "id": "sync_tokens.revoke",
+      "consumer": "browser",
+      "method": "DELETE",
+      "path": "/api/avatar/sync-tokens/{token_id}",
+      "success": {
+        "status_code": 200,
+        "required_keys": ["revoked", "token_id"]
+      }
+    }
+  ],
+  "status_notes": {
+    "tracker_rejected": "as a whole-response status it is a not-ready outcome (retry later); as a per-event failed[].status it is permanent and the event is quarantined locally",
+    "partial_failure": "contributions.upload answers available=false with status=partial_failure; consumers key on status and on failed[], not on available",
+    "owner_lane_literal_sequence": "apatch's literal call order is taxonomy, outcomes, reconcile, upload, reconcile, evidence: reconciliation brackets the upload; owner_lane_order lists the order in which each step settles",
+    "hc_identity_inactive": "the SSO subject is bound to an HC professional the HC identity directory reports as not active; on gated_routes it is refused like hc_identity_unbound, with 409",
+    "review_409_is_ambiguous": "on outcome_reviews.create and outcome_reviews.resubmit a 409 is review_conflict OR an identity_gate status; the client reads detail, never the code alone"
+  }
+}

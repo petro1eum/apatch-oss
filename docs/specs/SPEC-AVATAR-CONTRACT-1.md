@@ -1,6 +1,6 @@
 # SPEC-AVATAR-CONTRACT-1 — Shared ContributionEvent contract & identity anchor
 
-> **Status:** Implemented; reconciled 2026-08-28 — R1–R5 verify green (`avatar-contract` 0.5.0, 83 tests); lint + RFP coverage remain governed separately. · **Owner:** apatch core
+> **Status:** Implemented; reconciled 2026-08-28 — R1–R5 verify green (`avatar-contract` 0.7.2, 117 tests); lint + RFP coverage remain governed separately. · **Owner:** apatch core
 > **apatch artifact:** `spec:SPEC-AVATAR-CONTRACT-1`
 > **Anchors:** [RFP-028](../RFP-028-avatar-wiring.md) · [Avatar Architecture Canon §7–§8](../AVATAR-ARCHITECTURE-CANON.md)
 

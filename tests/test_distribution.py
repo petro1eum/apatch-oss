@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 import sys
@@ -14,10 +15,19 @@ except ModuleNotFoundError:  # pragma: no cover - Python 3.10
 
 ROOT = Path(__file__).resolve().parents[1]
 TRUSTCHAIN_MIT_SHA256 = "657376e03d6b7d1390bcddec4c006a3009876576c38aac112a7264c6e75799de"
-AVATAR_CONTRACT_COMMIT = "e8cee1689e2b661b8b7258d9c939fa1a3839cefb"
-AVATAR_CONTRACT_REQUIREMENT = (
-    "avatar-contract @ git+https://github.com/petro1eum/avatar-contract.git@"
-    + AVATAR_CONTRACT_COMMIT
+AVATAR_CONTRACT_COMMIT = "44c8f9ada8a50fb8b7c94346a4103c09a19f15c2"
+# Owner decision 2026-09-26 (RFP-049): the canonical avatar-contract is bundled as
+# apatch._vendor.avatar_contract; its exact bytes are pinned by UPSTREAM.json.
+VENDORED_AVATAR_CONTRACT = (
+    "apatch/_vendor/__init__.py",
+    "apatch/_vendor/avatar_contract/__init__.py",
+    "apatch/_vendor/avatar_contract/UPSTREAM.json",
+    "apatch/_vendor/avatar_contract/LICENSE",
+    "apatch/_vendor/avatar_contract/contribution_event.py",
+    "apatch/_vendor/avatar_contract/schema/contribution_event.v3.json",
+    "apatch/_vendor/avatar_contract/transport/__init__.py",
+    "apatch/_vendor/avatar_contract/transport/avatar_bff.v1.json",
+    "apatch/_vendor/avatar_contract/transport/hc_tracker_internal.v1.json",
 )
 
 
@@ -62,11 +72,33 @@ def _assert_distribution_members(names: set[str]) -> None:
         "apatch_pro/",
         "trustchain_pro/",
         "edcher_search/",
-        "avatar_contract/",
         "docs/ct_ckba_036_2017/",
         "/.env",
     ):
         assert forbidden not in lowered
+    # The contract ships only under APatch's private namespace, never as a
+    # top-level package that would collide with a separately installed one.
+    for name in names:
+        parts = Path(name).parts
+        assert "avatar_contract" not in parts or (
+            parts.index("avatar_contract") >= 2
+            and parts[parts.index("avatar_contract") - 2:parts.index("avatar_contract")]
+            == ("apatch", "_vendor")
+        ), name
+
+
+def _assert_vendored_contract(names: set[str], read) -> None:
+    """Every vendored file ships, byte-identical to the checkout."""
+    source_files = sorted(
+        path.relative_to(ROOT).as_posix()
+        for path in (ROOT / "apatch/_vendor").rglob("*")
+        if path.is_file() and "__pycache__" not in path.parts and path.suffix != ".pyc"
+    )
+    assert set(VENDORED_AVATAR_CONTRACT) <= set(source_files)
+    for relative in source_files:
+        member = next((name for name in names if name.endswith(relative)), None)
+        assert member is not None, relative
+        assert read(member) == (ROOT / relative).read_bytes(), relative
 
 
 def test_source_license_matches_trustchain_oss() -> None:
@@ -79,11 +111,17 @@ def test_source_license_matches_trustchain_oss() -> None:
     # PEP 639 represents SPDX licenses as strings and omits legacy license classifiers.
     assert project["license"] == "MIT"
     assert not any(item.startswith("License ::") for item in project["classifiers"])
-    # No `avatar` extra: an extra can reach avatar-contract only by a direct URL,
-    # and an index refuses a distribution whose metadata carries one. The pin stays
-    # on record in the file so the exact MIT contract commit is not lost.
+    # No `avatar` extra and no direct-URL requirement anywhere: the MIT contract is
+    # bundled, and its exact commit is recorded in the vendored UPSTREAM.json.
     assert "avatar" not in project.get("optional-dependencies", {})
-    assert AVATAR_CONTRACT_COMMIT in (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    pyproject_text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    assert "git+" not in pyproject_text and " @ " not in pyproject_text
+    assert not any("avatar-contract" in item for item in project["dependencies"])
+    upstream = json.loads(
+        (ROOT / "apatch/_vendor/avatar_contract/UPSTREAM.json").read_text(encoding="utf-8")
+    )
+    assert upstream["commit"] == AVATAR_CONTRACT_COMMIT
+    assert upstream["license"] == "MIT" and upstream["version"] == "0.7.2"
     # TrustChain is part of every APatch installation: signed contract evidence is
     # a base invariant, not an extra users must discover after MCP startup fails.
     assert "trustchain>=3.3.0" in project["dependencies"]
@@ -175,7 +213,11 @@ def test_wheel_and_sdist_publish_mit_without_private_inputs(tmp_path: Path) -> N
         assert hashlib.sha256(archive.extractfile(frozen_name).read()).hexdigest() == (
             "deb673de57fef35d0f2369581641164c11645bc8d9a8232dab3abf172ce743ae"
         )
-        license_name = next(name for name in sdist_names if name.endswith("/LICENSE"))
+        # The project root LICENSE, not the vendored avatar-contract LICENSE.
+        license_name = next(
+            name for name in sdist_names
+            if name.endswith("/LICENSE") and name.count("/") == 1
+        )
         extracted = archive.extractfile(license_name)
         assert extracted is not None
         assert extracted.read() == (ROOT / "LICENSE").read_bytes()
@@ -201,6 +243,12 @@ def test_wheel_and_sdist_publish_mit_without_private_inputs(tmp_path: Path) -> N
 
     _assert_distribution_members(wheel_names)
     _assert_distribution_members(sdist_names)
+    with zipfile.ZipFile(wheels[0]) as archive:
+        _assert_vendored_contract(wheel_names, archive.read)
+    with tarfile.open(sdists[0], "r:gz") as archive:
+        _assert_vendored_contract(
+            sdist_names, lambda name: archive.extractfile(name).read()
+        )
 
 
 def test_installed_wheel_initializes_complete_consumer(tmp_path: Path) -> None:

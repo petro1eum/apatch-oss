@@ -18,7 +18,7 @@ def _keypair():
 
 
 def _event():
-    from avatar_contract import ContributionEvent
+    from apatch._vendor.avatar_contract import ContributionEvent
     from apatch.contribution import sign_event
 
     private, public, key_id = _keypair()
@@ -63,7 +63,7 @@ def _event():
 
 
 def _review_package_id():
-    from avatar_contract import build_work_review_package
+    from apatch._vendor.avatar_contract import build_work_review_package
 
     return build_work_review_package(
         objective="SPEC-OUTCOME-1 - External outcome",
@@ -83,7 +83,7 @@ def _signed_outcome(
     organization_id: str = "customer-001",
     verifier_role: str = "client_counterparty",
 ):
-    from avatar_contract import (
+    from apatch._vendor.avatar_contract import (
         OUTCOME_ATTESTATION_CHAIN_ID,
         OUTCOME_ATTESTATION_EVENT,
         build_outcome_attestation_payload,
@@ -329,6 +329,9 @@ def test_owner_sync_pulls_outcome_recompiles_capability_and_uploads_distillate(
         "APATCH_TRUSTED_OUTCOME_ISSUERS",
         json.dumps([_issuer(outcome)]),
     )
+    # Taxonomy ingest is pinned the same way; the pull refuses to start
+    # without an issuer key even when no decision comes back.
+    monkeypatch.setenv("APATCH_TRUSTED_TAXONOMY_PUBLIC_KEYS", "pinned-tracker-key")
 
     result = sync_avatar_state(
         str(tmp_path),

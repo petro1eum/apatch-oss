@@ -25,6 +25,7 @@
 | A30-L | Documentation explains the broker model: local MCP is the only visible tool boundary, SSH is an internal capability, and agents should not call raw SSH for governed work | SHOULD |
 | A30-M | New users can create and validate a policy through `apatch remote init/validate` from minimal inputs (`alias`, `host`, `path`, optional health URL), without hand-writing JSON | MUST |
 | A30-N | When a remote machine cannot fetch a repository because credentials live locally, agents can use `apatch_remote_source_handoff` / `apatch remote handoff`; responses do not reveal GitHub credential topology, SSH pipe details, host, or remote path | MUST |
+| A30-O | Alias policy can route every SSH transport through one or more bastion hops (`jump_host`), bound them with `allowed_jump_hosts`, demand one with `require_jump_host`, and redact hop names exactly like the target host, so developer machines never need the workspace host's address | MUST |
 
 Canonical ids: this section.
 
@@ -85,13 +86,14 @@ Local control workspace:
 {
   "allowed_hosts": ["yc-*"],
   "allowed_roots": ["/home/ubuntu/projects/*"],
+  "allowed_jump_hosts": ["bastion"],
   "targets": {
     "search-example": {
       "host": "example-search-host",
       "path": "/srv/example/search-workspace",
       "display": "Search main",
       "python": "/opt/remote/bin/python",
-      "ssh_args": ["-J", "bastion"],
+      "jump_host": "bastion",
       "timeout_sec": 600,
       "redact": true,
       "allowed_operations": [
@@ -142,6 +144,7 @@ Hidden by default:
 - Bad JSON/schema: `REMOTE_POLICY_INVALID`.
 - Host outside allowlist: `REMOTE_HOST_DENIED`.
 - Root outside allowlist: `REMOTE_ROOT_DENIED`.
+- Bastion outside allowlist: `REMOTE_JUMP_HOST_DENIED`; alias without a required hop: `REMOTE_JUMP_HOST_REQUIRED`.
 - Internal step not allowed: `REMOTE_OPERATION_DENIED`.
 
 ### 4.3 Transport override policy

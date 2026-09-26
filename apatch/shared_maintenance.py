@@ -33,11 +33,12 @@ def prepare_shared_maintenance(
     *,
     specs: List[str],
     requirements: Mapping[str, Any],
+    single_source_intake: bool = False,
 ) -> Dict[str, Any]:
     """Validate and flatten the fail-closed v1 shared-maintenance manifest."""
     root = os.path.abspath(target_dir)
     spec_list = [str(spec).strip() for spec in specs if str(spec).strip()]
-    if len(spec_list) < 2 or set(requirements) != set(spec_list):
+    if (len(spec_list) < 2 and not (single_source_intake and len(spec_list) == 1)) or set(requirements) != set(spec_list):
         return _error(
             ERROR_PLAN,
             "requirements must explicitly cover every and only scheduled SPEC",
@@ -89,11 +90,16 @@ def prepare_shared_maintenance(
                 if not isinstance(needle, Mapping):
                     return _error(ERROR_PLAN, f"{token} contains a non-object needle")
                 action = str(needle.get("action") or "replace").strip().lower()
-                if action != "replace":
+                if action not in {"replace", "intake"}:
                     return _error(
                         ERROR_PLAN,
-                        f"{token} action {action!r} is outside shared-maintenance v1",
+                        f"{token} action {action!r} is outside shared-maintenance",
                     )
+                if action == "intake" and (
+                    set(needle) != {"action", "target_file", "sha256"}
+                    or not isinstance(needle.get("sha256"), str)
+                ):
+                    return _error(ERROR_PLAN, f"{token} intake needs exact target and sha256")
                 if needle.get("glob_pattern") or needle.get("source_file"):
                     return _error(ERROR_PLAN, f"{token} requires one explicit target_file")
                 raw_path = str(needle.get("target_file") or "").strip()
@@ -125,7 +131,7 @@ def prepare_shared_maintenance(
                 path_owner[rel] = token
                 owned_paths.append(rel)
                 normalized = dict(needle)
-                normalized["action"] = "replace"
+                normalized["action"] = action
                 normalized["target_file"] = rel
                 fingerprint = json.dumps(
                     normalized,
@@ -139,8 +145,15 @@ def prepare_shared_maintenance(
 
             artifact_files[artifact_key] = sorted(set(owned_paths))
 
+    actions = {needle["action"] for needle in flattened}
+    if single_source_intake and actions != {"intake"}:
+        return _error(ERROR_PLAN, "Single-SPEC source intake accepts only exact intake needles")
+    if len(actions) != 1:
+        return _error(ERROR_PLAN, "Cannot mix source intake with source replacements")
+
     return {
         "ok": True,
+        "mode": "source_intake" if actions == {"intake"} else "replace",
         "artifacts": artifacts,
         "artifact_files": artifact_files,
         "needles": flattened,
@@ -170,6 +183,18 @@ def shared_maintenance_workspace(
     )
     if not prepared.get("ok"):
         return prepared
+    if prepared["mode"] == "source_intake":
+        from apatch.existing_source_intake import run_partitioned_source_intake
+
+        return run_partitioned_source_intake(
+            root,
+            prepared=prepared,
+            specs=specs,
+            schedule=schedule,
+            maintenance_verify=maintenance_verify,
+            verify_jobs=verify_jobs,
+            verify_timeout=verify_timeout,
+        )
 
     from apatch.runtime.runtime import MutationRuntime
     from apatch.simulate import simulate_workspace

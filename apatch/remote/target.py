@@ -29,6 +29,7 @@ class RemoteTarget:
     python: Optional[str] = None
     runtime_path: Optional[str] = None
     ssh_args: Optional[Tuple[str, ...]] = None
+    jump_hosts: Optional[Tuple[str, ...]] = None
     timeout_sec: Optional[int] = None
     allow_transport_overrides: bool = True
     allowed_operations: Optional[Tuple[str, ...]] = None
@@ -36,12 +37,16 @@ class RemoteTarget:
     def as_dict(self) -> Dict[str, Any]:
         if self.redact:
             label = self.display or self.alias or "remote"
-            return {
+            exposed: Dict[str, Any] = {
                 "alias": self.alias or label,
                 "display": label,
                 "workspace_id": self.workspace_id,
                 "redacted": True,
             }
+            if self.jump_hosts:
+                # Admit that a bastion is in the path without naming it.
+                exposed["via_jump_host"] = True
+            return exposed
         result = {
             "host": self.host,
             "path": self.path,
@@ -55,6 +60,8 @@ class RemoteTarget:
             result["display"] = self.display
         if self.runtime_path:
             result["runtime_path"] = self.runtime_path
+        if self.jump_hosts:
+            result["jump_hosts"] = list(self.jump_hosts)
         return result
 
 
@@ -134,6 +141,7 @@ def build_remote_target(
     python: Optional[str] = None,
     runtime_path: Optional[str] = None,
     ssh_args: Optional[Tuple[str, ...]] = None,
+    jump_hosts: Optional[Tuple[str, ...]] = None,
     timeout_sec: Optional[int] = None,
     allow_transport_overrides: bool = True,
     allowed_operations: Optional[Tuple[str, ...]] = None,
@@ -147,6 +155,7 @@ def build_remote_target(
         python=python,
         runtime_path=runtime_path,
         ssh_args=ssh_args,
+        jump_hosts=jump_hosts,
         timeout_sec=timeout_sec,
         allow_transport_overrides=allow_transport_overrides,
         allowed_operations=allowed_operations,
@@ -163,6 +172,7 @@ def _build_target(
     python: Optional[str] = None,
     runtime_path: Optional[str] = None,
     ssh_args: Optional[Tuple[str, ...]] = None,
+    jump_hosts: Optional[Tuple[str, ...]] = None,
     timeout_sec: Optional[int] = None,
     allow_transport_overrides: bool = True,
     allowed_operations: Optional[Tuple[str, ...]] = None,
@@ -196,6 +206,7 @@ def _build_target(
         python=python,
         runtime_path=runtime_path,
         ssh_args=ssh_args,
+        jump_hosts=jump_hosts,
         timeout_sec=timeout_sec,
         allow_transport_overrides=allow_transport_overrides,
         allowed_operations=allowed_operations,

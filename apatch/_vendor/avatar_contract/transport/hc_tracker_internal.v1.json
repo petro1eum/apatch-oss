@@ -1,0 +1,237 @@
+{
+  "schema": "avatar_contract.transport.v1",
+  "name": "hc_tracker_internal",
+  "version": "1.0.1",
+  "title": "HC Tracker service-to-service API used by the trust-chain.ai Avatar BFF and by apatch's internal lane",
+  "provider": {
+    "system": "HC Tracker backend",
+    "router_prefix": "/api/v1",
+    "note": "Every route requires X-Service-Token equal to HC_INTERNAL_SERVICE_TOKEN (fail-closed in production). Routes addressed by professional_uuid exist for the Agent BFF, which knows the HC participant id of the logged-in person but never a Tracker user_id."
+  },
+  "consumers": ["TrustChain Agent (backend/services/hc_avatar_home.py, hc_contribution_bridge.py)", "apatch internal lane (contribution_delivery, avatar_delivery, taxonomy_delivery, outcome_delivery)", "Company Portal (transfer orchestration)"],
+  "auth": {
+    "header": "X-Service-Token",
+    "failure": {
+      "401": "invalid token",
+      "503": "token required but not configured"
+    }
+  },
+  "routes": [
+    {
+      "id": "identity_binding.by_professional",
+      "consumer": "agent",
+      "method": "PUT",
+      "path": "/api/v1/internal/professionals/{professional_uuid}/identity-binding",
+      "request": {
+        "principal_key_id": "key_id (8..64)",
+        "owner_name": "optional display name used only when a Tracker user must be created"
+      },
+      "success": {
+        "status_code": 200,
+        "required_keys": ["bound", "user_id", "professional_id", "principal_key_id"],
+        "notes": "bound=true; idempotent when the same professional is already bound to the same key; creates the Tracker User + AvatarEconomicsProfile when the professional has never opened the Tracker"
+      },
+      "errors": {
+        "409": "professional bound to another key, key bound to another professional, or key already registered as an agent identity",
+        "422": "invalid ids"
+      }
+    },
+    {
+      "id": "identity_binding.by_user",
+      "consumer": "legacy",
+      "method": "PUT",
+      "path": "/api/v1/internal/users/{user_id}/identity-binding",
+      "request": {
+        "professional_id": "uuid",
+        "principal_key_id": "key_id (8..64)"
+      },
+      "success": {
+        "status_code": 200,
+        "required_keys": ["user_id", "professional_id", "principal_key_id", "bound"]
+      },
+      "errors": {
+        "404": "user not found",
+        "409": "conflicting binding"
+      }
+    },
+    {
+      "id": "avatar_home.by_professional",
+      "consumer": "agent",
+      "method": "GET",
+      "path": "/api/v1/internal/professionals/{professional_uuid}/avatar-home",
+      "request": null,
+      "success": {
+        "status_code": 200,
+        "required_keys": ["user_id", "avatar_id", "identity_status", "economics", "summary", "history", "storage_health", "capability_evidence", "outcome_attestations", "economic_decisions", "outcome_review"],
+        "optional_keys": ["work_assets", "economic_projection", "outcome_verification"],
+        "status_values": {
+          "identity_status": ["resolved", "unbound"]
+        },
+        "notes": "identity_status is resolved on this route whenever a profile exists; a professional bound without a principal key gets avatar_id == economics.professional_id (owner-route fallback). outcome_attestations = {available, count, attestations[]} for the portfolio; outcome_review = {available, candidates[], requests[], counts{}, counterparties[]} where counterparties are the companies this professional holds contracts with (the only parties allowed to accept work)"
+      },
+      "errors": {
+        "404": "professional never bound (no AvatarEconomicsProfile row)"
+      }
+    },
+    {
+      "id": "avatar_outcomes.by_professional",
+      "consumer": "agent",
+      "method": "GET",
+      "path": "/api/v1/internal/professionals/{professional_uuid}/avatar-outcomes",
+      "query": {
+        "limit": "1..250, default 250"
+      },
+      "success": {
+        "status_code": 200,
+        "required_keys": ["schema_version", "kind", "avatar_id", "attestations", "count"],
+        "notes": "avatar_id is the principal key_id; attestations cover the whole ownership rollup (principal + owned agents), verified signatures only",
+        "optional_keys": ["professional_id", "key_ids"]
+      },
+      "errors": {
+        "404": "professional unknown or without a principal key"
+      }
+    },
+    {
+      "id": "avatar_outcomes.by_avatar",
+      "consumer": "apatch",
+      "method": "GET",
+      "path": "/api/v1/internal/avatar-outcomes",
+      "query": {
+        "avatar_id": "key_id",
+        "limit": "1..250, default 250"
+      },
+      "success": {
+        "status_code": 200,
+        "required_keys": ["schema_version", "kind", "avatar_id", "attestations", "count"]
+      }
+    },
+    {
+      "id": "avatar_review_requests.create",
+      "consumer": "agent",
+      "method": "POST",
+      "path": "/api/v1/internal/professionals/{professional_uuid}/avatar-review-requests",
+      "request": {
+        "work_episode_id": "40 lowercase hex chars",
+        "counterparty_company_id": "company id the professional holds a contract with",
+        "submission_note": "optional"
+      },
+      "success": {
+        "status_code": 201,
+        "required_keys": ["created", "request"],
+        "notes": "request is the verification request wire: id, skill, evidence_type, status, submitted_at, reviewed_at, reviewer_notes, credential_reference, evidence_reference (derived: review-package:<review_package_id>), outcome_loop, work_episode_id, subject_avatar_id, review_package_id, taxonomy_refs, counterparty_company_id, association_id, submission_note, clarification_response, remote_verification_id, delivery_status, delivery_error, synced_at"
+      },
+      "errors": {
+        "404": "professional unknown or unbound",
+        "409": "episode already pending/accepted, or counterparty is not a contract party",
+        "422": "not a candidate episode, or missing counterparty"
+      }
+    },
+    {
+      "id": "avatar_review_requests.resubmit",
+      "consumer": "agent",
+      "method": "POST",
+      "path": "/api/v1/internal/professionals/{professional_uuid}/avatar-review-requests/{request_id}/resubmit",
+      "request": {
+        "clarification_response": "1..4000"
+      },
+      "success": {
+        "status_code": 200,
+        "required_keys": ["resubmitted", "request"]
+      },
+      "errors": {
+        "404": "request not found for this professional",
+        "409": "request is not awaiting resubmission (only a request whose delivery_status is FAILED with a stored signed command can be resubmitted; clarification_response is kept in evidence_payload and the signed command is re-sent unchanged)",
+        "422": "rejected"
+      }
+    },
+    {
+      "id": "contribution_events.single",
+      "consumer": "agent",
+      "method": "POST",
+      "path": "/api/v1/internal/contribution-events",
+      "request": "one signed ContributionEvent",
+      "success": {
+        "status_code": [201, 200],
+        "required_keys": ["accepted", "stored", "duplicate", "event_id", "avatar_id", "signature_verified"],
+        "notes": "201 new, 200 duplicate=true"
+      },
+      "errors": {
+        "409": "conflicting content under an existing idempotency key",
+        "422": "invalid or unverifiable event"
+      }
+    },
+    {
+      "id": "contribution_events.batch",
+      "consumer": "apatch",
+      "method": "POST",
+      "path": "/api/v1/internal/contribution-events/batch",
+      "request": "list of 1..250 signed ContributionEvents",
+      "success": {
+        "status_code": 200,
+        "required_keys": ["accepted", "rejected", "results"]
+      }
+    },
+    {
+      "id": "contribution_events.reconcile",
+      "consumer": "apatch,agent",
+      "method": "POST",
+      "path": "/api/v1/internal/contribution-events/reconcile",
+      "request": {
+        "avatar_id": "key_id",
+        "event_ids": "list[str] up to MAX_RECONCILE_EVENT_IDS"
+      },
+      "success": {
+        "status_code": 200,
+        "required_keys": ["avatar_id", "present_event_ids", "missing_event_ids", "conflict_event_ids"],
+        "optional_keys": ["verified_present_event_ids", "unverified_present_event_ids"]
+      },
+      "errors": {
+        "422": "invalid request"
+      }
+    },
+    {
+      "id": "capability_evidence.ingest",
+      "consumer": "apatch,agent",
+      "method": "POST",
+      "path": "/api/v1/internal/capability-evidence",
+      "request": "one CapabilityEvidence v2 bundle",
+      "success": {
+        "status_code": [201, 200],
+        "required_keys": ["accepted", "stored", "duplicate", "bundle_id", "avatar_id", "trust_level", "signature_verified"]
+      },
+      "errors": {
+        "409": "different payload under an existing bundle_id",
+        "422": "invalid bundle"
+      }
+    },
+    {
+      "id": "avatar_taxonomy_decisions.by_avatar",
+      "consumer": "apatch,agent",
+      "method": "GET",
+      "path": "/api/v1/internal/avatar-taxonomy-decisions",
+      "query": {
+        "avatar_id": "key_id",
+        "limit": "1..1000, default 1000"
+      },
+      "success": {
+        "status_code": 200,
+        "required_keys": ["status", "schema_version", "kind", "avatar_id", "decisions", "count"],
+        "status_values": ["ready"]
+      }
+    },
+    {
+      "id": "avatar_portfolio.by_key",
+      "consumer": "agent,apatch",
+      "method": "GET",
+      "path": "/api/v1/internal/avatar-portfolio/{key_id}",
+      "success": {
+        "status_code": 200,
+        "required_keys": ["schema_version", "kind", "query_key_id", "principal_key_id", "key_ids", "ownership"]
+      },
+      "errors": {
+        "404": "unknown key",
+        "422": "key longer than 128"
+      }
+    }
+  ]
+}

@@ -18,32 +18,32 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 # R1 (Avatar Architecture Canon §2, Rule 1): the ContributionEvent schema is the
-# ONE shared `avatar-contract` definition, imported by BOTH apatch (emitter, L1)
+# ONE shared `avatar-contract` definition, used by BOTH apatch (emitter, L1)
 # and HC (consumer, L3) — not a second local schema "matching by convention".
-# It is imported LAZILY (inside the emit path, see `_event_class`) so a bare apatch
-# install (patching only) never requires it; contribution EMISSION requires it
-# (install the `avatar` extra / vendor / editable checkout). There is no local
-# fallback schema — absence raises, it never silently diverges.
+# APatch bundles that canonical package byte-for-byte (imports rewritten only) as
+# `apatch._vendor.avatar_contract` (SPEC-OSS-BUNDLED-AVATAR-CONTRACT-1), so every
+# install can emit contributions and a separately installed top-level
+# `avatar_contract` is never imported. There is no second local schema.
 
 SCHEMA_VERSION = 3
 
-_EVENT_CLASS = None  # cached apatch-side subclass of avatar_contract.ContributionEvent
+_EVENT_CLASS = None  # cached apatch-side subclass of the bundled ContributionEvent
 
 
 def current_schema_version() -> int:
-    """Return the canonical version without making avatar-contract a base dependency."""
-    from avatar_contract.contribution_event import SCHEMA_VERSION as contract_version
+    """Return the canonical ContributionEvent schema version of the bundled contract."""
+    from apatch._vendor.avatar_contract.contribution_event import SCHEMA_VERSION as contract_version
 
     return int(contract_version)
 
 
 def _event_class():
     """The apatch-side ContributionEvent = the shared contract class + a `to_dict()`
-    alias for existing readers. Built lazily so importing this module never requires
-    `avatar-contract` (raises ImportError only when contributions are actually built)."""
+    alias for existing readers. Built lazily on first use from the bundled canonical
+    contract (`apatch._vendor.avatar_contract`)."""
     global _EVENT_CLASS
     if _EVENT_CLASS is None:
-        from avatar_contract import ContributionEvent as _Base
+        from apatch._vendor.avatar_contract import ContributionEvent as _Base
 
         class ContributionEvent(_Base):
             def to_dict(self) -> Dict[str, Any]:
@@ -64,6 +64,23 @@ def _canonical(obj: Any) -> str:
 
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+ACTIVE_IDLE_GAP_MIN = 30.0
+
+
+def _measured_active_seconds(started: float, ledger_rows: List[Dict[str, Any]]) -> float:
+    """Measured governed work time: session start through every session ledger operation.
+
+    ``apatch_attest`` emits the event before ``session_end``, so ``duration_sec`` is the
+    sub-second ceremony (SPEC-CONTRIB-TIMESHEET-1 R8). ``active_sec`` records the measured
+    span instead, excluding gaps longer than ``ACTIVE_IDLE_GAP_MIN`` minutes (a break), so
+    governed evidence claims real work time (SPEC-OSS-BUNDLED-AVATAR-CONTRACT-1 R9).
+    """
+    from apatch.timesheet import idle_gap_split
+
+    points = [started] + [_to_epoch(row.get("timestamp")) for row in ledger_rows]
+    return idle_gap_split([point for point in points if point], ACTIVE_IDLE_GAP_MIN)
 
 
 def _to_epoch(value: Any) -> float:
@@ -88,7 +105,7 @@ def _floor_trust(level: Optional[str]) -> str:
     """Canon §7.2 ladder is exactly {claimed, attested, verified}. Anything else
     (legacy 'audit', None) floors to 'claimed' — the un-enrolled floor (canon §8),
     which the shared `avatar_contract` schema accepts (it rejects 'audit')."""
-    from avatar_contract import TRUST_LEVELS
+    from apatch._vendor.avatar_contract import TRUST_LEVELS
     return level if level in TRUST_LEVELS else "claimed"
 
 
@@ -409,7 +426,7 @@ def build_event(
             "started_at": session.get("started_at"),
             "ended_at": session.get("ended_at"),
             "duration_sec": round(duration, 3),
-            "active_sec": None,
+            "active_sec": _measured_active_seconds(started, ledger_rows),
         },
         "volume": volume,
         "proof_ref": {

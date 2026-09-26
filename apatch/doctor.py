@@ -229,13 +229,16 @@ def run_doctor(target_dir: str = ".") -> Dict[str, Any]:
 
     from apatch.avatar_delivery import avatar_runtime_compatibility
 
+    # The Avatar contract is bundled (apatch._vendor.avatar_contract); a separately
+    # installed top-level avatar-contract is never imported, so only a damaged
+    # APatch installation can make it unusable.
     avatar_contract = avatar_runtime_compatibility()
-    if not avatar_contract.get("ok") and avatar_contract.get("installed_version"):
+    if not avatar_contract.get("ok"):
         missing = ", ".join(avatar_contract.get("missing_symbols") or []) or "unknown"
         warnings.append(
-            "AVATAR CONTRACT INCOMPATIBLE: interpreter {} loads avatar-contract {} "
-            "from {}; missing symbols: {}. Replace it with the APatch-pinned "
-            "avatar-contract build and restart MCP.".format(
+            "AVATAR CONTRACT INCOMPATIBLE: interpreter {} loads the avatar-contract {} "
+            "bundled with APatch from {}; missing symbols: {}. Reinstall APatch in "
+            "this interpreter and restart MCP.".format(
                 avatar_contract.get("python_executable") or sys.executable,
                 avatar_contract.get("installed_version") or "unknown",
                 avatar_contract.get("module_path") or "unresolved",

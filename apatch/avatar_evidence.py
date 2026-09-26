@@ -53,7 +53,7 @@ def _is_outcome_candidate(episode: Dict[str, Any]) -> bool:
 
 
 def _sign_bundle(bundle: Dict[str, Any], target_dir: str) -> None:
-    from avatar_contract import capability_evidence_signing_bytes
+    from apatch._vendor.avatar_contract import capability_evidence_signing_bytes
     from apatch.trust_identity import load_local_identity
 
     identity = load_local_identity(target_dir)
@@ -86,7 +86,7 @@ def build_evidence_bundle(
     outcome_store_dir: Optional[str] = None,
     taxonomy_store_dir: Optional[str] = None,
 ) -> Dict[str, Any]:
-    from avatar_contract import (
+    from apatch._vendor.avatar_contract import (
         CAPABILITY_EVIDENCE_KIND,
         CAPABILITY_EVIDENCE_SCHEMA_VERSION,
         CapabilityEvidenceBundle,
@@ -160,7 +160,7 @@ def verify_evidence_bundle(
     bundle: Dict[str, Any],
     target_dir: str = ".",
 ) -> Dict[str, Any]:
-    from avatar_contract import CapabilityEvidenceBundle, CapabilityEvidenceError
+    from apatch._vendor.avatar_contract import CapabilityEvidenceBundle, CapabilityEvidenceError
 
     errors: List[Dict[str, Any]] = []
     try:

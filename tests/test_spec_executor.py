@@ -421,6 +421,60 @@ def test_execute_next_finalize(tmp_path, monkeypatch):
     assert captured["completion_summary"] == "Created the executable result."
 
 
+def test_execute_next_binds_the_lane_session_when_other_lanes_are_active(tmp_path, monkeypatch):
+    """RFP-036: a second active lane must not make the reused/finalize steps ambiguous."""
+    from apatch.lane_context import active_lane_ids, register_active_lane
+
+    marker = tmp_path / "marker.txt"
+    marker.write_text("BEFORE\n", encoding="utf-8")
+    _write_spec(
+        tmp_path,
+        "SPEC-EXEC",
+        SPEC_EXEC.replace(
+            "(verify: python3 -c \"print('exec-ok')\")",
+            f"(verify: test -f {marker})",
+        ),
+    )
+    start = execute_next_enriched(str(tmp_path), spec="SPEC-EXEC")
+    assert start["ok"] is True
+    register_active_lane(str(tmp_path), "sibling-lane", session_id="apatch_sess_sibling")
+    assert len(active_lane_ids(str(tmp_path))) == 2
+
+    out = execute_next_enriched(
+        str(tmp_path),
+        spec="SPEC-EXEC",
+        needles=[
+            {
+                "find_text": "BEFORE",
+                "replace_text": "AFTER",
+                "target_file": "marker.txt",
+                "label": "mark",
+            }
+        ],
+        logs_path=str(tmp_path / "patches.jsonl"),
+    )
+    assert out["ok"] is True, out
+    assert out["session_reused"] is True
+    assert marker.read_text(encoding="utf-8").strip() == "AFTER"
+
+    class FakeTC:
+        def has_trustchain(self):
+            return True
+
+        def commit_action(self, tool_id, payload):
+            return True
+
+        def iter_ledger_entries(self):
+            return iter([])
+
+    monkeypatch.setattr("apatch.trustchain_helper.TrustChainHelper", lambda *_a, **_k: FakeTC())
+    finalized = execute_next_enriched(str(tmp_path), spec="SPEC-EXEC", finalize=True)
+    assert finalized["ok"] is True, finalized
+    assert finalized["execution_phase"] == "complete"
+    assert "session_end" in finalized["steps_completed"]
+    assert active_lane_ids(str(tmp_path)) == ["sibling-lane"]
+
+
 def test_mcp_execute_next_registered():
     pytest.importorskip("mcp")
     from apatch.mcp import server as mcp_server

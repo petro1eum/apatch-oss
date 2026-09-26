@@ -40,6 +40,7 @@ ALLOWED_OPERATIONS = frozenset(
         "apatch_noop_attest",
         "apatch_attest",
         "apatch_commit_attested",
+        "apatch_git_untrack_runtime",
         "apatch_session_end",
         "apatch_session_state",
     }
@@ -92,6 +93,38 @@ def dispatch(payload: Mapping[str, Any]) -> Dict[str, Any]:
                 "REMOTE_PLAN_INVALID",
                 "apatch_execute_next plan must be a JSON object.",
             )
+        if plan.get("single_source_intake") is True:
+            # Compatibility with controllers whose execute_next route predates
+            # the explicit one-SPEC intake route. Delegate to the same worker
+            # preflight; never reinterpret an intake needle as a replacement.
+            allowed = {"execute_next", "single_source_intake", "spec", "requirement", "needles", "verify_jobs", "verify_timeout"}
+            spec_id = str(plan.get("spec") or "").strip()
+            token = str(plan.get("requirement") or "").strip()
+            needles = plan.get("needles")
+            if (
+                set(plan) - allowed
+                or plan.get("execute_next") is not True
+                or not spec_id.startswith("SPEC-")
+                or not token.startswith(spec_id + "#")
+                or not token[len(spec_id) + 1:]
+                or not isinstance(needles, list)
+                or len(needles) != 1
+                or not isinstance(needles[0], Mapping)
+            ):
+                return _fail("REMOTE_PLAN_INVALID", "Single-file intake needs one exact SPEC#Rk and one intake needle.")
+            normalized = {
+                "single_source_intake": True,
+                "specs": [spec_id],
+                "requirements": {spec_id: {token[len(spec_id) + 1:]: {"needles": [dict(needles[0])]}}},
+                "execution_mode": "shared_maintenance",
+                "verify_jobs": plan.get("verify_jobs", 8),
+                "verify_timeout": plan.get("verify_timeout", 120.0),
+            }
+            return dispatch({
+                "operation": "apatch_spec_run_multi",
+                "protocol_version": PROTOCOL_VERSION,
+                "arguments": {"plan": normalized},
+            })
         spec_id = str(plan.get("spec") or "").strip()
         requirement = str(plan.get("requirement") or "").strip()
         needles = plan.get("needles")
@@ -276,6 +309,41 @@ def dispatch(payload: Mapping[str, Any]) -> Dict[str, Any]:
             )
         specs = plan.get("specs") or args.get("specs")
         requirements = plan.get("requirements") or args.get("requirements")
+        if plan.get("single_source_intake") is True:
+            allowed = {"single_source_intake", "specs", "requirements", "execution_mode", "verify_jobs", "verify_timeout"}
+            if (
+                set(plan) - allowed
+                or not isinstance(specs, list)
+                or len(specs) != 1
+                or plan.get("execution_mode") != "shared_maintenance"
+                or not isinstance(requirements, Mapping)
+            ):
+                return _fail(
+                    "REMOTE_PLAN_INVALID",
+                    "Single-SPEC intake needs exactly one SPEC, explicit requirements, and shared_maintenance mode.",
+                )
+            from apatch.shared_maintenance import prepare_shared_maintenance
+            from apatch.existing_source_intake import run_partitioned_source_intake
+            from apatch.session_state import enrich_tool_response
+
+            selected = [str(specs[0])]
+            prepared = prepare_shared_maintenance(
+                target_dir,
+                specs=selected,
+                requirements=requirements,
+                single_source_intake=True,
+            )
+            if not prepared.get("ok"):
+                return prepared
+            result = run_partitioned_source_intake(
+                target_dir,
+                prepared=prepared,
+                specs=selected,
+                single_spec=True,
+                verify_jobs=_as_int(plan.get("verify_jobs"), 8),
+                verify_timeout=_as_float(plan.get("verify_timeout"), 120.0),
+            )
+            return enrich_tool_response("apatch_spec_run_multi", result, target_dir=target_dir)
         if not isinstance(specs, list) or len(specs) < 2:
             return _fail(
                 "REMOTE_PLAN_INVALID",
@@ -448,6 +516,25 @@ def dispatch(payload: Mapping[str, Any]) -> Dict[str, Any]:
         return MutationRuntime(target_dir).rollback(
             args.get("session_id"),
             preview=bool(args.get("preview")),
+        )
+
+    if operation == "apatch_git_untrack_runtime":
+        plan = args.get("plan")
+        if not isinstance(plan, Mapping) or set(plan) - {
+            "git_untrack_runtime", "message", "dry_run"
+        } or plan.get("git_untrack_runtime") is not True or (
+            "dry_run" in plan and type(plan["dry_run"]) is not bool
+        ):
+            return _fail(
+                "REMOTE_PLAN_INVALID",
+                "apatch_git_untrack_runtime accepts only its exact marker, message and boolean dry_run.",
+            )
+        from apatch.workflows import git_untrack_runtime_workspace
+
+        return git_untrack_runtime_workspace(
+            target_dir,
+            message=str(plan.get("message") or args.get("message") or "Stop tracking APatch runtime files"),
+            dry_run=bool(plan.get("dry_run", False)),
         )
 
     if operation == "apatch_commit_attested":

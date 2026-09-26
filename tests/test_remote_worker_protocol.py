@@ -8,6 +8,36 @@ from apatch.remote.target import build_remote_target, parse_remote_target
 from apatch.remote.transport import FakeRemoteTransport
 
 
+def test_git_untrack_runtime_worker_rejects_mixed_plan_and_dispatches_exact(monkeypatch):
+    from apatch.remote import worker
+
+    captured = {}
+
+    def fake_untrack(target_dir, **kwargs):
+        captured["target_dir"] = target_dir
+        captured.update(kwargs)
+        return {"ok": True, "dry_run": True}
+
+    monkeypatch.setattr("apatch.workflows.git_untrack_runtime_workspace", fake_untrack)
+    invalid = worker.dispatch({
+        "operation": "apatch_git_untrack_runtime",
+        "arguments": {"plan": {"git_untrack_runtime": True, "paths": ["src/secret.py"]}},
+    })
+    assert invalid["error_type"] == "REMOTE_PLAN_INVALID"
+    assert captured == {}
+
+    valid = worker.dispatch({
+        "operation": "apatch_git_untrack_runtime",
+        "arguments": {"plan": {"git_untrack_runtime": True, "dry_run": True}},
+    })
+    assert valid["ok"] is True
+    assert captured == {
+        "target_dir": ".",
+        "message": "Stop tracking APatch runtime files",
+        "dry_run": True,
+    }
+
+
 def test_r1_fake_transport_round_trip():
     target = build_remote_target("example-search-host", "/srv/repo", alias="x")
     transport = FakeRemoteTransport(

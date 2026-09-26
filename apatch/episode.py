@@ -59,7 +59,7 @@ def _identity_config(target_dir: str) -> Dict[str, Any]:
 
 
 def _ownership_graph():
-    from avatar_contract import OwnershipGraph
+    from apatch._vendor.avatar_contract import OwnershipGraph
 
     path = os.environ.get("APATCH_OWNERSHIP_GRAPH", "").strip()
     if not path:
@@ -214,7 +214,7 @@ def _review_package(
     signature_status: str,
     gate_quality: str,
 ) -> Dict[str, Any]:
-    from avatar_contract import build_work_review_package
+    from apatch._vendor.avatar_contract import build_work_review_package
 
     payload = event.payload or {}
     raw = payload.get("review_submission")
@@ -401,7 +401,7 @@ def episode_from_event(
     outcome_index: Optional[Dict[str, Dict[str, Any]]] = None,
     taxonomy_index: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
-    from avatar_contract import ContributionEvent
+    from apatch._vendor.avatar_contract import ContributionEvent
 
     event = ContributionEvent.from_wire(raw)
     event.validate()
@@ -573,7 +573,7 @@ def verify_episodes(
 def _economic_leak(value: Any) -> bool:
     """Backward-compatible helper used by older callers/tests."""
     try:
-        from avatar_contract import assert_capability_evidence_content_safe
+        from apatch._vendor.avatar_contract import assert_capability_evidence_content_safe
 
         assert_capability_evidence_content_safe({"value": value})
         return False

@@ -3,6 +3,11 @@
 Collect complete verification evidence and classify its explicitly named scope.
 Existing tests and native conformance remain authoritative; a scoped result never
 grants release approval or external-service acceptance.
+
+The canonical Avatar contract is bundled as ``apatch._vendor.avatar_contract``
+(owner decision 2026-09-26), so no test or requirement failure may be waived as an
+absent Avatar peer. The Avatar profile proves the vendored bytes equal the canonical
+checkout at the commit pinned in the vendored ``UPSTREAM.json``.
 """
 from __future__ import annotations
 
@@ -22,14 +27,20 @@ import uuid
 import xml.etree.ElementTree as ET
 
 
-SCHEMA = "apatch.oss-verification-inventory.v1"
+SCHEMA = "apatch.oss-verification-inventory.v2"
 RUNTIME_ROOTS = ("apatch", "apatch_search_workflows")
-DEPENDENCIES = {"avatar_contract", "tree_sitter_java"}
-COLLECTION_SKIPS = {"tests/test_contribution_event.py", "tests/test_edge_lockstep.py"}
+# Only genuinely optional public dependencies may explain a skip. The Avatar
+# contract is bundled, so it can never explain a failure, skip or requirement.
+DEPENDENCIES = {"tree_sitter_java"}
 FIELDS = {
     "schema", "qualification_scope", "provenance", "runtime_files", "source_files",
-    "absent_peer_failures", "existing_optional_skips", "peer_requirements",
-    "unproven_external_specs",
+    "existing_optional_skips", "unproven_external_specs",
+}
+VENDORED_CONTRACT = "apatch/_vendor/avatar_contract"
+VENDORED_UPSTREAM = VENDORED_CONTRACT + "/UPSTREAM.json"
+VENDOR_REWRITE = {
+    "pattern": r"^(\s*)from avatar_contract(\.| )",
+    "replacement": r"\1from apatch._vendor.avatar_contract\2",
 }
 
 
@@ -78,15 +89,12 @@ def _unique_rows(rows, key, fields, label):
     return rows
 
 
-def _node_path(node, *, collection=False):
+def _node_path(node):
     parts = node.split("::")
     path = _relative_path(parts[0]).as_posix()
     if not path.startswith("tests/") or not path.endswith(".py"):
         raise InventoryError("not a test path: " + node)
-    if collection:
-        if len(parts) != 1 or path not in COLLECTION_SKIPS:
-            raise InventoryError("unreviewed collection-level skip: " + node)
-    elif len(parts) < 2 or any(not re.fullmatch(r"[A-Za-z_]\w*", part) for part in parts[1:]):
+    if len(parts) < 2 or any(not re.fullmatch(r"[A-Za-z_]\w*", part) for part in parts[1:]):
         raise InventoryError("not an exact test identity: " + node)
     return path
 
@@ -116,39 +124,13 @@ def validate_inventory(inventory):
             _digest(digest)
             if group == "runtime_files" and not any(name.startswith(root + "/") for root in RUNTIME_ROOTS):
                 raise InventoryError("invalid runtime path: " + name)
-    failures = _unique_rows(inventory["absent_peer_failures"], "node",
-                            {"node", "dependency", "reason", "observed_message"}, "failure")
     skips = _unique_rows(inventory["existing_optional_skips"], "node",
-                         {"node", "dependency", "reason", "collection_skip"}, "skip")
-    if {row["node"] for row in failures} & {row["node"] for row in skips}:
-        raise InventoryError("ambiguous failure/skip declaration")
-    for row in failures:
-        _text(row["observed_message"], "observed failure message")
+                         {"node", "dependency", "reason"}, "skip")
     referenced = set()
-    for row in failures + skips:
+    for row in skips:
         _dependency(row["dependency"])
         _text(row["reason"], "dependency reason")
-        collection = row.get("collection_skip", False)
-        if not isinstance(collection, bool):
-            raise InventoryError("collection_skip must be boolean")
-        if collection and row["dependency"] != "avatar_contract":
-            raise InventoryError("invalid collection dependency")
-        if row in failures and row["dependency"] != "avatar_contract":
-            raise InventoryError("unreviewed failure dependency")
-        referenced.add(_node_path(row["node"], collection=collection))
-    requirements = _unique_rows(inventory["peer_requirements"], "requirement",
-                                {"requirement", "command", "observed_exit_code", "dependency", "kind", "reason"},
-                                "requirement")
-    for row in requirements:
-        if re.fullmatch(r"SPEC-[A-Z0-9-]+#R\d+", row["requirement"]) is None:
-            raise InventoryError("not an exact requirement identity")
-        _text(row["command"], "verify command")
-        _text(row["reason"], "requirement reason")
-        if (row["dependency"] != "avatar_contract"
-                or type(row["observed_exit_code"]) is not int
-                or (row["kind"], row["observed_exit_code"]) not in {("failure", 1), ("broken", 4)}):
-            raise InventoryError("unreviewed requirement observation")
-        referenced.add("docs/specs/" + row["requirement"].split("#")[0] + ".md")
+        referenced.add(_node_path(row["node"]))
     unproven = _unique_rows(inventory["unproven_external_specs"], "spec", {"spec", "reason"}, "unproven")
     if len(unproven) != 1 or unproven[0]["spec"] != "SPEC-AVATAR-CONTRACT-1":
         raise InventoryError("unreviewed external specification")
@@ -206,17 +188,9 @@ def verify_inventory_source(inventory, source):
             if sha256(content) != digest:
                 raise InventoryError("changed verification input: " + name)
             contents[name] = content
-    for row in inventory["absent_peer_failures"] + inventory["existing_optional_skips"]:
+    for row in inventory["existing_optional_skips"]:
         _test_exists(contents[row["node"].split("::")[0]], row["node"])
-    # Use the same parser as native conformance, after verifying its bytes.
-    from apatch.spec import parse_spec
-
-    for row in inventory["peer_requirements"]:
-        spec_id, requirement = row["requirement"].split("#")
-        parsed = parse_spec(contents["docs/specs/" + spec_id + ".md"].decode("utf-8"), spec_id=spec_id)
-        matches = [item for item in parsed.requirements if item.id == requirement]
-        if len(matches) != 1 or matches[0].verify != row["command"]:
-            raise InventoryError("changed requirement command: " + row["requirement"])
+    bundled_contract_pin(source)
     return {"inventory_validated": True, "profile_passed": False,
             "qualification_scope": "declarations_only_not_profile_acceptance",
             "release_authorized": False, "external_acceptance": "not_checked",
@@ -552,60 +526,8 @@ def collect_complete_run(source, output, *, timeout=1800):
     return evidence
 
 
-def _selected_nodes(command, nodes):
-    import fnmatch
-    import shlex
-    args = shlex.split(command)
-    if args[:3] not in (['python3', '-m', 'pytest'], ['python', '-m', 'pytest']):
-        raise InventoryError('unreviewed requirement runner')
-    selectors = [value for value in args[3:] if value.startswith('tests/')]
-    if not selectors or any(value in args[3:] for value in ('-k', '-m', '--deselect', '--ignore', '-x')):
-        raise InventoryError('unreviewed requirement selection')
-    result = set()
-    for node in nodes:
-        for selector in selectors:
-            file, *parts = selector.split('::')
-            if fnmatch.fnmatchcase(node.split('::')[0], file) and (
-                    not parts or node == selector or node.startswith(selector + '::')):
-                result.add(node)
-    return result
-
-
-def _validate_absent_requirement(detail, declaration, failures, skipped):
-    if (detail.get('kind') != declaration['kind']
-            or type(detail.get('exit_code')) is not int
-            or detail['exit_code'] != declaration['observed_exit_code']
-            or detail.get('cmd') != declaration['command']):
-        raise InventoryError('changed requirement failure: ' + declaration['requirement'])
-    stdout, stderr = detail.get('stdout_tail', ''), detail.get('stderr_tail', '')
-    if not isinstance(stdout, str) or not isinstance(stderr, str):
-        raise InventoryError('malformed requirement output')
-    if detail['kind'] == 'broken':
-        import shlex
-        selectors = [value for value in shlex.split(detail['cmd']) if value.startswith('tests/')]
-        if (len(selectors) != 1 or selectors[0].split('::')[0] not in COLLECTION_SKIPS
-                or re.fullmatch(r'\s*1 skipped in [^\n]+\s*', stdout) is None
-                or not stderr.strip().startswith('ERROR: found no collectors for ')
-                or not stderr.strip().endswith(selectors[0])
-                or len(stderr.strip().splitlines()) != 1):
-            raise InventoryError('unexplained uncollectable requirement')
-        return
-    expected = _selected_nodes(detail['cmd'], failures)
-    reported = re.findall(r'^FAILED (tests/\S+)(?:\s+-|\s*$)', stdout, flags=re.MULTILINE)
-    counts = re.findall(r'(\d+) failed(?:,| in|\s)', stdout)
-    if (not expected or set(reported) != expected or len(reported) != len(expected)
-            or not counts or int(counts[-1]) != len(expected)):
-        raise InventoryError('requirement output contains unreviewed or incomplete failures')
-    skip_counts = re.findall(r'(\d+) skipped(?:,| in|\s)', stdout)
-    expected_skips = _selected_nodes(detail['cmd'], skipped)
-    if (int(skip_counts[-1]) if skip_counts else 0) != len(expected_skips):
-        raise InventoryError('unreviewed requirement skip count')
-    if re.search(r'(\d+) error(?:s)?(?:,| in|\s)', stdout) or 'ERROR' in stderr:
-        raise InventoryError('requirement has an unrelated collection/runtime error')
-
-
 def qualify_standalone(inventory, evidence):
-    """Classify complete reviewed evidence, never turn raw failures into raw PASS."""
+    """Classify complete reviewed evidence; no Avatar absence can be waived any more."""
     validate_inventory(inventory)
     if evidence.get('complete') is not True:
         raise InventoryError('incomplete profile evidence')
@@ -616,36 +538,26 @@ def qualify_standalone(inventory, evidence):
     suite, contract = evidence['suite'], evidence['contract']
     dependencies = suite.get('dependencies', {})
     expected_dependencies = {'avatar_contract', 'tree_sitter_java', 'trustchain', 'mcp', 'cryptography'}
+    # Standalone is the public-install scenario: no top-level avatar_contract module,
+    # so the complete run proves APatch uses only its bundled contract.
     if (set(dependencies) != expected_dependencies or any(type(v) is not bool for v in dependencies.values())
             or dependencies['avatar_contract'] is not False
             or not all(dependencies[name] for name in ('trustchain', 'mcp', 'cryptography'))):
-        raise InventoryError('standalone requires absent Avatar and present public verification dependencies')
+        raise InventoryError('standalone requires no top-level Avatar module and present public verification dependencies')
     outcomes = suite.get('outcomes', {})
-    failures = {node: row for node, row in outcomes.items() if row.get('outcome') == 'failed'}
-    declared_failures = {row['node']: row for row in inventory['absent_peer_failures']}
-    if set(failures) != set(declared_failures):
-        raise InventoryError('unexpected failure or changed absence behavior')
-    for node, row in failures.items():
-        if row.get('phase') != 'call' or row.get('message') != declared_failures[node]['observed_message']:
-            raise InventoryError('changed reviewed failure: ' + node)
+    failures = sorted(node for node, row in outcomes.items() if row.get('outcome') == 'failed')
+    if failures:
+        raise InventoryError('test failures cannot be waived: ' + ', '.join(failures[:5]))
     expected_skips = {row['node']: row for row in inventory['existing_optional_skips']
                       if dependencies[row['dependency']] is False}
     actual_skips = {node: row for node, row in outcomes.items() if row.get('outcome') == 'skipped'}
-    collected_skips = suite.get('collection_skips', {})
-    if (set(actual_skips) != {node for node, row in expected_skips.items() if not row['collection_skip']}
-            or set(collected_skips) != {node for node, row in expected_skips.items() if row['collection_skip']}):
+    if set(actual_skips) != set(expected_skips) or suite.get('collection_skips'):
         raise InventoryError('unexpected or missing optional skip')
     for node in actual_skips:
         message = actual_skips[node].get('message', '')
-        dependency = expected_skips[node]['dependency']
-        marker = 'avatar_contract' if dependency == 'avatar_contract' else 'tree-sitter-java'
-        if not isinstance(message, str) or marker not in message:
+        if not isinstance(message, str) or 'tree-sitter-java' not in message:
             raise InventoryError('skip does not explain the absent dependency: ' + node)
-    for node, message in collected_skips.items():
-        if 'avatar_contract' not in message:
-            raise InventoryError('unexplained collection skip')
-    declared_requirements = {row['requirement']: row for row in inventory['peer_requirements']}
-    actual_requirements, unproven = {}, set()
+    unproven = set()
     rows = contract.get('per_spec', [])
     if len({row.get('spec') for row in rows}) != len(rows):
         raise InventoryError('duplicate specification result')
@@ -653,28 +565,18 @@ def qualify_standalone(inventory, evidence):
         status = row.get('conformance')
         if status not in {'conformant', 'drifted', 'broken', 'unproven'}:
             raise InventoryError('unexpected contract status')
-        if status == 'unproven': unproven.add(row['spec'])
-        details = row.get('verify_details', [])
-        if (status in {'drifted', 'broken'}) != bool(details):
-            raise InventoryError('unexplained contract failure')
-        for detail in details:
-            key = row['spec'] + '#' + detail['id']
-            if key in actual_requirements or key not in declared_requirements:
-                raise InventoryError('unreviewed or duplicate requirement failure: ' + key)
-            _validate_absent_requirement(detail, declared_requirements[key], failures, expected_skips)
-            actual_requirements[key] = detail
-    if set(actual_requirements) != set(declared_requirements):
-        raise InventoryError('changed requirement absence behavior')
+        if status in {'drifted', 'broken'} or row.get('verify_details'):
+            raise InventoryError('requirement failures cannot be waived: ' + str(row.get('spec')))
+        if status == 'unproven':
+            unproven.add(row['spec'])
     if unproven != {row['spec'] for row in inventory['unproven_external_specs']}:
         raise InventoryError('unexpected unproven contract')
-    if type(contract.get('contract_holds')) is not bool:
-        raise InventoryError('missing raw standing verdict')
+    if contract.get('contract_holds') is not True:
+        raise InventoryError('missing or red raw standing verdict')
     return {'profile': 'standalone', 'profile_passed': True,
-            'raw_suite_passed': not failures, 'raw_contract_holds': contract['contract_holds'],
-            'external_acceptance': 'not_checked', 'avatar_acceptance': 'unavailable',
-            'release_authorized': False, 'classified_failures': sorted(failures),
-            'classified_skips': sorted(expected_skips),
-            'classified_requirements': sorted(actual_requirements),
+            'raw_suite_passed': True, 'raw_contract_holds': True,
+            'external_acceptance': 'not_checked', 'canonical_contract_checked': False,
+            'release_authorized': False, 'classified_skips': sorted(expected_skips),
             'unproven_external_specs': sorted(unproven)}
 
 
@@ -696,15 +598,36 @@ def _toml_version(content):
     return tomllib.loads(content.decode('utf-8'))['project']['version']
 
 
+def _inverse_vendor_rewrite(content):
+    return re.sub(rb'^(\s*)from apatch\._vendor\.avatar_contract(\.| )', rb'\1from avatar_contract\2',
+                  content, flags=re.MULTILINE)
+
+
+def bundled_contract_pin(source):
+    """The canonical commit recorded by the vendored contract, read from reviewed bytes."""
+    try:
+        upstream = json.loads(_read_source(Path(source), VENDORED_UPSTREAM).decode('utf-8'),
+                              object_pairs_hook=_unique_json)
+    except (UnicodeDecodeError, ValueError) as exc:
+        raise InventoryError('malformed bundled Avatar contract record') from exc
+    if (not isinstance(upstream, dict) or upstream.get('license') != 'MIT'
+            or upstream.get('rewrite', {}).get('from_import') != VENDOR_REWRITE
+            or not isinstance(upstream.get('commit'), str)
+            or re.fullmatch(r'[0-9a-f]{40}', upstream['commit']) is None
+            or not isinstance(upstream.get('files'), dict) or not upstream['files']):
+        raise InventoryError('bundled Avatar contract record is incomplete')
+    return upstream['commit']
+
+
 def avatar_prerequisite(source, checkout):
-    """Require the source-declared pin, a clean exact checkout and matching installed bytes."""
+    """Require a clean canonical checkout at the bundled pin whose bytes equal the vendored copy."""
     import io
     import tarfile
-    text = _read_source(Path(source), 'pyproject.toml').decode('utf-8')
-    pins = re.findall(r'avatar-contract @ git\+https://github\.com/petro1eum/avatar-contract\.git@([0-9a-f]{40})', text)
-    if len(pins) != 1 or not checkout:
-        raise InventoryError('Avatar requires the one source-declared pin and an explicit canonical checkout')
-    pin = pins[0]
+    source = Path(source)
+    pin = bundled_contract_pin(source)
+    if not checkout:
+        raise InventoryError('Avatar requires an explicit canonical checkout at the bundled pin')
+    upstream = json.loads(_read_source(source, VENDORED_UPSTREAM).decode('utf-8'))
     checkout = Path(checkout).resolve(strict=True)
     if (_git(checkout, 'rev-parse', 'HEAD').decode().strip() != pin
             or Path(_git(checkout, 'rev-parse', '--show-toplevel').decode().strip()).resolve() != checkout
@@ -723,37 +646,33 @@ def avatar_prerequisite(source, checkout):
             if _read_source(checkout, name) != content:
                 raise InventoryError('canonical checkout bytes differ from declared Git object')
             files[name] = sha256(content)
-            if name.startswith('avatar_contract/'): package[name] = files[name]
+            if name.startswith('avatar_contract/') or name == 'LICENSE': package[name] = files[name]
             if name == 'pyproject.toml': version = _toml_version(content)
     if not version or 'avatar_contract/__init__.py' not in package:
         raise InventoryError('declared peer does not contain the canonical package')
-    code = '''
-import hashlib,importlib.util,json
-from importlib import metadata
-from pathlib import Path
-try:
-    spec=importlib.util.find_spec('avatar_contract')
-    if spec is None or not spec.origin: raise ValueError('avatar_contract is absent')
-    root=Path(spec.origin).parent
-    files={}
-    for p in root.rglob('*'):
-        if p.is_symlink(): raise ValueError('symlinked installed peer member')
-        if p.is_file() and '__pycache__' not in p.parts and p.suffix!='.pyc':
-            files['avatar_contract/'+p.relative_to(root).as_posix()]=hashlib.sha256(p.read_bytes()).hexdigest()
-    print(json.dumps({'ok':True,'version':metadata.version('avatar-contract'),'origin':str(root),'files':files}))
-except Exception as exc:
-    print(json.dumps({'ok':False,'error':str(exc)}))
-'''
-    proc = subprocess.run([sys.executable, '-I', '-c', code], capture_output=True, text=True, timeout=30)
-    try:
-        installed = json.loads(proc.stdout)
-    except ValueError as exc:
-        raise InventoryError('installed canonical peer is not inspectable') from exc
-    if (proc.returncode or installed.get('ok') is not True
-            or installed.get('version') != version or installed.get('files') != package):
-        raise InventoryError('missing, substituted or incompatible installed Avatar contract')
+    if upstream.get('files') != package or upstream.get('version') != version:
+        raise InventoryError('bundled Avatar contract record differs from the canonical checkout')
+    vendored_root = source / VENDORED_CONTRACT
+    if not vendored_root.is_dir() or vendored_root.is_symlink():
+        raise InventoryError('missing or substituted bundled Avatar contract')
+    vendored = {}
+    for path in vendored_root.rglob('*'):
+        if path.is_symlink():
+            raise InventoryError('symlinked bundled Avatar contract member')
+        if not path.is_file() or '__pycache__' in path.parts or path.suffix == '.pyc':
+            continue
+        relative = path.relative_to(vendored_root).as_posix()
+        if relative == 'UPSTREAM.json':
+            continue
+        name = relative if relative == 'LICENSE' else 'avatar_contract/' + relative
+        content = _read_source(source, VENDORED_CONTRACT + '/' + relative)
+        if name.endswith('.py') and re.search(rb'^\s*(from|import)\s+avatar_contract\b', content, re.MULTILINE):
+            raise InventoryError('bundled Avatar contract imports the top-level package: ' + relative)
+        vendored[name] = sha256(_inverse_vendor_rewrite(content) if name.endswith('.py') else content)
+    if vendored != package:
+        raise InventoryError('bundled Avatar contract differs from the canonical checkout')
     return {'pin': pin, 'checkout': str(checkout), 'version': version,
-            'source_files': files, 'installed': installed, 'prerequisite_passed': True}
+            'source_files': files, 'bundled_files': len(vendored), 'prerequisite_passed': True}
 
 
 def _copy_checked_files(source, destination, files):
@@ -785,11 +704,14 @@ def collect_shared_contract(source, output, prerequisite, *, timeout=1800):
         raise InventoryError('canonical shared-contract suite failed or skipped checks')
     parsed = parse_spec_file(str(public / 'docs/specs/SPEC-AVATAR-CONTRACT-1.md'))
     checked = []
+    # The canonical checks import the canonical package from the verified peer copy;
+    # no separately installed avatar-contract is involved.
+    shared_env = dict(verification_environment(output), PYTHONPATH=str(peer))
     for requirement in parsed.requirements:
         if not requirement.verify:
             raise InventoryError('shared contract contains an unexecutable requirement')
         result = run_capture(shlex.split(requirement.verify), cwd=public,
-            env=verification_environment(output), output=output,
+            env=shared_env, output=output,
             label='shared-' + requirement.id, timeout=timeout)
         if result['timed_out'] or result['exit_code'] != 0:
             raise InventoryError('canonical shared requirement failed: ' + requirement.id)
@@ -809,10 +731,12 @@ def qualify_avatar(inventory, evidence, shared):
         raise InventoryError('Avatar qualification is missing complete shared-contract evidence')
     suite = evidence['suite']
     deps = suite.get('dependencies', {})
-    if (deps.get('avatar_contract') is not True
+    # APatch uses only its bundled contract: a separately installed top-level
+    # avatar_contract may be present or absent, but must be observed.
+    if (type(deps.get('avatar_contract')) is not bool
             or not all(deps.get(name) is True for name in ('trustchain', 'mcp', 'cryptography'))
             or type(deps.get('tree_sitter_java')) is not bool):
-        raise InventoryError('Avatar was not installed in the actual suite process')
+        raise InventoryError('Avatar profile dependencies were not observed in the actual suite process')
     if (not suite.get('outcomes') or any(row.get('outcome') not in {'passed', 'skipped', 'failed'}
             for row in suite['outcomes'].values())
             or any(evidence.get('source_files', {}).get(path) != digest
@@ -838,6 +762,7 @@ def qualify_avatar(inventory, evidence, shared):
     return {'profile': 'avatar', 'profile_passed': True, 'raw_suite_passed': True,
             'raw_contract_holds': contract['contract_holds'], 'external_acceptance': 'not_checked',
             'release_authorized': False, 'canonical_shared_contract_passed': True,
+            'canonical_contract_checked': True,
             'canonical_pin': shared['pin'], 'classified_skips': sorted(skips)}
 
 
@@ -922,7 +847,8 @@ def qualification_prerequisite(source, inventory, profile):
         raise InventoryError('installed APatch is not the reviewed source version and bytes')
     deps = installed.get('dependencies', {})
     if (not all(deps.get(name) is True for name in ('trustchain', 'mcp', 'cryptography', 'pytest', 'build'))
-            or deps.get('avatar_contract') is not (profile == 'avatar')):
+            or type(deps.get('avatar_contract')) is not bool
+            or (profile == 'standalone' and deps['avatar_contract'] is not False)):
         raise InventoryError('qualification dependencies do not match the named profile')
     console = Path(sys.executable).parent / 'apatch'
     if (not console.is_file() or console.is_symlink()

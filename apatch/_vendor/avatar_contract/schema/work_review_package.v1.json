@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trust-chain.ai/schemas/work_review_package.v1.json",
+  "title": "WorkReviewPackage v1",
+  "description": "Content-safe, content-addressed card shown to a natural work counterparty before acceptance.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "review_package_id",
+    "status",
+    "objective",
+    "delivery_summary",
+    "acceptance_criteria",
+    "verification",
+    "artifact_refs",
+    "limitations",
+    "missing_fields"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "review_package_id": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "status": {"enum": ["ready", "incomplete"]},
+    "objective": {"type": ["string", "null"], "maxLength": 500},
+    "delivery_summary": {"type": ["string", "null"], "maxLength": 600},
+    "acceptance_criteria": {
+      "type": "array",
+      "maxItems": 20,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 300}
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_signature", "gate", "proof_refs"],
+      "properties": {
+        "source_signature": {"enum": ["verified", "missing", "invalid", "unverifiable"]},
+        "gate": {"enum": ["falsified", "unprobed", "false_gate", "not_applicable"]},
+        "proof_refs": {
+          "type": "array",
+          "maxItems": 100,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[A-Za-z0-9._:@#+/-]+$"
+          }
+        }
+      }
+    },
+    "artifact_refs": {
+      "type": "array",
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256,
+        "pattern": "^[A-Za-z0-9._:@#+/-]+$"
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "maxItems": 20,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 300}
+    },
+    "missing_fields": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "objective",
+          "delivery_summary",
+          "acceptance_criteria",
+          "artifact_refs",
+          "source_signature",
+          "proof_refs"
+        ]
+      }
+    }
+  }
+}

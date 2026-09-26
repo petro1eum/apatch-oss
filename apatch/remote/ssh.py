@@ -7,6 +7,7 @@ import shlex
 import subprocess
 from typing import Any, Dict, Mapping, Optional, Sequence
 
+from apatch.remote.jump import jump_argv
 from apatch.remote.target import RemoteTarget
 
 
@@ -32,7 +33,7 @@ class SshRemoteTransport:
     ) -> Dict[str, Any]:
         payload = {"operation": operation, "arguments": dict(arguments)}
         command = _remote_command(target.path, self.python, runtime_path=target.runtime_path)
-        argv = ["ssh", *self.ssh_args, target.host, command]
+        argv = ["ssh", *self.ssh_args, *jump_argv(target.jump_hosts), target.host, command]
 
         try:
             proc = subprocess.run(

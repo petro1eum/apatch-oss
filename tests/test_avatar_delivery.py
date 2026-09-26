@@ -4,6 +4,7 @@ from __future__ import annotations
 import copy
 import json
 import sys
+from pathlib import Path
 from types import SimpleNamespace
 
 
@@ -211,9 +212,19 @@ def test_operational_sync_status_does_not_call_offline_queue_complete():
     ]
 
 
-def test_avatar_sync_runtime_check_fails_before_partial_contract_use(monkeypatch):
-    from apatch.avatar_delivery import avatar_runtime_compatibility
+def test_runtime_reports_bundled_contract_and_ignores_stale_external_module(monkeypatch):
+    """Owner decision 2026-09-26: the contract is bundled; a stale external module is ignored."""
+    from apatch.avatar_delivery import (
+        AVATAR_RUNTIME_REQUIRED_SYMBOLS,
+        avatar_runtime_compatibility,
+    )
 
+    upstream = json.loads(
+        (
+            Path(__file__).resolve().parents[1]
+            / "apatch/_vendor/avatar_contract/UPSTREAM.json"
+        ).read_text(encoding="utf-8")
+    )
     monkeypatch.setitem(
         sys.modules,
         "avatar_contract",
@@ -230,21 +241,44 @@ def test_avatar_sync_runtime_check_fails_before_partial_contract_use(monkeypatch
 
     result = avatar_runtime_compatibility()
 
+    assert result["ok"] is True
+    assert result["status"] == "ready"
+    assert result["source"] == "bundled" and result["bundled"] is True
+    assert result["installed_version"] == upstream["version"] == "0.7.2"
+    assert result["upstream_commit"] == upstream["commit"]
+    assert result["module_path"].replace("\\", "/").endswith(
+        "apatch/_vendor/avatar_contract/__init__.py"
+    )
+    assert "stale" not in result["module_path"]
+    assert result["external_installed_version"] == "0.4.0"
+    assert result["external_used"] is False
+    assert result["missing_symbols"] == []
+    assert result["required_symbols"] == list(AVATAR_RUNTIME_REQUIRED_SYMBOLS)
+    assert result["action_required"] == []
+    assert result["restart_required"] is False
+
+
+def test_damaged_bundled_contract_fails_before_partial_contract_use(monkeypatch):
+    from apatch._vendor import avatar_contract as bundled
+    from apatch.avatar_delivery import avatar_runtime_compatibility, sync_avatar_state
+
+    monkeypatch.delattr(bundled, "OutcomeAttestation")
+
+    result = avatar_runtime_compatibility()
+
     assert result["ok"] is False
     assert result["status"] == "dependency_incompatible"
-    assert result["installed_version"] == "0.4.0"
-    assert result["module_path"].endswith("stale/avatar_contract/__init__.py")
-    assert result["python_executable"]
-    assert "OutcomeAttestation" in result["missing_symbols"]
-    assert result["action_required"] == ["upgrade_avatar_contract"]
+    assert result["installed_version"] == "0.7.2"
+    assert result["missing_symbols"] == ["OutcomeAttestation"]
+    assert result["action_required"] == ["reinstall_apatch"]
     assert result["restart_required"] is True
+    synced = sync_avatar_state(".")
+    assert synced["ok"] is False and synced["outbox_preserved"] is True
+    assert synced["status"] == "dependency_incompatible"
 
 
 def test_avatar_runtime_reports_logical_venv_interpreter(monkeypatch, tmp_path):
-    from apatch.avatar_delivery import (
-        AVATAR_RUNTIME_REQUIRED_SYMBOLS,
-        avatar_runtime_compatibility,
-    )
+    from apatch.avatar_delivery import avatar_runtime_compatibility
 
     resolved = tmp_path / "python3.14"
     resolved.write_text("", encoding="utf-8")
@@ -252,10 +286,6 @@ def test_avatar_runtime_reports_logical_venv_interpreter(monkeypatch, tmp_path):
     logical.parent.mkdir(parents=True)
     logical.symlink_to(resolved)
 
-    contract = SimpleNamespace(__file__="/tmp/avatar_contract/__init__.py")
-    for name in AVATAR_RUNTIME_REQUIRED_SYMBOLS:
-        setattr(contract, name, object())
-    monkeypatch.setitem(sys.modules, "avatar_contract", contract)
     monkeypatch.setattr(sys, "executable", str(logical))
     monkeypatch.setattr(
         "apatch.avatar_delivery.metadata.version",
@@ -384,6 +414,119 @@ def test_direct_sync_resolves_broker_token_once(monkeypatch):
         ("evidence", "broker-token"),
         ("contributions", "broker-token"),
     ]
+
+
+def test_platform_url_alone_keeps_the_tracker_transport(monkeypatch):
+    """APATCH_PLATFORM_URL also drives the transparency log and governed work.
+
+    Only the Avatar token opts into the platform's Avatar transport; a URL on
+    its own must not move the sync onto a lane the owner never configured.
+    """
+    import apatch.avatar_delivery as delivery
+    import apatch.contribution as contribution
+    import apatch.contribution_delivery as contribution_delivery
+    import apatch.contribution_export as contribution_export
+    import apatch.outcome_delivery as outcome_delivery
+    import apatch.service_secret as service_secret
+    import apatch.taxonomy_delivery as taxonomy_delivery
+
+    observed = []
+    monkeypatch.setattr(
+        delivery,
+        "tracker_config_from_env",
+        lambda: {
+            "platform_url": "https://trust-chain.ai",
+            "avatar_token": "",
+            "base_url": "http://tracker:8040",
+            "service_token": "",
+        },
+    )
+    monkeypatch.setattr(
+        service_secret, "resolve_hc_tracker_token", lambda token: "broker-token"
+    )
+    monkeypatch.setattr(
+        contribution, "resolve_identity", lambda _target: {"key_id": "avatar-key-1"}
+    )
+
+    def never(**_kwargs):
+        raise AssertionError("the platform Avatar lane must not be selected by a URL alone")
+
+    monkeypatch.setattr(contribution_export, "sync_to_trustchain_avatar", never)
+    monkeypatch.setattr(taxonomy_delivery, "pull_taxonomy_decisions_from_platform", never)
+    monkeypatch.setattr(outcome_delivery, "pull_outcome_attestations_from_platform", never)
+    pulled = {
+        "ok": True, "status": "pulled", "received": 0, "stored": 0,
+        "duplicates": 0, "errors": [],
+    }
+    monkeypatch.setattr(
+        taxonomy_delivery,
+        "pull_taxonomy_decisions",
+        lambda **kwargs: observed.append("taxonomy") or dict(pulled),
+    )
+    monkeypatch.setattr(
+        outcome_delivery,
+        "pull_outcome_attestations",
+        lambda **kwargs: observed.append("outcomes") or dict(pulled),
+    )
+    monkeypatch.setattr(
+        delivery,
+        "sync_avatar_evidence",
+        lambda *_args, **kwargs: observed.append("evidence") or {
+            "ok": True,
+            "queue": {"avatar_id": "avatar-key-1"},
+            "delivery": {"ok": True, "delivered": 0, "pending": 0, "errors": []},
+        },
+    )
+    monkeypatch.setattr(
+        contribution_delivery,
+        "sync_contributions",
+        lambda **kwargs: observed.append("contributions") or {
+            "ok": True,
+            "delivery": {"ok": True, "delivered": 0, "pending": 0, "errors": []},
+        },
+    )
+
+    result = delivery.sync_avatar_state(".")
+
+    assert result["transport"] == "hc_tracker_internal"
+    assert result["ok"] is True
+    assert observed == ["taxonomy", "outcomes", "evidence", "contributions"]
+
+
+def test_platform_url_alone_keeps_evidence_on_the_tracker_lane(monkeypatch, tmp_path):
+    import apatch.avatar_delivery as delivery
+
+    monkeypatch.setattr(
+        delivery,
+        "tracker_config_from_env",
+        lambda: {
+            "platform_url": "https://trust-chain.ai",
+            "avatar_token": "",
+            "base_url": "http://tracker:8040",
+            "service_token": "svc-token",
+        },
+    )
+    monkeypatch.setattr(
+        delivery, "queue_current_evidence", lambda *_a, **_k: {"ok": True, "queued": 0}
+    )
+
+    def never(**_kwargs):
+        raise AssertionError("evidence must stay on the HC Tracker lane")
+
+    monkeypatch.setattr(delivery, "deliver_pending_evidence_to_platform", never)
+    lanes = []
+    monkeypatch.setattr(
+        delivery,
+        "deliver_pending_evidence",
+        lambda **kwargs: lanes.append((kwargs["base_url"], kwargs["service_token"])) or {
+            "ok": True, "status": "delivered", "delivered": 0, "pending": 0, "errors": [],
+        },
+    )
+
+    result = delivery.sync_avatar_evidence(str(tmp_path), outbox_dir=str(tmp_path / "outbox"))
+
+    assert result["ok"] is True
+    assert lanes == [("http://tracker:8040", "svc-token")]
 
 
 def test_tracker_url_survives_restart_without_environment(monkeypatch, tmp_path):

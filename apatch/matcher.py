@@ -171,6 +171,19 @@ class ASTMatcher:
 
     def evaluate(self, old_str: str, new_str: str, action_type: str = "REPLACE",
                  replace_all: bool = False) -> MatchResult:
+        result = self._evaluate_unchecked(old_str, new_str, action_type, replace_all)
+        if result.success and action_type == "REPLACE":
+            from apatch.csv_scope import CsvScopeError, validate_csv_replacement
+            try:
+                validate_csv_replacement(
+                    self.target_file_path, self.content, result.content, new_str
+                )
+            except CsvScopeError as exc:
+                return MatchResult(False, self.content, "csv-scope-rejected", 0.0, [str(exc)])
+        return result
+
+    def _evaluate_unchecked(self, old_str: str, new_str: str, action_type: str = "REPLACE",
+                            replace_all: bool = False) -> MatchResult:
         """
         Attempts to align a patch using the layered matching strategies and
         reports the outcome (strategy, confidence 0..1, and any warnings) without

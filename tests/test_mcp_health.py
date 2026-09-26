@@ -181,10 +181,13 @@ def test_repair_mcp_config_writes_full_guidance_when_fixing_apatch_source(tmp_pa
     assert data["mcpServers"]["apatch"]["env"]["APATCH_MCP_GUIDANCE"] == "full"
 
 
-def test_bare_apatch_mcp_fails_env_match():
+def test_bare_apatch_mcp_fails_env_match(tmp_path):
     from apatch.mcp_health import _config_matches_recommended
 
-    cfg = {"command": "/opt/homebrew/bin/apatch-mcp", "args": []}
-    if not os.path.isfile(cfg["command"]):
-        pytest.skip("apatch-mcp not on PATH")
+    # A bare console bound to this interpreter, so the check runs on every host
+    # instead of only where Homebrew installed apatch-mcp.
+    command = tmp_path / "apatch-mcp"
+    command.write_text(f"#!{sys.executable}\n", encoding="utf-8")
+    command.chmod(0o755)
+    cfg = {"command": str(command), "args": []}
     assert _config_matches_recommended(cfg) is False

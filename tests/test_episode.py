@@ -25,7 +25,7 @@ def _event(
     signature=True,
     review_submission=True,
 ):
-    from avatar_contract import ContributionEvent
+    from apatch._vendor.avatar_contract import ContributionEvent
 
     private, public, key_id = _keypair()
     payload = {

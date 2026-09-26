@@ -29,7 +29,6 @@ def test_r2_coverage():
 
 def test_r3_verify():
     """R3: `apatch concept verify --json` runs the invariants; ContributionEvent is green."""
-    pytest.importorskip("avatar_contract")  # cross-repo anchor, absent in CI
     r = _run("concept", "verify", "--json")
     assert r.exit_code == 0, r.output
     res = json.loads(r.output)

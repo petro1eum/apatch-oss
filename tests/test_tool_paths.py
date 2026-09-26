@@ -2,6 +2,7 @@
 
 import json
 import os
+import sys
 from pathlib import Path
 
 from apatch.session_state import PHASE_VERIFY, enrich_tool_response
@@ -21,6 +22,13 @@ def test_resolve_executable_finds_npm():
         assert npm == os.path.realpath("/opt/homebrew/bin/npm")
     elif npm:
         assert os.path.basename(npm) == "npm"
+
+
+def test_self_workspace_spec_verify_uses_active_python():
+    root = Path(__file__).resolve().parents[1]
+    assert resolve_executable("python3", workspace=str(root)) == sys.executable
+    command = materialize_verify_command("python3 -m pytest tests/test_tool_paths.py -q", str(root))
+    assert command.startswith(sys.executable + " -m pytest")
 
 
 def test_detect_toolchain_finds_npm_with_package_json(tmp_path):
@@ -56,16 +64,23 @@ def test_build_subprocess_env_prepends_tool_dirs(tmp_path):
 
 
 
-def test_build_subprocess_env_drops_mcp_server_only_policy(tmp_path):
+def test_build_subprocess_env_drops_mcp_server_context(tmp_path):
+    server_only = {
+        "APATCH_MCP_TARGET_POLICY": "alias_only",
+        "APATCH_CANONICAL_RUNTIME": "1",
+        "APATCH_MCP_BOOTSTRAPPED": "1",
+        "APATCH_MCP_BOUND": "/private/server-boundary",
+        "APATCH_MCP_GUIDANCE": "doctor_only",
+        "APATCH_MCP_PROFILE": "full",
+        "APATCH_MCP_STDIO": "1",
+        "APATCH_MCP_STDIO_ACTIVE": "1",
+        "APATCH_LANE": "server-lane",
+    }
     env = build_subprocess_env(
         str(tmp_path),
-        base_env={
-            "PATH": "/usr/bin",
-            "APATCH_MCP_TARGET_POLICY": "alias_only",
-            "KEEP_ME": "yes",
-        },
+        base_env={"PATH": "/usr/bin", "KEEP_ME": "yes", **server_only},
     )
-    assert "APATCH_MCP_TARGET_POLICY" not in env
+    assert set(server_only).isdisjoint(env)
     assert env["KEEP_ME"] == "yes"
 
 

@@ -23,10 +23,8 @@ def _check_schema_lockstep(target_dir: str) -> Tuple[bool, Any]:
 def _check_economic_barrier(target_dir: str) -> Tuple[bool, Any]:
     from apatch import contribution as emitter
 
-    try:
-        from avatar_contract.contribution_event import assert_economic_barrier
-    except Exception as exc:  # pragma: no cover
-        return False, "avatar-contract unavailable: %s" % exc
+    from apatch._vendor.avatar_contract.contribution_event import assert_economic_barrier
+
     event = emitter.build_event({"session_id": "verify-probe"}, target_dir=target_dir, ledger_rows=[])
     try:
         assert_economic_barrier(event.to_dict())

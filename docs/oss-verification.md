@@ -9,20 +9,23 @@ scoped result is not permission to rewrite the underlying contract or its tests.
 
 | Profile | Required environment | What a passing profile means |
 | --- | --- | --- |
-| `standalone` | Public dependencies; no `avatar_contract` module | The complete local suite and exhaustive native gate contain only the exact reviewed absent-peer observations. |
-| `avatar` | Installed canonical peer plus a clean checkout at the source-declared Git pin | The complete local suite, native gate, complete canonical peer suite and unchanged shared-contract requirements pass within their declared scope. |
+| `standalone` | Public dependencies; no top-level `avatar_contract` module installed (the public-install case) | The complete local suite passes except the reviewed optional Java grammar skip, and the exhaustive native gate holds with only the canonical sibling-repository contract unproven. |
+| `avatar` | A clean canonical `avatar-contract` checkout at the commit pinned in `apatch/_vendor/avatar_contract/UPSTREAM.json`; an installed top-level peer is neither required nor used | The bundled copy equals the canonical checkout, and the complete local suite, native gate, complete canonical suite and unchanged shared-contract requirements pass within their declared scope. |
 
 Neither profile proves live HC, Tracker, Platform or production inclusion. Neither
-uploads packages, changes repository visibility, signs owner approval or publishes
-the private Avatar contract. Standalone operation requires no Platform account.
+uploads packages, changes repository visibility or signs owner approval.
+Standalone operation requires no Platform account.
 
-The standalone inventory currently classifies 40 exact test failures, 22 exact
-requirement failures and the existing dependency-specific optional skips. These
-are **raw failures, not passing tests**. The raw standing contract remains red.
-Mixed modules still run in full, including all local-only tests. A new failure,
-changed message, changed input hash, unexplained skip, timeout or incomplete
-report fails qualification. Do not automatically refresh this inventory to make
-a changed run pass: review the change and its evidence first.
+Since the owner decision of 2026-09-26, APatch bundles the canonical MIT
+`avatar-contract` byte-for-byte as `apatch._vendor.avatar_contract` and never imports
+a top-level `avatar_contract`. The inventory (`apatch.oss-verification-inventory.v2`)
+therefore classifies no absent-peer test failures, no peer requirements and no Avatar
+skips: any test failure, any drifted or broken requirement and any skip other than the
+reviewed optional Java grammar skip fails qualification. The canonical
+sibling-repository contract checks remain the single unproven external specification
+in a standalone run. A changed input hash, unexplained skip, timeout or incomplete
+report fails qualification. Do not automatically refresh this inventory to make a
+changed run pass: review the change and its evidence first.
 
 ## Run from a reviewed public checkout
 
@@ -46,17 +49,20 @@ gate, without private Git history, local credentials, workspaces or old ledgers.
 It accepts no test selection, imported report or cached-pass argument. Native
 enrollment, policy and frozen assertions remain unchanged.
 
-For an independently provisioned, clean, pinned canonical peer:
+For an independently provisioned, clean canonical checkout at the bundled pin:
 
 ```bash
 python scripts/qualify_oss.py --profile avatar --source . --avatar-checkout /path/to/avatar-contract --output /tmp/apatch-avatar-fresh
 ```
 
-The exact pin is the explicit installation comment in `pyproject.toml`. Missing,
-dirty, differently pinned or substituted source/installations stop before the
-suite starts. The tool does not install or repair the peer. Private shared-source
-snapshots stay outside the public checkout; never upload those directories as
-public CI artifacts.
+The exact pin is the `commit` in `apatch/_vendor/avatar_contract/UPSTREAM.json`.
+The prerequisite archives the checkout at that commit and requires every vendored
+file, after the inverse import rewrite, to equal the canonical bytes and the recorded
+hashes. A missing, dirty or differently pinned checkout, a drifted vendored file or a
+changed record stops before the suite starts. The tool does not install or repair
+anything; the canonical checks import the verified checkout copy, not an installed
+package. Shared-source snapshots stay outside the public checkout; never upload those
+directories as public CI artifacts.
 
 ## Read the report without overstating it
 

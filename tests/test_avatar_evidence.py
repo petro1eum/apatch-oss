@@ -53,7 +53,7 @@ def _patch(monkeypatch):
 
 def test_bundle_is_signed_shared_contract(monkeypatch, tmp_path):
     key_id, episodes = _patch(monkeypatch)
-    from avatar_contract import CapabilityEvidenceBundle
+    from apatch._vendor.avatar_contract import CapabilityEvidenceBundle
     from apatch.avatar_evidence import build_evidence_bundle
 
     bundle = build_evidence_bundle(str(tmp_path), now_ts=NOW)

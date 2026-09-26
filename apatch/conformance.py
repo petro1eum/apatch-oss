@@ -33,6 +33,8 @@ import time
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, as_completed, wait
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+from apatch.tool_paths import build_subprocess_env
+
 CONFIG_REL = os.path.join(".apatch", "conformance.json")
 
 # Per-spec conformance buckets (A35-C).
@@ -201,6 +203,7 @@ def _run_verify_command(root: str, rid: str, cmd: str, timeout: float) -> Dict[s
             cmd,
             shell=True,
             cwd=root,
+            env=build_subprocess_env(root),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             start_new_session=True,

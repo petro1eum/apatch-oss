@@ -83,6 +83,17 @@ def remote_task_run(
                 }
             )
             return result
+    if "git_untrack_runtime" in normalized_plan:
+        if normalized_plan.get("git_untrack_runtime") is not True or (
+            set(normalized_plan) - {"git_untrack_runtime", "message", "dry_run"}
+        ) or ("dry_run" in normalized_plan and type(normalized_plan["dry_run"]) is not bool):
+            return {
+                **_success_result(parsed_target, intent, []),
+                "ok": False,
+                "failed_step": "preflight",
+                "error_type": "REMOTE_RUNTIME_UNTRACK_PLAN_INVALID",
+                "message": "Use only git_untrack_runtime=true, optional message and boolean dry_run.",
+            }
     if normalized_plan.get("commit_attested"):
         raw_sessions = normalized_plan.get("session_ids") or normalized_plan.get(
             "governed_session_id"
@@ -615,6 +626,17 @@ def _build_steps(
     plan: Mapping[str, Any],
     verify: Optional[Union[str, Sequence[str], Mapping[str, Any]]],
 ) -> List[Tuple[str, Dict[str, Any]]]:
+    if plan.get("git_untrack_runtime"):
+        untrack_plan = dict(plan)
+        untrack_plan["message"] = str(untrack_plan.get("message") or intent).strip()
+        return [
+            ("apatch_doctor", {}),
+            (
+                "apatch_git_untrack_runtime",
+                {"plan": untrack_plan, "message": untrack_plan["message"]},
+            ),
+        ]
+
     if plan.get("commit_attested"):
         commit_plan = dict(plan)
         commit_plan["message"] = str(commit_plan.get("message") or intent).strip()
@@ -715,6 +737,13 @@ def _build_steps(
         return [
             ("apatch_doctor", {}),
             ("apatch_slug_ratify", {"plan": dict(plan)}),
+        ]
+
+    if plan.get("single_source_intake") is True:
+        # A lone pre-existing file needs exact source intake, not a dummy peer SPEC.
+        return [
+            ("apatch_doctor", {}),
+            ("apatch_spec_run_multi", {"plan": dict(plan)}),
         ]
 
     single_spec = _single_spec_id(plan)
@@ -1163,6 +1192,8 @@ def _sanitize_for_target(target: RemoteTarget, value: Any) -> Any:
             elif target.redact and key_lower in {
                 "host",
                 "remote_host",
+                "jump_host",
+                "jump_hosts",
                 "path",
                 "remote_root",
                 "root",
@@ -1180,7 +1211,7 @@ def _sanitize_for_target(target: RemoteTarget, value: Any) -> Any:
         return tuple(_sanitize_for_target(target, item) for item in value)
     if isinstance(value, str) and target.redact:
         out = value
-        for needle in (target.uri, target.path, target.host):
+        for needle in (target.uri, target.path, target.host, *(target.jump_hosts or ())):
             if needle:
                 out = out.replace(needle, label)
         return out

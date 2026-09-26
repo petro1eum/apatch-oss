@@ -108,6 +108,8 @@ _MUTATION_SUCCESS_TOOLS = frozenset({
     "apatch_phase_run",
     "apatch_governed_phase_run",
     "apatch_pipeline_run",
+    "apatch_source_intake",
+    "apatch_git_untrack_runtime",
 })
 
 TOOL_DEFAULT_PHASE = {

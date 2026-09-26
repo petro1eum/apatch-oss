@@ -21,13 +21,17 @@ not a replacement. Missing/drifted SPEC bindings or an older worker fail closed 
 For mutations spanning two or more specs, use `plan={"specs": [...], "requirements": {...}}`; the broker
 routes `spec_run_multi` rather than split the change into standalone sessions. For independent
 maintenance targets, add `"execution_mode": "shared_maintenance"`: each file must belong to one
-exact Rk, one apply is followed by parallel native Rk verifies, and shared targets fail closed. To verify once,
+exact Rk, one apply is followed by parallel native Rk verifies, and shared targets fail closed. For one pre-existing untracked run manifest, use `single_source_intake=true` with one SPEC, exact Rk intake needle and SHA-256; it signs the original bytes without a dummy peer. To verify once,
 re-attest open requirements, and enroll conformance remotely, use
 `plan={"slug_ratify": true, "slug": "slug", "spec": "SPEC-X"}`. When a shared file
 makes sibling requirements stale, use `plan={"rebind_stale": true, "spec": "SPEC-X"}`;
 the remote worker verifies and rebinds them without fake source mutations.
 After completed sessions, use `plan={"commit_attested": true, "session_ids": [...], "push": true}`
 to commit/push only their exact signed file hashes; unrelated dirty files stay untouched.
+For the fixed APatch runtime Git hygiene scope only, `apatch_git_untrack_runtime(dry_run=true)`
+previews four ignored tracked paths. Then `dry_run=false` signs and commits only their
+index deletions while preserving working files; remotely use
+`plan={"git_untrack_runtime": true, "dry_run": false}`. Never supply arbitrary paths.
 Before reopening a completed category, run `apatch_slug_cockpit(slug=..., live=true)`.
 When its configured `operational_status` hook returns `runtime_work_complete=true`
 with empty `reopen_reasons`, preserve the runtime implementation: evidence debt is
