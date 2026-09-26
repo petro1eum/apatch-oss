@@ -2894,8 +2894,8 @@
     },
     {
       "path": "docs/public-release-readiness.md",
-      "sha256": "3e98a6a6a2cc563e94fe47c3afc7561c27dd7a403d3191e3c7e8de557d2acb75",
-      "bytes": 8359,
+      "sha256": "9ae92371bda09698227836cce189c1219dd9fda6ff7ae13cb1d200fc9f89d763",
+      "bytes": 9566,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },

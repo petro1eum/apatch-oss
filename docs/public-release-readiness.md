@@ -13,7 +13,26 @@ routing, exact Avatar evidence publication (RFP-048), CSV partition preservation
 slug and lane fixes, and the bundled canonical MIT Avatar contract with measured
 contribution time (RFP-049). All 266 runtime files are byte-identical to the private
 release commit recorded in the source manifest; Apatch Pro is excluded from the source
-and both archives. Qualification evidence for this revision is recorded below.
+and both archives.
+
+The `standalone` profile was qualified on 2026-09-26 at source commit `2a2c496` in a
+clean Linux container (`python:3.14-slim`, Python 3.14, the built 0.8.48 wheel
+installed with `dev`, `mcp`, `trustchain`, `yaml` and `platform`, no top-level
+`avatar_contract`, unprivileged user). It reported `profile_passed`, `raw_suite_passed`
+and `raw_contract_holds`: **2346 tests, 0 failures, 1 reviewed skip** (the optional
+Java grammar), and the native gate over 95 enrolled specifications had none drifted
+or broken, with only `SPEC-AVATAR-CONTRACT-1` unproven as declared. The `avatar`
+prerequisite also passed: all 18 bundled files equal canonical `avatar-contract`
+0.7.2 at `44c8f9a`. The complete `avatar` profile was not rerun. The tagged revision
+differs from the qualified one only in this paragraph and the regenerated source
+manifest. This is not a hosted CI run and not proof of live Avatar, HC, Platform or
+Cowork acceptance.
+
+On the maintainer's macOS workstation the same native gate is not a clean
+environment: verify subprocesses resolve `python3` through `/opt/homebrew/bin`
+ahead of the qualification virtualenv, where an older APatch is installed, so a
+runtime-identity check reports a loaded/installed version mismatch. That run is
+not used as evidence.
 
 ## Previous assembly — 2026-09-14
 
