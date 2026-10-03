@@ -226,8 +226,8 @@
     },
     {
       "path": "SOURCE-EXPORT.md",
-      "sha256": "d7420383ee620a7580c1ec18f3081e6d8d431ffde29102b2677c87c9c8d246e8",
-      "bytes": 5133,
+      "sha256": "fe9391a1aeb29348abaded5d93c80ee1539fc0f909b40e0f0952b16db78c73a3",
+      "bytes": 5426,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -3586,8 +3586,8 @@
     },
     {
       "path": "docs/specs/SPEC-SPEC-OWNERSHIP-GATE-1.md",
-      "sha256": "283b45ef3702c62a5dd480cb67c2c90d521570abf6084b052d7942c1af3eddd0",
-      "bytes": 15216,
+      "sha256": "49c2aec651ab98edca8fca15432357fea5a15fd128fe79ba8ec51b24f0947612",
+      "bytes": 15688,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -5742,8 +5742,8 @@
     },
     {
       "path": "tests/test_artifact.py",
-      "sha256": "00f3b50a4f44cd7acc421a39f30e694cafbe84f859ae3dcafec23d768ef54deb",
-      "bytes": 12031,
+      "sha256": "9af10a52c0ac78e41efd165304cb34804b397c2eb71b23a57c9126da89790e3d",
+      "bytes": 11979,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -6841,8 +6841,8 @@
     },
     {
       "path": "tests/test_public_source_boundary.py",
-      "sha256": "66168f004e63f3b2e54388adedc18dddf03da59ee9a43e508e91332ee318598e",
-      "bytes": 8022,
+      "sha256": "5f38caf02f0357e9ac6cf34a40e774c7a0194b07e1597deee94d5f1905607812",
+      "bytes": 8089,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -7492,8 +7492,8 @@
     },
     {
       "path": "tests/test_strip_lifecycle_imports.py",
-      "sha256": "0166ab7ec8458ea9c8ba88daff23c835db8b839a2ea30c0bfa675f9de651dd2b",
-      "bytes": 5800,
+      "sha256": "3b8a17fe87d415c98c8c65b939d9c7fb39e79f3c36d9c57127e3653dc7820bcb",
+      "bytes": 6769,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -15560,7 +15560,7 @@
     {
       "path": "SOURCE-EXPORT.md",
       "before_sha256": "876d534d749cf1e7a8b8fc2ccd99f5826b245595e17484658d8998c7d2e9952e",
-      "after_sha256": "d7420383ee620a7580c1ec18f3081e6d8d431ffde29102b2677c87c9c8d246e8",
+      "after_sha256": "fe9391a1aeb29348abaded5d93c80ee1539fc0f909b40e0f0952b16db78c73a3",
       "reason": "portable-regression-or-release-integrity"
     },
     {
@@ -15630,7 +15630,7 @@
     {
       "path": "docs/specs/SPEC-SPEC-OWNERSHIP-GATE-1.md",
       "before_sha256": "c0fb9a01062f034f54e2ab8c3ad7ff3dc31be73934557ec051d8b3808f4f3271",
-      "after_sha256": "283b45ef3702c62a5dd480cb67c2c90d521570abf6084b052d7942c1af3eddd0",
+      "after_sha256": "49c2aec651ab98edca8fca15432357fea5a15fd128fe79ba8ec51b24f0947612",
       "reason": "portable-regression-or-release-integrity"
     },
     {
@@ -15638,6 +15638,12 @@
       "before_sha256": "41fe12e1be0da72d9823ea25c61ff3fbe819c57873342dc63186af2d0fdbdfb4",
       "after_sha256": "e1184821a2735beb09bdca854f455dc0d039a3ef7bf7142f7270a790d00ecd39",
       "reason": "portable-regression-or-release-integrity"
+    },
+    {
+      "path": "tests/test_artifact.py",
+      "before_sha256": "00f3b50a4f44cd7acc421a39f30e694cafbe84f859ae3dcafec23d768ef54deb",
+      "reason": "target-pinned-legacy-signer-regressions",
+      "after_sha256": "9af10a52c0ac78e41efd165304cb34804b397c2eb71b23a57c9126da89790e3d"
     },
     {
       "path": "tests/test_mcp_workspace_signer_scope.py",
@@ -15648,7 +15654,7 @@
     {
       "path": "tests/test_public_source_boundary.py",
       "before_sha256": "d1ed4b0a352ca642fda9cd14b8067ee237550e50da435ff7184b5bc0c5f70916",
-      "after_sha256": "66168f004e63f3b2e54388adedc18dddf03da59ee9a43e508e91332ee318598e",
+      "after_sha256": "5f38caf02f0357e9ac6cf34a40e774c7a0194b07e1597deee94d5f1905607812",
       "reason": "portable-regression-or-release-integrity"
     },
     {
@@ -15656,6 +15662,12 @@
       "before_sha256": "3c174310a839898a6f46a266b979a8f3e1baeaba0bf12dcae25fa84a57da9efa",
       "after_sha256": "7a38bc9fec51c6566860dd37b34680bb7847e587c93df19b2b6da4c591c369d1",
       "reason": "portable-regression-or-release-integrity"
+    },
+    {
+      "path": "tests/test_strip_lifecycle_imports.py",
+      "before_sha256": "0166ab7ec8458ea9c8ba88daff23c835db8b839a2ea30c0bfa675f9de651dd2b",
+      "reason": "target-pinned-legacy-signer-regressions",
+      "after_sha256": "3b8a17fe87d415c98c8c65b939d9c7fb39e79f3c36d9c57127e3653dc7820bcb"
     },
     {
       "path": "tests/test_workspace_signer_scope.py",

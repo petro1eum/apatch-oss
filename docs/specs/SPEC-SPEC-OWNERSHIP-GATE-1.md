@@ -32,7 +32,7 @@ declare the target. Editable prose is never completion authority.
 
 ## R15 Workspace signer isolation and fail-closed persisted evidence
 
-owns: `apatch/trust_identity.py`, `apatch/trustchain_helper.py`, `apatch/mcp/server.py`, `apatch/consumer_profiles.py`, `tests/test_workspace_signer_scope.py`, `tests/test_mcp_workspace_signer_scope.py`, `tests/test_workspace_signer_scope_stdio.py`, `docs/mcp_setup.md`, `docs/AGENTS.template.md`, `docs/README.md`
+owns: `tests/test_artifact.py`, `tests/test_strip_lifecycle_imports.py`, `apatch/trust_identity.py`, `apatch/trustchain_helper.py`, `apatch/mcp/server.py`, `apatch/consumer_profiles.py`, `tests/test_workspace_signer_scope.py`, `tests/test_mcp_workspace_signer_scope.py`, `tests/test_workspace_signer_scope_stdio.py`, `docs/mcp_setup.md`, `docs/AGENTS.template.md`, `docs/README.md`
 
 A successfully resolved, human-registered local roaming alias SHALL sign with
 the target workspace's existing enrolled identity, never the caller's ambient
@@ -64,7 +64,11 @@ keys. Target records must verify only with the target pin, while caller ledger,
 identity pins, configurations and environment remain unchanged. Existing native
 workspace-identity compatibility tests SHALL run unchanged.
 
-(verify: python3 -m pytest -q -p no:cacheprovider tests/test_workspace_signer_scope.py tests/test_mcp_workspace_signer_scope.py tests/test_workspace_signer_scope_stdio.py tests/test_workspace_identity.py)
+Legacy artifact enrichment and first-party attest-policy regression fixtures SHALL
+use genuine disposable target-pinned Ed25519 receipts. An enforced workspace
+without a configured identity SHALL fail before appending a ledger entry.
+
+(verify: python3 -m pytest -q -p no:cacheprovider tests/test_workspace_signer_scope.py tests/test_mcp_workspace_signer_scope.py tests/test_workspace_signer_scope_stdio.py tests/test_workspace_identity.py tests/test_artifact.py::test_commit_enriches_governed_session_artifacts tests/test_strip_lifecycle_imports.py::test_enforcement_policy_allows_apatch_attest_ledger_commit)
 
 ## R1 Exact slug ownership
 

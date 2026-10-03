@@ -303,12 +303,15 @@ def test_resolve_op_id_reverse_mapping(tmp_path):
 
 
 def test_commit_enriches_governed_session_artifacts(tmp_path, monkeypatch):
-    # Patches trustchain.TrustChain directly, so the module must be importable.
-    pytest.importorskip("trustchain")
     from apatch.session_state import save_session_state
+    from apatch.trust_identity import workspace_identity_scope
+    from tests.test_workspace_signer_scope import IDENTITY_ENV, persisted_record, workspace_pin
 
+    for name in IDENTITY_ENV:
+        monkeypatch.delenv(name, raising=False)
+    root = workspace_pin(tmp_path / "artifact-workspace", identity="artifact-fixture")
     save_session_state(
-        str(tmp_path),
+        str(root),
         {
             "session_id": "apatch_sess_test",
             "intent": "enriched intent",
@@ -316,28 +319,15 @@ def test_commit_enriches_governed_session_artifacts(tmp_path, monkeypatch):
             "phase": "idle",
         },
     )
-    captured = {}
-
-    class FakeTC:
-        def sign(self, tool_id, data):
-            captured["payload"] = data
-
-    monkeypatch.setattr(
-        "apatch.trustchain_helper.TrustChainHelper.has_trustchain",
-        lambda self: True,
-    )
-    monkeypatch.setattr(
-        "apatch.trustchain_helper.TrustChainHelper._policy_allows",
-        lambda self, *_a, **_k: True,
-    )
-    monkeypatch.setattr(
-        "apatch.trustchain_helper.TrustChainHelper._tc_config",
-        lambda self: object(),
-    )
-    monkeypatch.setattr("trustchain.TrustChain", lambda *_a, **_k: FakeTC())
-
-    helper = TrustChainHelper(str(tmp_path), auto_init=False)
-    helper.trustchain_dir = str(tmp_path / ".trustchain")
-    helper.commit_action("apatch", {"action": "apply", "files": {"a.py": {"sha256": "x"}}})
-    assert captured["payload"]["artifacts"] == [{"kind": "spec", "id": "SPEC-1"}]
-    assert captured["payload"]["governed_session_id"] == "apatch_sess_test"
+    with workspace_identity_scope(str(root)):
+        helper = TrustChainHelper(str(root), auto_init=False)
+        assert helper.commit_action("apatch", {"action": "artifact-fixture"}) is True
+        evidence = helper.last_commit_evidence
+        assert evidence["persisted"] is True
+        assert evidence["pinned_signature_valid"] is True
+        assert evidence["key_id_matches"] is True
+        record = persisted_record(root, evidence)
+    assert record["key_id"] == "artifact-fixture"
+    assert record["data"]["artifacts"] == [{"kind": "spec", "id": "SPEC-1"}]
+    assert record["data"]["governed_session_id"] == "apatch_sess_test"
+    assert record["data"]["intent"] == "enriched intent"

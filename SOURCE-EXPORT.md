@@ -9,6 +9,10 @@ Apatch Pro excluded. That historical inventory is preserved verbatim in
 The current candidate changes five runtime files for workspace signer isolation
 and spec-owned Move destination admission. The remaining 261 runtime files are
 unchanged. `petro1eum/apatch-oss` remains the public source destination.
+Legacy artifact-enrichment and first-party attest-policy tests use genuine
+disposable target-pinned Ed25519 receipts. An enforced workspace without a
+configured identity is rejected before a ledger append. These fixture corrections
+retain the runtime signer isolation and receipt protections.
 Fresh source and built-artifact qualification is required before 0.8.49 publication;
 the historical 0.8.48 evidence does not qualify this candidate.
 
