@@ -8,6 +8,12 @@ MCP_ROAMING_AGENT_NOTE = """## MCP local roaming
 
 Bound workspace: use `target_dir="."`. A human-registered sibling may use
 `target_dir="@alias"` only after `apatch_workspace_inspect(alias=..., include_contract=true)`.
+A verified local alias signs with that target workspace's existing enrolled identity for the call;
+caller environment is unchanged. Bound/native owner calls retain explicit env precedence.
+Configured/scoped/enforced signing fails closed on missing identity or pin drift, verifies the
+actual persisted Ed25519 record before notarization, and never retries after signer denial.
+Do not change keys, alias pins or profiles to repair a signing failure. Local proof does not
+replace independent certificate validation or customer acceptance.
 Never pass a raw absolute cross-workspace path. For one executable spec, use
 `apatch_remote_task_run(..., plan={"spec": "SPEC-X", "requirements": {...}},
 dry_run=false)` so the broker routes `spec_run` directly. To mutate and

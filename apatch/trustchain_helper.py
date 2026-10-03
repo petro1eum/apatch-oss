@@ -674,37 +674,57 @@ class TrustChainHelper:
             self._signature_index = self._build_signature_index()
         return self._signature_index.get(signature)
 
-    def _tc_config(self):
-        """Build a TrustChainConfig, wiring the enrolled identity when present.
+    def _commit_identity(self):
+        """Resolve once; configured/enforced/scoped signing may never be ephemeral."""
+        from apatch.trust_identity import (SigningIdentityError,
+            active_workspace_identity_scope, load_local_identity)
+        from apatch.enforcement import is_enforcement_enabled
+        identity = load_local_identity(self.workspace_root)
+        required = (active_workspace_identity_scope() is not None or
+            is_enforcement_enabled(self.workspace_root) or
+            os.path.exists(os.path.join(self.workspace_root, ".apatch", "agent-identity.json")) or
+            any(os.environ.get(name) for name in ("APATCH_AGENT_ID", "APATCH_AGENT_KEY",
+                "APATCH_KEY_BACKEND", "APATCH_AGENT_SIGN_CMD", "APATCH_AGENT_PUBKEY")))
+        if identity is None and required:
+            raise SigningIdentityError("configured signing identity is unavailable; ephemeral downgrade forbidden")
+        return identity
 
-        When ``APATCH_AGENT_ID`` + ``APATCH_AGENT_KEY`` are set, the ledger is
-        signed with the enrolled Ed25519 key whose leaf certificate chains to
-        the TrustChain root CA (RFP-005 §5.2). Otherwise an ephemeral dev key
-        is used (self-signed, no external anchor).
-
-        Compatible with trustchain 2.4 (``key_file`` only, no key binding) and
-        3.1+ (``key_provider`` for PEM and command/HSM backends).
-        """
+    def _tc_config(self, identity=None):
+        """Honor the captured provider; unsupported SDK/provider fails closed."""
         import inspect
-
+        from apatch.trust_identity import SigningIdentityError
         from trustchain import TrustChainConfig
-
-        kwargs = dict(
-            enable_chain=True, chain_storage="file", chain_dir=self.trustchain_dir
-        )
-        try:
-            from apatch.trust_identity import load_local_identity
-
-            ident = load_local_identity(self.workspace_root)
-            if ident is not None:
-                params = inspect.signature(TrustChainConfig.__init__).parameters
-                if "key_provider" in params:
-                    kwargs["key_provider"] = ident.key_provider
-                elif ident.key_path and "key_file" in params:
-                    kwargs["key_file"] = ident.key_path
-        except Exception:
-            pass
+        if identity is None:
+            identity = self._commit_identity()
+        kwargs = dict(enable_chain=True, chain_storage="file", chain_dir=self.trustchain_dir)
+        if identity is not None:
+            params = inspect.signature(TrustChainConfig.__init__).parameters
+            if "key_provider" not in params:
+                raise SigningIdentityError("TrustChain SDK cannot bind the configured provider")
+            kwargs["key_provider"] = identity.key_provider
         return TrustChainConfig(**kwargs)
+
+    @staticmethod
+    def _pinned_record(record, identity):
+        """Verify the exact persisted record against an out-of-band captured pin."""
+        import base64
+        from trustchain.v2.chain_store import reconstruct_signed_response
+        from trustchain.v2.signer import _canonical_json_from_response
+        if isinstance(record, dict) and isinstance(record.get("value"), dict):
+            record = record["value"]
+        matches = bool(isinstance(record, dict) and record.get("algorithm") == "ed25519"
+            and record.get("key_id") == identity.agent_id)
+        valid = False
+        if matches:
+            try:
+                response = reconstruct_signed_response(record)
+                signature = base64.b64decode(response.signature, validate=True)
+                valid = any(identity.key_provider.verify(
+                    _canonical_json_from_response(response, include_signature_id=flag).encode("utf-8"),
+                    signature) for flag in (True, False))
+            except Exception:
+                pass
+        return matches, valid
 
     def _enrich_payload_from_governed_session(self, payload: dict) -> dict:
         """Stamp active governed-session intent/artifacts onto ledger commits (RFP-006)."""
@@ -780,6 +800,7 @@ class TrustChainHelper:
         tool_id: str,
         payload: dict,
         before_length: Optional[int],
+        identity=None,
     ) -> Dict[str, Any]:
         """Validate only the object just appended by TrustChain."""
         chain = getattr(tc, "chain", None)
@@ -819,6 +840,12 @@ class TrustChainHelper:
                     record = None
                 object_path = os.path.join("objects", f"{op_id}.json")
 
+        if isinstance(record, dict) and isinstance(record.get("value"), dict):
+            record = record["value"]
+        key_id_matches = pinned_signature_valid = None
+        if identity is not None:
+            key_id_matches, pinned_signature_valid = self._pinned_record(record, identity)
+            signature_valid = pinned_signature_valid
         record_valid = bool(
             isinstance(record, dict)
             and record.get("tool") == tool_id
@@ -834,6 +861,9 @@ class TrustChainHelper:
             "persisted": persisted,
             "validation": "single_object",
             "signature_valid": signature_valid,
+            "key_id_matches": key_id_matches,
+            "pinned_signature_valid": pinned_signature_valid,
+            "expected_key_id": identity.agent_id if identity else None,
             "record_valid": record_valid,
             "head_valid": head_valid,
             "signature": signature,
@@ -856,31 +886,67 @@ class TrustChainHelper:
         from apatch.runtime.atomic_io import exclusive_file_lock
 
         self._last_commit_evidence = None
+        try:
+            identity = self._commit_identity()
+        except Exception as exc:
+            self._last_commit_evidence = {"persisted": False,
+                "error_type": "SIGNING_IDENTITY_UNAVAILABLE", "exception_type": type(exc).__name__}
+            return False
         with exclusive_file_lock(self._ledger_lock_path()):
             before_head = self.ledger_head()
             try:
                 from trustchain import TrustChain
+                config = self._tc_config(identity)
+            except ImportError as exc:
+                # A dependency import failed before constructing/calling a signer.
+                if self.ledger_head() != before_head:
+                    self._last_commit_evidence = {"persisted": False,
+                        "error_type": "PRIMARY_SIGNING_PARTIAL_APPEND", "exception_type": type(exc).__name__}
+                    ok = False
+                else:
+                    ok = self._commit_via_subprocess(tool_id, payload,
+                        before_head=before_head, identity=identity)
+                    self._last_commit_evidence.setdefault("primary_exception_type", type(exc).__name__)
+            except Exception as exc:
+                self._last_commit_evidence = {"persisted": False,
+                    "error_type": "PRIMARY_SIGNING_FAILED", "exception_type": type(exc).__name__}
+                ok = False
+            else:
+                try:
+                    tc = TrustChain(config)
+                    chain = getattr(tc, "chain", None)
+                    before_length = getattr(chain, "length", None)
+                    signed = tc.sign(tool_id=tool_id, data=payload)
+                    self._last_commit_evidence = self._validate_python_commit(
+                        tc, signed, tool_id=tool_id, payload=payload,
+                        before_length=before_length if isinstance(before_length, int) else None,
+                        identity=identity)
+                    ok = bool(self._last_commit_evidence.get("persisted"))
+                except Exception as exc:
+                    # Denial, broker failure, and even a lazy ImportError must
+                    # never issue a second biometric/sign request.
+                    self._last_commit_evidence = {"persisted": False,
+                        "error_type": ("PRIMARY_SIGNING_PARTIAL_APPEND"
+                            if self.ledger_head() != before_head else "PRIMARY_SIGNING_FAILED"),
+                        "exception_type": type(exc).__name__}
+                    ok = False
 
-                tc = TrustChain(self._tc_config())
-                chain = getattr(tc, "chain", None)
-                before_length = getattr(chain, "length", None)
-                signed = tc.sign(tool_id=tool_id, data=payload)
-                self._last_commit_evidence = self._validate_python_commit(
-                    tc,
-                    signed,
-                    tool_id=tool_id,
-                    payload=payload,
-                    before_length=before_length if isinstance(before_length, int) else None,
-                )
-                ok = bool(self._last_commit_evidence.get("persisted"))
-            except ImportError:
-                ok = self._commit_via_subprocess(tool_id, payload, before_head=before_head)
+        if ok and identity is not None:
+            try:
+                current = self._commit_identity()
+                unchanged = bool(current is not None and current.agent_id == identity.agent_id
+                    and current.backend == identity.backend
+                    and current.key_provider.get_public_key() == identity.key_provider.get_public_key())
             except Exception:
-                ok = self._commit_via_subprocess(tool_id, payload, before_head=before_head)
+                unchanged = False
+            self._last_commit_evidence["identity_unchanged"] = unchanged
+            if not unchanged:
+                self._last_commit_evidence.update(persisted=False, error_type="SIGNING_IDENTITY_CHANGED")
+                ok = False
 
         if ok:
             self._signature_index = None
-            self._maybe_push_to_platform(tool_id, payload)
+            self._maybe_push_to_platform(tool_id, payload, identity)
             evidence = self.last_commit_evidence
             session_id = str(
                 payload.get("governed_session_id") or payload.get("session_id") or ""
@@ -933,7 +999,42 @@ class TrustChainHelper:
                 pass
         return ok
 
-    def _maybe_push_to_platform(self, tool_id: str, payload: dict) -> None:
+    def _platform_identity_matches(self, cfg: dict, private_key, identity=None) -> bool:
+        """Roaming transport may only project the same pinned project identity.
+
+        Ordinary/native owner configuration keeps its existing ENV semantics.
+        A missing or mismatched roaming certificate is not an enrollment route.
+        """
+        from apatch.trust_identity import active_workspace_identity_scope
+        if active_workspace_identity_scope() is None:
+            return True
+        try:
+            from cryptography import x509
+            from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+            identity = identity if identity is not None else self._commit_identity()
+            current = self._commit_identity()
+            if identity is None or current is None:
+                return False
+            public = identity.key_provider.get_public_key()
+            if (cfg.get("agent_id") != identity.agent_id
+                or current.agent_id != identity.agent_id or current.backend != identity.backend
+                or current.key_provider.get_public_key() != public
+                or private_key.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw) != public):
+                return False
+            if bool(identity.cert_path) != bool(cfg.get("cert_path")):
+                return False
+            if identity.cert_path:
+                with open(identity.cert_path, "rb") as handle:
+                    expected = x509.load_pem_x509_certificate(handle.read())
+                with open(cfg["cert_path"], "rb") as handle:
+                    actual = x509.load_pem_x509_certificate(handle.read())
+                return bool(actual.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw) == public
+                    and actual.public_bytes(Encoding.DER) == expected.public_bytes(Encoding.DER))
+            return True
+        except Exception:
+            return False
+
+    def _maybe_push_to_platform(self, tool_id: str, payload: dict, identity=None) -> None:
         """Push to Platform when APATCH_PLATFORM_* env is set.
 
         With a tenant binding and the agent certificate configured the step
@@ -957,6 +1058,10 @@ class TrustChainHelper:
                 return
             with open(cfg["key_path"], "rb") as f:
                 private_key = load_pem_private_key(f.read(), password=None)
+            if not self._platform_identity_matches(cfg, private_key, identity):
+                self.last_platform_push = {"lane": "unknown", "tool": tool_id,
+                    "ok": False, "state": "error", "error_type": "PLATFORM_IDENTITY_MISMATCH"}
+                return
             meta: dict = {"source": "apatch", "workspace": self.workspace_root}
             if cfg.get("tenant_id"):
                 meta["tenant_id"] = cfg["tenant_id"]
@@ -1034,6 +1139,10 @@ class TrustChainHelper:
                 return
             with open(cfg["key_path"], "rb") as f:
                 private_key = load_pem_private_key(f.read(), password=None)
+            if not self._platform_identity_matches(cfg, private_key):
+                self.last_platform_push = {"lane": "unknown", "tool": "revert",
+                    "ok": False, "state": "error", "error_type": "PLATFORM_IDENTITY_MISMATCH"}
+                return
             push_revert(
                 target_op_id=target_op_id,
                 reason=reason,
@@ -1044,91 +1153,86 @@ class TrustChainHelper:
         except Exception:
             pass
 
-    def _commit_via_subprocess(
-        self,
-        tool_id: str,
-        payload: dict,
-        *,
-        before_head: Optional[str] = None,
-    ) -> bool:
-        """Fallback signed commit with an O(1) receipt from the child process."""
+    def _commit_via_subprocess(self, tool_id: str, payload: dict, *,
+                               before_head: Optional[str] = None, identity=None) -> bool:
+        """Resolve the same provider in the child and verify the parent's captured pin."""
+        import base64
+        from apatch.trust_identity import active_workspace_identity_scope
+        try:
+            identity = identity if identity is not None else self._commit_identity()
+        except Exception as exc:
+            self._last_commit_evidence = {"persisted": False,
+                "error_type": "SIGNING_IDENTITY_UNAVAILABLE", "exception_type": type(exc).__name__}
+            return False
+        expected = ({"agent_id": identity.agent_id, "backend": identity.backend,
+                     "public_key": base64.b64encode(identity.key_provider.get_public_key()).decode("ascii")}
+                    if identity is not None else None)
         script = (
-            "import json, os\n"
-            "from trustchain import TrustChain, TrustChainConfig\n"
-            "chain_dir = os.environ['TC_CHAIN_DIR']\n"
-            "tool_id = os.environ['TC_TOOL_ID']\n"
-            "payload = json.loads(os.environ['TC_PAYLOAD'])\n"
-            "kwargs = dict(enable_chain=True, chain_storage='file', chain_dir=chain_dir)\n"
-            "kp = os.environ.get('APATCH_AGENT_KEY'); aid = os.environ.get('APATCH_AGENT_ID')\n"
-            "if kp and aid and os.path.isfile(kp):\n"
-            "    try:\n"
-            "        from apatch.trust_identity import _PemKeyProvider\n"
-            "        kwargs['key_provider'] = _PemKeyProvider(kp, key_id=aid)\n"
-            "    except Exception:\n"
-            "        pass\n"
-            "cfg = TrustChainConfig(**kwargs)\n"
-            "tc = TrustChain(cfg)\n"
-            "signed = tc.sign(tool_id=tool_id, data=payload)\n"
-            "print(json.dumps({'signature': signed.signature, 'length': tc.chain.length}))\n"
+            "import base64,json,os\n"
+            "from contextlib import nullcontext\n"
+            "from trustchain import TrustChain,TrustChainConfig\n"
+            "from apatch.trust_identity import load_local_identity,workspace_identity_scope\n"
+            "root=os.environ['TC_WORKSPACE_ROOT']\n"
+            "expected=json.loads(os.environ['TC_EXPECTED_IDENTITY'])\n"
+            "scope=workspace_identity_scope(root) if os.environ['TC_IDENTITY_SCOPE']=='workspace' else nullcontext()\n"
+            "with scope:\n"
+            "    identity=load_local_identity(root)\n"
+            "    if expected is not None and (identity is None or identity.agent_id!=expected['agent_id'] or identity.backend!=expected['backend'] or base64.b64encode(identity.key_provider.get_public_key()).decode('ascii')!=expected['public_key']):\n"
+            "        raise RuntimeError('child identity differs from captured parent pin')\n"
+            "    if expected is None and identity is not None:\n"
+            "        raise RuntimeError('unconfigured child identity changed')\n"
+            "    kwargs=dict(enable_chain=True,chain_storage='file',chain_dir=os.environ['TC_CHAIN_DIR'])\n"
+            "    if identity is not None: kwargs['key_provider']=identity.key_provider\n"
+            "    tc=TrustChain(TrustChainConfig(**kwargs))\n"
+            "    signed=tc.sign(tool_id=os.environ['TC_TOOL_ID'],data=json.loads(os.environ['TC_PAYLOAD']))\n"
+            "    print(json.dumps({'signature':signed.signature,'length':tc.chain.length}))\n"
         )
         env = os.environ.copy()
-        env["TC_CHAIN_DIR"] = self.trustchain_dir
-        env["TC_TOOL_ID"] = tool_id
-        env["TC_PAYLOAD"] = json.dumps(payload)
+        env.update(TC_CHAIN_DIR=self.trustchain_dir, TC_TOOL_ID=tool_id,
+                   TC_PAYLOAD=json.dumps(payload), TC_WORKSPACE_ROOT=self.workspace_root,
+                   TC_EXPECTED_IDENTITY=json.dumps(expected),
+                   TC_IDENTITY_SCOPE="workspace" if active_workspace_identity_scope() else "ordinary")
         extra_path = os.environ.get("APATCH_TC_PYTHONPATH")
         if extra_path:
             env["PYTHONPATH"] = (extra_path + os.pathsep + env.get("PYTHONPATH", "")).rstrip(os.pathsep)
         py_exe = os.environ.get("APATCH_TC_PYTHON") or sys.executable
         try:
-            res = subprocess.run(
-                [py_exe, "-c", script],
-                capture_output=True,
-                text=True,
-                env=env,
-            )
+            res = subprocess.run([py_exe, "-c", script], capture_output=True, text=True, env=env)
         except OSError:
-            return False
-        if res.returncode != 0:
+            res = None
+        if res is None or res.returncode != 0:
+            self._last_commit_evidence = {"persisted": False, "validation": "single_object_subprocess",
+                "error_type": "PINNED_SUBPROCESS_SIGNING_FAILED"}
             return False
         try:
             receipt = json.loads([line for line in res.stdout.splitlines() if line.strip()][-1])
         except (IndexError, json.JSONDecodeError):
             receipt = {}
-        signature = receipt.get("signature")
-        length = receipt.get("length")
+        signature, length = receipt.get("signature"), receipt.get("length")
         after_head = self.ledger_head()
-        object_path = None
-        record_valid = False
+        object_path, record_valid, value = None, False, None
         if isinstance(length, int):
             object_path = os.path.join("objects", f"op_{length:04d}.json")
-            absolute = os.path.join(self.trustchain_dir or "", object_path)
             try:
-                with open(absolute, encoding="utf-8") as f:
-                    stored = json.load(f)
+                with open(os.path.join(self.trustchain_dir or "", object_path), encoding="utf-8") as handle:
+                    stored = json.load(handle)
                 value = stored.get("value") if isinstance(stored.get("value"), dict) else stored
-                record_valid = bool(
-                    value.get("tool") == tool_id
-                    and value.get("data") == payload
-                    and value.get("signature") == signature
-                )
+                record_valid = bool(value.get("tool") == tool_id and value.get("data") == payload
+                    and value.get("signature") == signature)
             except (OSError, json.JSONDecodeError, AttributeError):
-                record_valid = False
-        persisted = bool(
-            signature and after_head == signature and after_head != before_head and record_valid
-        )
-        self._last_commit_evidence = {
-            "persisted": persisted,
-            "validation": "single_object_subprocess",
-            "signature_valid": bool(signature),
-            "record_valid": record_valid,
-            "head_valid": after_head == signature,
-            "signature": signature,
-            "object_path": object_path,
-            "length_before": None,
-            "length_after": length,
-            "ledger_head": after_head,
-            "merkle_root": None,
-        }
+                pass
+        key_id_matches = pinned_signature_valid = None
+        if identity is not None:
+            key_id_matches, pinned_signature_valid = self._pinned_record(value, identity)
+        signature_valid = pinned_signature_valid if identity is not None else bool(signature)
+        head_valid = bool(signature and after_head == signature and after_head != before_head)
+        persisted = bool(signature_valid and head_valid and record_valid)
+        self._last_commit_evidence = {"persisted": persisted, "validation": "single_object_subprocess",
+            "signature_valid": signature_valid, "pinned_signature_valid": pinned_signature_valid,
+            "key_id_matches": key_id_matches, "expected_key_id": identity.agent_id if identity else None,
+            "record_valid": record_valid, "head_valid": head_valid, "signature": signature,
+            "object_path": object_path, "length_before": None, "length_after": length,
+            "ledger_head": after_head, "merkle_root": None}
         return persisted
 
     def bind_physical_backup(self, checkpoint_name: str, backup_mgr: "BackupManager") -> None:

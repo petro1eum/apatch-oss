@@ -1,10 +1,16 @@
 # Public OSS source boundary
 
-This is the clean **0.8.48 public source release**, updated on 2026-09-26.
-By owner decision the complete APatch line since the public 0.8.45 is published:
-every runtime file is byte-identical to the recorded private release commit, with
-Apatch Pro excluded. `petro1eum/apatch-oss` is the public source destination; the
-0.8.48 package is built from this qualified source.
+This is the **0.8.49 public maintenance candidate**, prepared on 2026-10-03 from
+public commit `9b20e82e7ea343bdfb8784bdb20fda2b908f841b` (0.8.48).
+The historical 0.8.48 export published the complete APatch line since 0.8.45, with
+all 266 runtime files byte-identical to its recorded private release commit and
+Apatch Pro excluded. That historical inventory is preserved verbatim in
+`PUBLIC-SOURCE-MANIFEST.json`; no private commit objects are imported.
+The current candidate changes five runtime files for workspace signer isolation
+and spec-owned Move destination admission. The remaining 261 runtime files are
+unchanged. `petro1eum/apatch-oss` remains the public source destination.
+Fresh source and built-artifact qualification is required before 0.8.49 publication;
+the historical 0.8.48 evidence does not qualify this candidate.
 
 **Release scope: standalone OSS, with separately qualified optional integrations.**
 The canonical MIT Avatar contract is bundled as `apatch._vendor.avatar_contract`
@@ -19,9 +25,10 @@ The MIT license is unchanged and identical to TrustChain OSS.
 
 ## Included
 
-- The APatch CLI/MCP runtime and compatibility package: 266 module/schema files, all
-  byte-identical to the private release commit recorded in the source manifest.
-  No private commit objects are imported.
+- The APatch CLI/MCP runtime and compatibility package: 266 module/schema files,
+  five reviewed maintenance changes and 261 unchanged files relative to public
+  0.8.48. The exact changed paths and before/after hashes are recorded in the
+  source manifest. No private commit objects are imported.
 - The canonical MIT `avatar-contract` 0.7.2, bundled byte-for-byte under
   `apatch/_vendor/avatar_contract` with only its own imports rewritten;
   `UPSTREAM.json` pins its commit, license and hashes.
@@ -47,6 +54,9 @@ document or a link that appears public but requires a private repository.
 ## Integrity and verification
 
 `PUBLIC-SOURCE-MANIFEST.json` records the selected source files and hashes.
+It records both the immutable historical 0.8.48 inventory and the exact reviewed
+0.8.49 delta, including current verification-inventory pins. Existing profile
+provenance remains historical; refreshing source hashes does not claim a new pass.
 It excludes itself, Git metadata and generated build/test/runtime artifacts.
 It is an inventory, not a cryptographic owner attestation or a security certificate.
 

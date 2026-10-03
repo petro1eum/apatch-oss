@@ -24,9 +24,68 @@ Env contract (shared with ``platform_client.platform_config_from_env``):
 from __future__ import annotations
 
 import os
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Optional
+
+
+_WORKSPACE_IDENTITY_SCOPE = ContextVar("apatch_workspace_identity_scope", default=None)
+
+
+class SigningIdentityError(RuntimeError):
+    """A configured/scoped identity may not downgrade to an ephemeral signer."""
+
+
+def active_workspace_identity_scope() -> Optional[str]:
+    return _WORKSPACE_IDENTITY_SCOPE.get()
+
+
+@contextmanager
+def workspace_identity_scope(workspace_root: str):
+    """Used only after trusted routing has verified the roaming workspace."""
+    root = os.path.realpath(os.path.abspath(workspace_root))
+    token = _WORKSPACE_IDENTITY_SCOPE.set(root)
+    try:
+        yield
+    finally:
+        _WORKSPACE_IDENTITY_SCOPE.reset(token)
+
+
+def _scoped_identity(workspace_root: Optional[str]) -> Optional[LocalIdentity]:
+    scope = active_workspace_identity_scope()
+    if scope is None:
+        return None
+    if workspace_root is not None and os.path.realpath(os.path.abspath(workspace_root)) != scope:
+        raise SigningIdentityError("signing workspace differs from the verified routing scope")
+    from apatch.workspace_identity import load_workspace_identity
+    data = load_workspace_identity(scope)
+    if data is None:
+        raise SigningIdentityError("verified workspace has no usable pinned identity")
+    resolved = resolve_key_provider(data["agent_id"], key_path=data.get("key"),
+        backend=data.get("key_backend"), sign_cmd=data.get("sign_cmd"),
+        public_key=data.get("public_key"), use_environment=False)
+    if resolved is None:
+        raise SigningIdentityError("verified workspace pinned provider is unavailable")
+    provider, backend, key_path = resolved
+    public = provider.get_public_key()
+    if not isinstance(public, bytes) or len(public) != 32 or provider.get_key_id() != data["agent_id"]:
+        raise SigningIdentityError("verified workspace provider does not bind its exact Ed25519 identity")
+    certificate_path = data.get("cert")
+    if certificate_path:
+        try:
+            from cryptography import x509
+            from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+            with open(certificate_path, "rb") as handle:
+                certificate = x509.load_pem_x509_certificate(handle.read())
+            if certificate.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw) != public:
+                raise SigningIdentityError("workspace signing key differs from the pinned certificate")
+        except SigningIdentityError:
+            raise
+        except Exception as exc:
+            raise SigningIdentityError("workspace pinned certificate is unavailable") from exc
+    return LocalIdentity(data["agent_id"], key_path, certificate_path, provider, backend)
 
 
 class _PemKeyProvider:
@@ -202,6 +261,7 @@ def resolve_key_provider(
     backend: Optional[str] = None,
     sign_cmd: Optional[str] = None,
     public_key: Optional[str] = None,
+    use_environment: bool = True,
 ) -> Optional[tuple]:
     """Resolve a (provider, backend, key_path) for the configured key backend.
 
@@ -216,10 +276,10 @@ def resolve_key_provider(
     command backend. Returns ``None`` when no usable key material is configured
     (ephemeral).
     """
-    env_backend = os.environ.get("APATCH_KEY_BACKEND", "").strip().lower()
-    env_sign_cmd = os.environ.get("APATCH_AGENT_SIGN_CMD", "").strip()
-    env_pubkey = os.environ.get("APATCH_AGENT_PUBKEY", "").strip()
-    env_key_path = os.environ.get("APATCH_AGENT_KEY", "").strip()
+    env_backend = os.environ.get("APATCH_KEY_BACKEND", "").strip().lower() if use_environment else ""
+    env_sign_cmd = os.environ.get("APATCH_AGENT_SIGN_CMD", "").strip() if use_environment else ""
+    env_pubkey = os.environ.get("APATCH_AGENT_PUBKEY", "").strip() if use_environment else ""
+    env_key_path = os.environ.get("APATCH_AGENT_KEY", "").strip() if use_environment else ""
     workspace_backend = (backend or "").strip().lower()
     if env_backend:
         backend = env_backend
@@ -260,6 +320,8 @@ def load_local_identity(workspace_root: Optional[str] = None) -> Optional[LocalI
     ``.apatch/agent-identity.json`` under *workspace_root*. Missing material
     falls back to ephemeral signing (returns ``None``).
     """
+    if active_workspace_identity_scope() is not None:
+        return _scoped_identity(workspace_root)
     from apatch.workspace_identity import load_workspace_identity
 
     agent_id = os.environ.get("APATCH_AGENT_ID", "").strip()

@@ -6,6 +6,19 @@
 
 ## [Unreleased]
 
+## [0.8.49] — 2026-10-03
+
+### Fixed
+
+- **Workspace signer isolation:** verified local aliases select the target's existing signer without changing caller environment; primary and dependency-fallback signing validate persisted Ed25519 evidence against the independently selected pin before notarization or Platform projection advances. Missing, malformed, inconsistent or changed pins fail closed; partial append or signer refusal never starts a second signing attempt.
+- **Native rename ownership:** native patch path extraction includes `Move to` destinations, so ownership admission covers both rename paths and wrapped patch envelopes before JSONL generation. Existing public ownership and normal authorized mutation behavior stay intact.
+
+### Distribution boundaries
+
+- Keep the bundled canonical MIT Avatar contract and existing OSS packaging. No machine-local Master owner helper/template, Pro implementation, new authoring workflow or workspace runtime evidence is part of this maintenance scope.
+- SDK package delivery is separate from Studio/Cowork delivery and external functional acceptance.
+
+
 ## [0.8.48] — 2026-09-26
 
 ### Changed

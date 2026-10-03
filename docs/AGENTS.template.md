@@ -13,6 +13,14 @@
 
 **Core invariant:** `Intent → Session → Mutation → Verification → Attestation | Rollback`
 
+**Signing scope:** a verified local `@alias` uses the target workspace's existing
+identity for the call; bound/native owner calls retain explicit environment
+precedence. Never fix a signing error by swapping process environment, regenerating
+keys, changing alias pins or weakening enforcement. Configured/scoped/enforced
+signing must verify the actual persisted Ed25519 record against the selected pin
+before notarization and must not retry a signature after denial or partial append.
+Certificate validity and customer acceptance remain separate checks.
+
 Читай в **каждом** MCP-ответе: `state_update.next_action`, `invariant.satisfied`, `error_type`, `recommended_action`.
 
 ---
