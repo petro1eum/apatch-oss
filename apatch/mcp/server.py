@@ -174,7 +174,8 @@ def _wrap_mcp_tools() -> None:
                 from apatch.mcp.bound_workspace import resolve_target_dir_kwargs
                 from apatch.mcp.workspace_registry import WorkspaceRegistryError
 
-                # Resolve a roaming alias before lane/lifecycle side effects select a workspace.
+                # Scope only a human-registered alias, after registry resolution succeeds.
+                is_roaming = str(kwargs.get("target_dir") or ".").strip().startswith("@")
                 resolve_target_dir_kwargs(kwargs)
             except WorkspaceRegistryError as exc:
                 from apatch.mcp.bound_workspace import bound_mcp_workspace
@@ -188,31 +189,35 @@ def _wrap_mcp_tools() -> None:
                         target_dir=fallback,
                     )
                 )
-            try:
-                from apatch.lane_context import bind_lane_from_kwargs
-                from apatch.mcp.lifecycle import touch_workspace
+            from contextlib import nullcontext
+            from apatch.trust_identity import workspace_identity_scope
+            scope = workspace_identity_scope(str(kwargs["target_dir"])) if is_roaming else nullcontext()
+            with scope:
+                try:
+                    from apatch.lane_context import bind_lane_from_kwargs
+                    from apatch.mcp.lifecycle import touch_workspace
 
-                bind_lane_from_kwargs(kwargs)
-                touch_workspace(str(kwargs.get("target_dir", ".")))
-            except Exception:
-                pass
-            # only forward target_dir to tools whose signature accepts it;
-            # the workspace side-effects above already used it
-            call_kwargs = kwargs
-            if not __accepts_td and "target_dir" in kwargs:
-                call_kwargs = {k: v for k, v in kwargs.items() if k != "target_dir"}
-            raw = sanitize_tool_result(__orig(*args, **call_kwargs))
-            if isinstance(raw, dict):
-                if "state_update" in raw:
-                    return raw
-                from apatch.session_state import enrich_tool_response
+                    bind_lane_from_kwargs(kwargs)
+                    touch_workspace(str(kwargs.get("target_dir", ".")))
+                except Exception:
+                    pass
+                # only forward target_dir to tools whose signature accepts it;
+                # the workspace side-effects above already used it
+                call_kwargs = kwargs
+                if not __accepts_td and "target_dir" in kwargs:
+                    call_kwargs = {k: v for k, v in kwargs.items() if k != "target_dir"}
+                raw = sanitize_tool_result(__orig(*args, **call_kwargs))
+                if isinstance(raw, dict):
+                    if "state_update" in raw:
+                        return raw
+                    from apatch.session_state import enrich_tool_response
 
-                return enrich_tool_response(
-                    __tname,
-                    raw,
-                    target_dir=str(kwargs.get("target_dir", ".")),
-                )
-            return raw
+                    return enrich_tool_response(
+                        __tname,
+                        raw,
+                        target_dir=str(kwargs.get("target_dir", ".")),
+                    )
+                return raw
 
         tool.fn = wrapper
 

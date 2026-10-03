@@ -27,7 +27,7 @@ _ALLOWED_CHANNELS = frozenset(
 )
 _SPEC_FILE_RE = re.compile(r"^docs/specs/(SPEC-[A-Za-z0-9_.-]+)\.md$")
 _PATCH_FILE_RE = re.compile(
-    r"^\*\*\* (?:Add|Update|Delete) File: (.+?)\s*$", re.MULTILINE
+    r"^\*\*\* (?:(?:Add|Update|Delete) File|Move to): (.+?)\s*$", re.MULTILINE
 )
 
 

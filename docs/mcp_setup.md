@@ -63,6 +63,26 @@ python -m apatch.mcp.workspace_launcher
 
 Discovery order in `workspace_launcher`: `APATCH_WORKSPACE` → `CURSOR_PROJECT_DIR` → walk up from `cwd` → `.apatch/mcp.json`.
 
+### Workspace signer isolation
+
+A successfully verified, human-registered local `@alias` signs with the target
+workspace's existing enrolled identity for that tool call. Identity scope is
+context-local and restored on return/error, without process environment swaps.
+Bound `target_dir="."` and ordinary native owner calls retain explicit environment
+precedence. This does not authorize raw cross-workspace paths or bypass contract,
+SPEC ownership, capability, session or lease checks.
+
+Configured, scoped and enforced signing cannot fall back to an ephemeral identity.
+Notarization verifies the actual persisted canonical Ed25519 record against the
+selected public key and key id before indexing or Platform projection. Dependency
+import failure before signing may use an isolated child with the same provider;
+denial, lazy signing error or partial append must not request another signature.
+Scoped Platform actor/key/certificate mismatch stops before transport.
+
+Repairing this path does not regenerate enrolled keys, rewrite existing ledgers
+or change operator profiles. Certificate validity and client availability require
+their own fresh checks; a valid local signature is not customer acceptance.
+
 ### Runtime identity and health
 
 Use the exact venv executable, such as `/path/to/venv/bin/python`, in both

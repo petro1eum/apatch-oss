@@ -1,6 +1,6 @@
 # APatch documentation
 
-Source version: **0.8.48**. See [PyPI](https://pypi.org/project/apatch/) for published package versions
+Source version: **0.8.49**. See [PyPI](https://pypi.org/project/apatch/) for published package versions
 and the [verification guide](oss-verification.md) for the evidence scope.
 
 APatch turns specification-driven and test-driven agent work into an executable contract:
@@ -21,6 +21,8 @@ The entry pages are in English. Many detailed engineering references below remai
 They are included in this source tree and source distribution; they do not require access to a private repository.
 
 ## Contracts and verification
+
+Local workspace signing: [workspace signer isolation](./mcp_setup.md#workspace-signer-isolation) — target-only pinned Ed25519 records, context isolation and no repeated signing after refusal.
 
 | Subject | Read |
 | --- | --- |

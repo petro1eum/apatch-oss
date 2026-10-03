@@ -75,6 +75,22 @@ partition. On an owner mismatch, `rejected_targets` SHALL contain only conflicti
 targets and `partition_conflicts` SHALL identify each path, expected SPEC, and
 actual requirement. No patch JSONL is generated for any part of the rejected batch.
 
+### Workspace signing boundary
+
+A resolved local roaming alias selects the target workspace's enrolled signer
+for that call only. Caller environment is not signing authority for a sibling;
+ordinary bound/native calls retain explicit owner environment precedence.
+Selection never swaps process environment or changes existing keys/configs.
+
+Configured, scoped or enforced identities must not silently degrade to ephemeral
+keys. Validate the actual persisted canonical Ed25519 record against the selected
+public key and key id before indexing or publishing proof. A dependency-only
+fallback preserves that provider; denial or partial signing must not cause a
+second request. Platform projection rejects mismatched actor/key/certificate
+before transport. Real stdio regressions must prove target-only signatures and
+unchanged caller state. Certificate validity and customer acceptance are separate
+checks, not implied by successful local verification.
+
 ## Acceptance
 
 | ID | Requirement | Level |
@@ -92,6 +108,7 @@ actual requirement. No patch JSONL is generated for any part of the rejected bat
 | SO-K | A session bound to `spec-bootstrap:<SPEC>#Rk` may create that absent SPEC file through the local mutation channel; existing, foreign, or plain-bound SPEC files stay gated. | MUST |
 
 | SO-L | Runtime sync preserves the selected Python environment and explicit user profile; configured-child checks fail closed on bootstrap/import/version/readiness failures and never substitute current-process health for client availability. | MUST |
+| SO-M | Verified local roaming signs with the existing target identity per call, validates actual persisted Ed25519 records against its pin, preserves native owner precedence, and fails closed without repeat signing or mismatched Platform projection. | MUST |
 
 ## Security invariants
 

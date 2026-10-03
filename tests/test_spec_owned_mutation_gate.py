@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from apatch.agent_guidance import protocol_contract
 from apatch.session_state import save_session_state
 from apatch.spec_ownership import (
@@ -12,6 +14,75 @@ from apatch.spec_ownership import (
     resolve_spec_owned_targets,
 )
 from apatch.workflows import generate_patch_jsonl, generate_patch_jsonl_batch
+
+
+@pytest.mark.parametrize("header", ["Add File", "Update File", "Delete File", "Move to"])
+def test_native_wrapped_patch_owned_paths_reject_before_generation(tmp_path, header):
+    _surface_contract(tmp_path)
+    patch = "*** Begin Patch\n"
+    if header == "Move to":
+        patch += "*** Update File: services/unowned.py\n"
+    patch += f"*** {header}: categories/filter/query.py\n*** End Patch\n"
+    needle = {"tool_calls": [{"name": "apply_patch", "arguments": {"input": patch}}]}
+    out = tmp_path / ".apatch/native-wrapped.jsonl"
+    result = generate_patch_jsonl_batch(needles=[needle], target_dir=str(tmp_path), out_path=str(out))
+    assert result["ok"] is False
+    assert result["error_type"] == ERROR_SPEC_WORKFLOW_REQUIRED
+    assert result["generation_started"] is False
+    assert result["required_specs"] == ["SPEC-FILTER-1"]
+    assert not out.exists()
+    assert not list(tmp_path.rglob("*.jsonl"))
+
+
+def _native_move_spec(root, owned):
+    specs = root / "docs/specs"
+    specs.mkdir(parents=True)
+    (specs / "SPEC-MOVE-1.md").write_text(
+        "# SPEC-MOVE-1 -- Native rename\n\n"
+        "> **apatch artifact:** `spec:SPEC-MOVE-1`\n"
+        "> **ownership mode:** strict\n\n"
+        "## R1 Native rename\n\nowns: "
+        + ", ".join(f"`{path}`" for path in owned)
+        + "\n\n(verify: true)\n", encoding="utf-8",
+    )
+    _bind(root, "SPEC-MOVE-1#R1")
+
+
+def test_native_move_destination_outside_strict_write_set_is_rejected(tmp_path):
+    _native_move_spec(tmp_path, ["owned/source.py"])
+    patch = "*** Begin Patch\n*** Update File: owned/source.py\n*** Move to: outside/target.py\n*** End Patch\n"
+    needle = {"tool_calls": [{"name": "apply_patch", "arguments": {"input": patch}}]}
+    out = tmp_path / ".apatch/native-undeclared.jsonl"
+    before_logs = {str(p): p.read_bytes() for p in tmp_path.rglob("*.jsonl")}
+    result = generate_patch_jsonl_batch(needles=[needle], target_dir=str(tmp_path),
+        out_path=str(out), created_by_tool="apatch_execute_next")
+    assert result["ok"] is False
+    assert result["error_type"] == ERROR_SPEC_TARGET_NOT_DECLARED
+    assert result["generation_started"] is False
+    assert result["rejected_targets"] == ["outside/target.py"]
+    assert not out.exists()
+    assert {str(p): p.read_bytes() for p in tmp_path.rglob("*.jsonl")} == before_logs
+
+
+def test_native_move_with_both_declared_paths_is_authorized(tmp_path):
+    _native_move_spec(tmp_path, ["owned/source.py", "owned/target.py"])
+    patch = "*** Begin Patch\n*** Update File: owned/source.py\n*** Move to: owned/target.py\n*** End Patch\n"
+    result = authorize_spec_owned_needles(str(tmp_path),
+        [{"tool_calls": [{"name": "apply_patch", "arguments": {"input": patch}}]}],
+        created_by_tool="apatch_execute_next")
+    assert result["ok"] is True
+    assert result["authorization"] == "spec_requirement"
+    assert {row["path"] for row in result["owned"]} == {"owned/source.py", "owned/target.py"}
+
+
+@pytest.mark.parametrize("field", ["TargetFile", "target_file"])
+def test_native_wrapped_direct_target_remains_owned(tmp_path, field):
+    _surface_contract(tmp_path)
+    result = authorize_spec_owned_needles(str(tmp_path),
+        [{"tool_calls": [{"name": "replace", "arguments": {field: "categories/filter/query.py"}}]}])
+    assert result["ok"] is False
+    assert result["error_type"] == ERROR_SPEC_WORKFLOW_REQUIRED
+    assert result["generation_started"] is False
 
 
 def _workspace(root: Path) -> dict:

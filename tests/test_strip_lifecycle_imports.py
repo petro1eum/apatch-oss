@@ -120,8 +120,12 @@ def test_attest_allowed_in_verifying_lifecycle_fallback(tmp_path):
 
 
 def test_enforcement_policy_allows_apatch_attest_ledger_commit(tmp_path, monkeypatch):
-    """Regression: attest used tool_id apatch_attest, blocked by _require_apatch_notarization."""
-    pytest.importorskip("trustchain")  # asserts has_trustchain(); needs the lib
+    """First-party attest policy permits a valid target-pinned Ed25519 receipt."""
+    from apatch.trust_identity import workspace_identity_scope
+    from tests.test_workspace_signer_scope import IDENTITY_ENV, persisted_record, workspace_pin
+
+    for name in IDENTITY_ENV:
+        monkeypatch.delenv(name, raising=False)
     monkeypatch.setattr("shutil.which", lambda _cmd: None)
     apatch_dir = tmp_path / ".apatch"
     apatch_dir.mkdir()
@@ -131,14 +135,28 @@ def test_enforcement_policy_allows_apatch_attest_ledger_commit(tmp_path, monkeyp
     register_enforcement_policy_hook()
     helper = TrustChainHelper(str(tmp_path), auto_init=True)
     assert helper.has_trustchain()
-
     payload = {
         "intent": "verify then attest",
         "session_id": "apatch_sess_test",
         "message": "test attest",
     }
-    assert helper.commit_action("apatch_attest", payload) is True
+    before = helper.ledger_head()
+    assert helper.commit_action("apatch_attest", payload) is False
+    assert helper.last_commit_evidence["error_type"] == "SIGNING_IDENTITY_UNAVAILABLE"
+    assert helper.ledger_head() == before
 
+    workspace_pin(tmp_path, identity="attest-policy-fixture")
+    with workspace_identity_scope(str(tmp_path)):
+        helper = TrustChainHelper(str(tmp_path), auto_init=False)
+        assert helper.commit_action("apatch_attest", payload) is True
+        evidence = helper.last_commit_evidence
+        assert evidence["persisted"] is True
+        assert evidence["pinned_signature_valid"] is True
+        assert evidence["key_id_matches"] is True
+        record = persisted_record(tmp_path, evidence)
+    assert record["key_id"] == "attest-policy-fixture"
+    assert record["tool"] == "apatch_attest"
+    assert record["data"]["session_id"] == "apatch_sess_test"
 
 def test_attest_success_sets_attested_flag(tmp_path):
     start_session(str(tmp_path), "attest flag")

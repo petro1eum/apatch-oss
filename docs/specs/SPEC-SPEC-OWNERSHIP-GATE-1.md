@@ -27,7 +27,48 @@ declare the target. Editable prose is never completion authority.
 | SO-J | R10 | covered |
 | SO-K | R12 | covered |
 | SO-L | R14 | covered |
+| SO-M | R15 | covered |
 | extension | R11 | attested Git handoff |
+
+## R15 Workspace signer isolation and fail-closed persisted evidence
+
+owns: `tests/test_artifact.py`, `tests/test_strip_lifecycle_imports.py`, `apatch/trust_identity.py`, `apatch/trustchain_helper.py`, `apatch/mcp/server.py`, `apatch/consumer_profiles.py`, `tests/test_workspace_signer_scope.py`, `tests/test_mcp_workspace_signer_scope.py`, `tests/test_workspace_signer_scope_stdio.py`, `docs/mcp_setup.md`, `docs/AGENTS.template.md`, `docs/README.md`
+
+A successfully resolved, human-registered local roaming alias SHALL sign with
+the target workspace's existing enrolled identity, never the caller's ambient
+identity. Scope is per call and execution context; it SHALL restore on exceptions
+and support disjoint concurrent calls without changing process environment.
+Ordinary bound/native owner calls retain the existing explicit environment
+precedence. Alias policy, contract pins, sessions, ownership and lease gates
+remain mandatory.
+
+Configured, scoped or enforced signing SHALL fail closed when identity material
+is missing, malformed, inconsistent or changes during the operation. Primary
+and isolated dependency-fallback paths SHALL preserve the exact selected
+provider, public key and key id. The actual persisted canonical Ed25519 record
+SHALL verify against that independently selected public key before notarized
+index or Platform projection advances. Genuine wrong-key records, even with a
+matching claimed key id, SHALL NOT become accepted proof.
+
+A dependency import failure before signing may use one isolated fallback;
+signer refusal, lazy signing errors or partial append SHALL NOT trigger another
+signing attempt. Scoped Platform projection SHALL reject caller/target actor,
+key or certificate mismatch before either best-effort or durable transport.
+No key generation, certificate renewal, profile weakening or ledger rewriting
+is part of this repair. A local signature is not customer acceptance or proof
+of current certificate validity; anchor verification remains a separate gate.
+
+Regression evidence SHALL exercise the real MCP wrapper and a full actual stdio
+session/mutate/verify/attest/end cycle in two disposable projects with distinct
+keys. Target records must verify only with the target pin, while caller ledger,
+identity pins, configurations and environment remain unchanged. Existing native
+workspace-identity compatibility tests SHALL run unchanged.
+
+Legacy artifact enrichment and first-party attest-policy regression fixtures SHALL
+use genuine disposable target-pinned Ed25519 receipts. An enforced workspace
+without a configured identity SHALL fail before appending a ledger entry.
+
+(verify: python3 -m pytest -q -p no:cacheprovider tests/test_workspace_signer_scope.py tests/test_mcp_workspace_signer_scope.py tests/test_workspace_signer_scope_stdio.py tests/test_workspace_identity.py tests/test_artifact.py::test_commit_enriches_governed_session_artifacts tests/test_strip_lifecycle_imports.py::test_enforcement_policy_allows_apatch_attest_ledger_commit)
 
 ## R1 Exact slug ownership
 
@@ -173,7 +214,7 @@ MCP responses distinguish an applied but deferred session from an attested close
 
 ## R11 Attested Git handoff
 
-owns: `apatch/git_commit.py`, `apatch/workflows.py`, `apatch/cli.py`, `apatch/mcp/server.py`, `apatch/remote/policy.py`, `apatch/remote/worker.py`, `apatch/remote/orchestrator.py`, `apatch/shared_maintenance.py`, `apatch/spec_ownership.py`, `apatch/existing_source_intake.py`, `apatch/consumer_profiles.py`, `tests/test_commit_attested.py`, `tests/test_existing_source_intake.py`, `tests/test_cli_commit_attested.py`, `tests/test_mcp.py`, `tests/test_remote_worker_protocol.py`, `tests/test_remote_mcp_routing.py`, `pyproject.toml`, `CHANGELOG.md`, `README.md`, `AGENTS.md`, `docs/README.md`, `docs/mcp_setup.md`, `docs/AGENTS.template.md`, `docs/cookbook.md`, `docs/orchestration.md`, `docs/apatch-studio.md`, `docs/security-one-pager.md`, `docs/mcp_performance.md`, `docs/RFP-008-spec-executor.md`, `docs/RFP-009-spec-run.md`, `docs/agent-onboarding.md`, `docs/RFP-007-executable-specifications.md`, `docs/for-leaders.md`, `docs/RFP-019-mcp-scale-lifecycle.md`
+owns: `PUBLIC-SOURCE-MANIFEST.json`, `SOURCE-EXPORT.md`, `tests/test_public_source_boundary.py`, `apatch/git_commit.py`, `apatch/workflows.py`, `apatch/cli.py`, `apatch/mcp/server.py`, `apatch/remote/policy.py`, `apatch/remote/worker.py`, `apatch/remote/orchestrator.py`, `apatch/shared_maintenance.py`, `apatch/spec_ownership.py`, `apatch/existing_source_intake.py`, `apatch/consumer_profiles.py`, `tests/test_commit_attested.py`, `tests/test_existing_source_intake.py`, `tests/test_cli_commit_attested.py`, `tests/test_mcp.py`, `tests/test_remote_worker_protocol.py`, `tests/test_remote_mcp_routing.py`, `pyproject.toml`, `CHANGELOG.md`, `README.md`, `AGENTS.md`, `docs/README.md`, `docs/mcp_setup.md`, `docs/AGENTS.template.md`, `docs/cookbook.md`, `docs/orchestration.md`, `docs/apatch-studio.md`, `docs/security-one-pager.md`, `docs/mcp_performance.md`, `docs/RFP-008-spec-executor.md`, `docs/RFP-009-spec-run.md`, `docs/agent-onboarding.md`, `docs/RFP-007-executable-specifications.md`, `docs/for-leaders.md`, `docs/RFP-019-mcp-scale-lifecycle.md`
 
 Commit and optionally push only the exact current file hashes from explicitly
 named governed sessions when each session has a later signed attestation.
@@ -181,7 +222,12 @@ Fail closed on drift, pre-staged files, unsafe paths, missing proof, or mixed
 scope; preserve unrelated dirty files. Remote orchestration routes the operation
 without opening a new mutation session.
 
-(verify: python3 -m pytest tests/test_commit_attested.py tests/test_cli_commit_attested.py tests/test_remote_worker_protocol.py tests/test_remote_mcp_routing.py tests/test_mcp.py -q)
+The public release inventory SHALL preserve the exact historical public manifest
+and list only the reviewed maintenance delta with current source hashes. Runtime
+counts, source-bound inventories and current source-boundary documentation SHALL
+remain truthful; historical qualification is not a new release acceptance.
+
+(verify: python3 -m pytest tests/test_commit_attested.py tests/test_cli_commit_attested.py tests/test_remote_worker_protocol.py tests/test_remote_mcp_routing.py tests/test_mcp.py tests/test_public_source_boundary.py -q)
 ## R14 Environment-preserving MCP bootstrap and truthful health
 
 owns: `apatch/mcp_health.py`, `apatch/mcp/runtime_probe.py`, `apatch/doctor.py`, `apatch/path_leases.py`, `apatch/cli.py`, `apatch/consumer_profiles.py`, `tests/test_mcp_runtime_identity.py`, `tests/test_mcp_runtime_wheel.py`, `docs/mcp_setup.md`, `docs/AGENTS.template.md`, `docs/README.md`, `docs/agent-onboarding.md`
