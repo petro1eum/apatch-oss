@@ -28,6 +28,7 @@ declare the target. Editable prose is never completion authority.
 | SO-K | R12 | covered |
 | SO-L | R14 | covered |
 | SO-M | R15 | covered |
+| SO-N | R16 | covered |
 | extension | R11 | attested Git handoff |
 
 ## R15 Workspace signer isolation and fail-closed persisted evidence
@@ -258,6 +259,59 @@ installed wheel initialize/tools/list/doctor. Existing mismatch refusal, governe
 authorization, frozen tests, session/lease/ledger state and alias pins stay intact.
 
 (verify: python3 -m pytest tests/test_mcp_runtime_identity.py tests/test_mcp_runtime_wheel.py -q)
+
+## R16 Bounded R0 self-metadata restoration in tool-development workspaces
+
+owns: `apatch/spec_ownership.py`, `tests/test_spec_self_metadata_repair.py`
+
+The missing self-declaration of an existing strict SPEC must not force a human to
+rewrite a protected file outside APatch. The local `apatch_execute_next` or
+`apatch_spec_run` channel MAY restore exactly that declaration only when all of
+the following hold:
+
+1. The active, non-ended session has a real `spec:<SPEC>#R0@<current hash>`
+   requirement binding. Bare SPEC, bootstrap, another Rk, a stale hash and generic
+   generation are not equivalent authority.
+2. The canonical regular file is `docs/specs/<SPEC>.md`, is strict, has exactly one
+   R0, and that R0 has no `owns:` declaration. Symlinks, hardlinks and CRLF input
+   are refused. Existing declarations cannot be replaced or expanded.
+3. The workspace has no `.apatch/sdd_verification_contract.json` entry at all.
+   An active file, symlink or dangling symlink fences this exception. It is for
+   unfrozen tool-development workspaces, never for active consumer-contract repair.
+4. There is exactly one needle with the four keys `action`, `target_file`,
+   `find_text`, `replace_text`; action is literal `replace`. The only accepted
+   delta inserts `owns: docs/specs/<SPEC>.md\n\n` immediately after the exact
+   existing R0 heading and its blank line. The unchanged heading is the entire
+   find anchor. Whole-file replacement and additional fields are not accepted.
+5. No other needle, source write, requirement edit, verify edit, status edit,
+   ownership expansion, file operation or alternate document target is allowed.
+   Existing ownership resolution and all native session, sandbox, lease, signing,
+   mandatory verification, attestation and rollback checks still run.
+
+The operation repairs metadata only; it does not assert human approval, issue a
+new owner capability, create a key/profile/contract, or complete implementation.
+The executor's existing targeted pre-lint-defer option may be used only to reach
+this exact missing-declaration operation; it does not relax the mutation gate.
+After restoration, ordinary lint and the unchanged real verify command apply.
+
+The pre-implementation judge has 36 collected behavioral cases, including a
+qualified real native Ed25519 runtime cycle and the exact native R0 cycle.
+All deny/boundary cases first require the positive operation to be allowed, so a
+permanently denying implementation cannot turn the package green. Native records
+must verify, the existing fixture signer and source bytes must remain unchanged,
+and no active contract may be created. Generated fixture keys are disposable and
+are not the user's owner identity or a production grant.
+
+Judge SHA-256:
+`aa7bf85905099dc85e4c794d6ff94cfb6aaaf57fa2ec94dca01e2e11e9fdac73`.
+Historical upstream pre-implementation baseline: 34 failed, two existing
+regressions passed, no errors or skips. The same frozen judge was subsequently
+qualified with its native source fix. Public transfer and installed-artifact
+qualification remain separate gates. The public R16/SO-N labels avoid colliding
+with the already published R15/SO-M workspace-signer isolation requirement;
+that existing requirement and its verify command remain byte-identical.
+
+(verify: python3 -m pytest tests/test_spec_self_metadata_repair.py tests/test_spec_owned_mutation_gate.py tests/test_spec.py -q)
 
 ## Non-goals
 

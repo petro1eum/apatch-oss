@@ -91,6 +91,29 @@ before transport. Real stdio regressions must prove target-only signatures and
 unchanged caller state. Certificate validity and customer acceptance are separate
 checks, not implied by successful local verification.
 
+### Bounded self-metadata restoration (SO-N; proposed extension)
+
+An unfrozen tool-development workspace may need to correct an omitted R0
+self-declaration without raw document editing. Only the live current-hash-bound
+R0 of its own canonical strict SPEC may restore that one missing declaration
+through the native local requirement executor. The accepted mutation is one
+closed-field literal replacement anchored on the existing R0 heading; it inserts
+only `owns: docs/specs/<same SPEC>.md`. It cannot alter verify commands, another
+requirement, a status, source files, existing ownership, or another SPEC.
+
+Any `.apatch/sdd_verification_contract.json` filesystem entry (including a
+dangling symlink), stale/ended/plain/bootstrap binding, noncanonical link, mixed
+batch, extra field or broader delta denies before generation. All existing
+session, sandbox, leases, signatures, verification, attestation and rollback
+remain required. No new owner, key, frozen profile or execution grant is issued.
+The original absent-SPEC bootstrap boundary is unchanged.
+
+The exact test package and source allowlist are in R16. A real native signed
+cycle is required alongside positive, negative and boundary judges; a permanent
+deny implementation does not satisfy them. Preparation is not implementation:
+the historical upstream 36-case baseline had 34 feature failures and two passing
+regressions; unchanged tests must qualify the independent public transfer.
+
 ## Acceptance
 
 | ID | Requirement | Level |
@@ -101,7 +124,7 @@ checks, not implied by successful local verification.
 | SO-D | Remote worker returns the same structured failure and does not hide or bypass the guard. | MUST |
 | SO-E | Agent guidance states that signatures do not replace requirement ownership. | MUST |
 | SO-F | Strict SPEC requirements declare exact files or bounded `/**` prefixes; malformed or ambiguous declarations fail closed. | MUST |
-| SO-G | A strict requirement cannot mutate any target outside its declared write-set, including a newly invented file. | MUST |
+| SO-G | Except for the exact self-metadata restoration in SO-N, a strict requirement cannot mutate any target outside its declared write-set, including a newly invented file. | MUST |
 | SO-H | SPEC lint rejects manual implementation/completion claims that disagree with ledger-derived status. | MUST |
 | SO-I | Needles and plan scaffolds use declared ownership as the authoritative target list. | MUST |
 | SO-J | The OLang consumer profile is selectable through the public `init-consumer` command and installs sandbox/enforcement coverage for `o_lang/**`, governance docs, and `AGENTS.md`. | MUST |
@@ -110,12 +133,15 @@ checks, not implied by successful local verification.
 | SO-L | Runtime sync preserves the selected Python environment and explicit user profile; configured-child checks fail closed on bootstrap/import/version/readiness failures and never substitute current-process health for client availability. | MUST |
 | SO-M | Verified local roaming signs with the existing target identity per call, validates actual persisted Ed25519 records against its pin, preserves native owner precedence, and fails closed without repeat signing or mismatched Platform projection. | MUST |
 
+| SO-N | Exact live R0 may restore only its missing self-declaration in its own canonical strict SPEC in an unfrozen tool-development workspace; real native receipts verify and all broader document/source/authority changes are denied. | MUST |
+
 ## Security invariants
 
 - The guard runs before patch JSONL is persisted.
 - Ownership is exact and requirement-granular; ambiguity fails closed.
 - A bare `spec:SPEC-ID` artifact is insufficient.
-- A valid `SPEC-ID#Rk` artifact does not authorize undeclared targets.
+- A valid `SPEC-ID#Rk` artifact does not authorize undeclared targets; SO-N only
+  restores its missing canonical R0 self-declaration, not general file authority.
 - Completion is derived from TrustChain evidence, never from editable prose.
 - The SPEC file that defines ownership is part of the attested requirement hash.
 - Existing sandbox, lease, TrustChain, verification, and rollback checks remain in force.

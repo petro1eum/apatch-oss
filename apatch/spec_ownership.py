@@ -75,7 +75,17 @@ def authorize_spec_owned_needles(
                     row.get("requirement") == active_requirement for row in matches
                 ):
                     undeclared.append(rel)
-        if undeclared:
+        # Missing R0 ownership must also fence opaque/pathless mutations.
+        # Otherwise a passthrough needle would fall through as "unowned".
+        missing_r0_declaration = active_requirement.endswith("#R0") and not any(
+            row.get("requirement") == active_requirement for row in declarations
+        )
+        if undeclared or missing_r0_declaration:
+            metadata_repair = _self_metadata_repair_authorization(
+                root, state, needles, owned, active_requirement, created_by_tool
+            )
+            if metadata_repair is not None:
+                return metadata_repair
             return {
                 "ok": False,
                 "error_type": ERROR_SPEC_TARGET_NOT_DECLARED,
@@ -142,6 +152,104 @@ def authorize_spec_owned_needles(
         "ok": True,
         "owned": owned,
         "authorization": "spec_requirement",
+        "requirement_token": active_requirement,
+        "created_by_tool": created_by_tool,
+    }
+
+
+def _self_metadata_repair_authorization(
+    root: str,
+    state: Dict[str, Any],
+    needles: List[Any],
+    owned: List[Dict[str, str]],
+    active_requirement: str,
+    created_by_tool: str,
+) -> Optional[Dict[str, Any]]:
+    """SO-N: restore one missing R0 self-declaration, never general authority."""
+    if (
+        created_by_tool not in {"apatch_execute_next", "apatch_spec_run"}
+        or not active_requirement.endswith("#R0")
+        or not state.get("session_id")
+        or state.get("ended_at")
+        or os.path.lexists(os.path.join(root, ".apatch", "sdd_verification_contract.json"))
+        or len(needles) != 1
+        or not isinstance(needles[0], dict)
+        or set(needles[0]) != {"action", "target_file", "find_text", "replace_text"}
+    ):
+        return None
+    spec_id = active_requirement.split("#", 1)[0]
+    rel = f"docs/specs/{spec_id}.md"
+    needle = needles[0]
+    if (
+        needle["action"] != "replace"
+        or needle["target_file"] != rel
+        or not _SPEC_FILE_RE.fullmatch(rel)
+        or not owned
+        or any(row.get("path") != rel or row.get("spec") != spec_id for row in owned)
+    ):
+        return None
+    bindings = [
+        artifact for artifact in state.get("artifacts") or []
+        if isinstance(artifact, dict) and artifact.get("kind") in {"spec", "spec-bootstrap"}
+    ]
+    if len(bindings) != 1 or bindings[0].get("kind") != "spec":
+        return None
+    binding = bindings[0]
+    bound_id = str(binding.get("id") or "")
+    if bound_id.split("@", 1)[0] != active_requirement:
+        return None
+
+    # Read the canonical bytes once. Parsing here is pure: no registry/cache writes.
+    from apatch.spec import parse_spec
+    import stat
+
+    path = os.path.join(root, rel)
+    try:
+        if os.path.realpath(path) != os.path.join(os.path.realpath(root), rel):
+            return None
+        original_stat = os.lstat(path)
+        if not stat.S_ISREG(original_stat.st_mode) or original_stat.st_nlink != 1:
+            return None
+        with open(path, "rb") as stream:
+            raw = stream.read()
+        current_stat = os.lstat(path)
+        fields = ("st_dev", "st_ino", "st_size", "st_mtime_ns", "st_mode", "st_nlink")
+        if any(getattr(original_stat, name) != getattr(current_stat, name) for name in fields):
+            return None
+        if b"\r" in raw:
+            return None
+        text = raw.decode("utf-8")
+        parsed = parse_spec(text, source_path=path)
+    except (OSError, UnicodeError, ValueError):
+        return None
+    if parsed.id != spec_id or not parsed.strict_ownership or parsed.warnings:
+        return None
+    r0 = next((requirement for requirement in parsed.requirements if requirement.id == "R0"), None)
+    if r0 is None or r0.owns or binding.get("content_hash") != r0.content_hash:
+        return None
+    if "@" in bound_id and bound_id.split("@", 1)[1] != r0.content_hash:
+        return None
+    lines = text.splitlines(keepends=True)
+    next_line = min(
+        (requirement.line - 1 for requirement in parsed.requirements if requirement.line > r0.line),
+        default=len(lines),
+    )
+    block = "".join(lines[r0.line - 1:next_line])
+    if re.search(r"(?im)^[ \t]*owns[ \t]*:", block):
+        return None
+    heading = lines[r0.line - 1]
+    anchor = heading + "\n"
+    if (
+        not heading.endswith("\n")
+        or text.count(anchor) != 1
+        or needle["find_text"] != anchor
+        or needle["replace_text"] != anchor + f"owns: {rel}\n\n"
+    ):
+        return None
+    return {
+        "ok": True,
+        "owned": owned,
+        "authorization": "spec_self_metadata_repair",
         "requirement_token": active_requirement,
         "created_by_tool": created_by_tool,
     }
