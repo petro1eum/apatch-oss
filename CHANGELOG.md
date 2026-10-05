@@ -6,6 +6,22 @@
 
 ## [Unreleased]
 
+## [0.8.50] — 2026-10-06
+
+### Added
+
+- **Portable owner contract preparation:** the public SDK now exposes fixed-ID intake preparation, exact-content review and owner confirmation using the existing signer. Generic preparation helpers replace private migration imports; the public package carries no case-specific migration implementation. Read-only preparation does not create files, keys or execution authority. Changed reviews, frozen inputs, owner pins and unsafe targets fail closed.
+
+### Fixed
+
+- **Pending-intake implementation fence:** an unfinished or unknown intake transaction prevents implementation instead of deleting pending evidence or proceeding with an unconfirmed contract.
+- **Bounded SPEC self-metadata restoration:** the already qualified R0 repair is available in the public tool-development runtime with its unchanged 36-case judge; active consumer contracts remain excluded.
+
+### Distribution boundaries
+
+- Preserve the existing public workspace-signer isolation, canonical bundled MIT Avatar contract and every prior standalone/Cowork feature. This release adds exactly three generic runtime modules and retains the selected existing signer; no key enrollment, private migration, Pro code or historical authoring route is exported.
+- APatch Studio 0.1.5 supplies the separately released HTTP adapter. Source inventory, frozen functional checks, built wheel/sdist and clean installed-pair qualification are separate release gates. This changelog entry is not proof of a PyPI upload or live Cowork acceptance.
+
 ## [0.8.49] — 2026-10-03
 
 ### Fixed

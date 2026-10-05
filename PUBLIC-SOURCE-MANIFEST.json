@@ -1,17 +1,23 @@
 {
-  "schema": "apatch.public-source.v2",
-  "version": "0.8.49",
+  "schema": "apatch.public-source.v3",
+  "version": "0.8.50",
   "status": "public_release_candidate",
   "baseline_commit": "3561c67961f80703621a6d224673d6f2070a5d66",
   "private_git_history_included": false,
-  "runtime_files_total": 266,
-  "runtime_files_unchanged": 261,
+  "runtime_files_total": 269,
+  "runtime_files_unchanged": 260,
   "runtime_files_modified": [
     "apatch/consumer_profiles.py",
     "apatch/mcp/server.py",
+    "apatch/sdd_integrity.py",
     "apatch/spec_ownership.py",
     "apatch/trust_identity.py",
     "apatch/trustchain_helper.py"
+  ],
+  "runtime_files_added": [
+    "apatch/sdd_contract_intake.py",
+    "apatch/sdd_preparation_io.py",
+    "apatch/strict_existing_signer.py"
   ],
   "reviewed_source_commits": [
     "42b79172e3072e337ba82feef69a7751b76140f4",
@@ -53,6 +59,37 @@
     "c87cb67a622a77bfaaa48e96051fe631b39510d0",
     "eb18fcb93b78d26714aa6d500a948478acb6d878"
   ],
+  "contract_intake_source": {
+    "schema": "apatch.public-intake-source.v1",
+    "source_commit": "77a5e19572df0fc14526881b8f9ecf6fdb6905a7",
+    "files": {
+      "apatch/sdd_preparation_io.py": {
+        "requirement": "SPEC-OSS-CONTRACT-INTAKE-EXECUTION-1#R1",
+        "sha256": "96158de995a5bc233a0d22cf0157eda6dfa77924889162afa6ab879b6ec7fa4f",
+        "bytes": 5892
+      },
+      "apatch/strict_existing_signer.py": {
+        "requirement": "SPEC-OSS-CONTRACT-INTAKE-EXECUTION-1#R1",
+        "sha256": "b35d1c195fe391ac55d577244432d233675d32946a8e0c6b573fcf4621e22d4a",
+        "bytes": 4272
+      },
+      "apatch/sdd_contract_intake.py": {
+        "requirement": "SPEC-OSS-CONTRACT-INTAKE-EXECUTION-1#R1",
+        "sha256": "a493318100574b4bf84cfbb2a9c8284cd497e27405854beace042b25b4262b6e",
+        "bytes": 22562
+      },
+      "apatch/sdd_integrity.py": {
+        "requirement": "SPEC-OSS-CONTRACT-INTAKE-EXECUTION-1#R1",
+        "sha256": "759e8927762d365e8701fb64935066f876cd5a8932ad3ed7855abc23658954d2",
+        "bytes": 55320
+      },
+      "apatch/trustchain_helper.py": {
+        "requirement": "SPEC-SPEC-OWNERSHIP-GATE-1#R15",
+        "sha256": "7c6e7060537a16a4fb502acf5c3ebd7605d26e2d4d8f2eb70869df9c9d658d45",
+        "bytes": 59916
+      }
+    }
+  },
   "self_excluded": "PUBLIC-SOURCE-MANIFEST.json",
   "generated_artifacts_excluded": true,
   "files": [
@@ -170,8 +207,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "2d3d1bd4e293bc9fa6d09525861b17532dd24f0be5ecf7da9744fe1961412a38",
-      "bytes": 64472,
+      "sha256": "bfa05df115846cea834c988c20dd6b45f2c8b477de10fd0de02e2057bc25c3f0",
+      "bytes": 66009,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -226,8 +263,8 @@
     },
     {
       "path": "SOURCE-EXPORT.md",
-      "sha256": "fe9391a1aeb29348abaded5d93c80ee1539fc0f909b40e0f0952b16db78c73a3",
-      "bytes": 5426,
+      "sha256": "a7619a9fecc0320c0816d7160f28a88b8aa9f02439c1aa532dc2441015dea067",
+      "bytes": 6572,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -1661,10 +1698,10 @@
     },
     {
       "path": "apatch/sdd_integrity.py",
-      "sha256": "0b67954e874fef0567451173351ce806d00f5c082bfdaa554e05ea67385f23e4",
-      "bytes": 55020,
+      "sha256": "759e8927762d365e8701fb64935066f876cd5a8932ad3ed7855abc23658954d2",
+      "bytes": 55320,
       "mode": "0o644",
-      "runtime_baseline_unchanged": true
+      "runtime_baseline_unchanged": false
     },
     {
       "path": "apatch/semantic_parser.py",
@@ -1808,8 +1845,8 @@
     },
     {
       "path": "apatch/spec_ownership.py",
-      "sha256": "10c4a650b0ae8287e59f6f7bb6dcdb34fbcb67db3bb2222327e72b0ac4f3fa15",
-      "bytes": 25275,
+      "sha256": "9f8a7af623e2fe2a83474a03d38458db6cf63cc2261721b7748729cab8564826",
+      "bytes": 29597,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -1934,8 +1971,8 @@
     },
     {
       "path": "apatch/trustchain_helper.py",
-      "sha256": "550182fc6a2137280481747194c938f5532627f6b853600dfbec8c61c9429a03",
-      "bytes": 56795,
+      "sha256": "7c6e7060537a16a4fb502acf5c3ebd7605d26e2d4d8f2eb70869df9c9d658d45",
+      "bytes": 59916,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -2333,8 +2370,8 @@
     },
     {
       "path": "docs/RFP-039-spec-owned-mutation-gate.md",
-      "sha256": "b04f365431c39bccec290c2184e5a484b5a6ca69ac96659fd2146a09ae2a8e46",
-      "bytes": 7873,
+      "sha256": "bc3f8313272a28eb9976d8c02859dc2c5816de5bc899a21065ce5d49e5ce2371",
+      "bytes": 9715,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -3586,8 +3623,8 @@
     },
     {
       "path": "docs/specs/SPEC-SPEC-OWNERSHIP-GATE-1.md",
-      "sha256": "49c2aec651ab98edca8fca15432357fea5a15fd128fe79ba8ec51b24f0947612",
-      "bytes": 15688,
+      "sha256": "6ec65b5d301ad3c9eeab9ddd5544949887139517616ef3df96fbf9519dfc4c77",
+      "bytes": 20815,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -3845,7 +3882,7 @@
     },
     {
       "path": "pyproject.toml",
-      "sha256": "e1184821a2735beb09bdca854f455dc0d039a3ef7bf7142f7270a790d00ecd39",
+      "sha256": "f194750a4fc4eab34b21e8aa3885c6c5a5d4c8a5e880ec131751aa3352f3e943",
       "bytes": 3778,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
@@ -6841,8 +6878,8 @@
     },
     {
       "path": "tests/test_public_source_boundary.py",
-      "sha256": "5f38caf02f0357e9ac6cf34a40e774c7a0194b07e1597deee94d5f1905607812",
-      "bytes": 8089,
+      "sha256": "5d22ba46369296c44c240bbec6f542a5531044ac188630d811e2bb8b314278c1",
+      "bytes": 24255,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -7781,6 +7818,70 @@
       "path": "tests/trustchain_compat.py",
       "sha256": "a1aa38dc64aabe185c9dc3c78e16011d91b9f4dcdfd5fd75395db49c56a66695",
       "bytes": 1068,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    }
+,
+    {
+      "path": "apatch/sdd_contract_intake.py",
+      "sha256": "a493318100574b4bf84cfbb2a9c8284cd497e27405854beace042b25b4262b6e",
+      "bytes": 22562,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
+      "path": "apatch/sdd_preparation_io.py",
+      "sha256": "96158de995a5bc233a0d22cf0157eda6dfa77924889162afa6ab879b6ec7fa4f",
+      "bytes": 5892,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
+      "path": "apatch/strict_existing_signer.py",
+      "sha256": "b35d1c195fe391ac55d577244432d233675d32946a8e0c6b573fcf4621e22d4a",
+      "bytes": 4272,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
+      "path": "docs/RFP-050-OSS-CONTRACT-INTAKE-PORT.md",
+      "sha256": "13d8b752ffad7874e5085971afa6e397eb812d6d995040ad773e2efac85eeda2",
+      "bytes": 5343,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
+      "path": "docs/specs/SPEC-OSS-CONTRACT-INTAKE-EXECUTION-1.md",
+      "sha256": "ae0995b900cc889217f415eaba88cba7a02cd2670699fde29df6e86e6e07d307",
+      "bytes": 3937,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
+      "path": "tests/portable_intake/helper-pins.json",
+      "sha256": "859b0a5a19d26054c1d2b0040d5f80284e934397be8cdc5417ebf8023fa246ac",
+      "bytes": 665,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
+      "path": "tests/portable_intake/native_intake_fixture.py",
+      "sha256": "1a29ab298d55313b4564d1c638f8650572fead79b1f32b1967d30673391f5ab4",
+      "bytes": 9512,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
+      "path": "tests/portable_intake/test_portable_intake.py",
+      "sha256": "66a468ab368467613a8c84b4603caf70ec6634e899ceaefdfb776e189c0fa23f",
+      "bytes": 10178,
+      "mode": "0o644",
+      "runtime_baseline_unchanged": false
+    },
+    {
+      "path": "tests/test_spec_self_metadata_repair.py",
+      "sha256": "aa7bf85905099dc85e4c794d6ff94cfb6aaaf57fa2ec94dca01e2e11e9fdac73",
+      "bytes": 14661,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     }
@@ -15554,48 +15655,68 @@
     {
       "path": "CHANGELOG.md",
       "before_sha256": "612dc3430c44e16634e9851c7d64c2fa0bd337ce20dee808798b969393a7131b",
-      "after_sha256": "2d3d1bd4e293bc9fa6d09525861b17532dd24f0be5ecf7da9744fe1961412a38",
+      "after_sha256": "bfa05df115846cea834c988c20dd6b45f2c8b477de10fd0de02e2057bc25c3f0",
       "reason": "portable-regression-or-release-integrity"
     },
     {
       "path": "SOURCE-EXPORT.md",
       "before_sha256": "876d534d749cf1e7a8b8fc2ccd99f5826b245595e17484658d8998c7d2e9952e",
-      "after_sha256": "fe9391a1aeb29348abaded5d93c80ee1539fc0f909b40e0f0952b16db78c73a3",
+      "after_sha256": "a7619a9fecc0320c0816d7160f28a88b8aa9f02439c1aa532dc2441015dea067",
       "reason": "portable-regression-or-release-integrity"
     },
     {
       "path": "apatch/consumer_profiles.py",
       "before_sha256": "b831071f483de7c374ed0bb76b2dcb7b3a7963431b6a370e8da82e1eaf47b058",
       "after_sha256": "304872e5a881e847c27ecb77da7f95ea43f5cc0740e5b5db10760a2be2324722",
-      "reason": "workspace-signer-isolation",
-      "reviewed_source_commit": "715e6f4904f9b770df0b1aed44376e309a4f5bce"
+      "reason": "workspace-signer-isolation"
     },
     {
       "path": "apatch/mcp/server.py",
       "before_sha256": "7600a24d14b3a7532cd01577b671d5418b542bc1384c586ffab9de28498d58e1",
       "after_sha256": "aef3761392b3574ec2e9cb52f5e467091786541c70acfae41982bfdb2c81397b",
-      "reason": "workspace-signer-isolation",
-      "reviewed_source_commit": "715e6f4904f9b770df0b1aed44376e309a4f5bce"
+      "reason": "workspace-signer-isolation"
+    },
+    {
+      "path": "apatch/sdd_contract_intake.py",
+      "before_sha256": null,
+      "after_sha256": "a493318100574b4bf84cfbb2a9c8284cd497e27405854beace042b25b4262b6e",
+      "reason": "owner-approved-portable-intake-transfer"
+    },
+    {
+      "path": "apatch/sdd_integrity.py",
+      "before_sha256": "0b67954e874fef0567451173351ce806d00f5c082bfdaa554e05ea67385f23e4",
+      "after_sha256": "759e8927762d365e8701fb64935066f876cd5a8932ad3ed7855abc23658954d2",
+      "reason": "owner-approved-portable-intake-transfer"
+    },
+    {
+      "path": "apatch/sdd_preparation_io.py",
+      "before_sha256": null,
+      "after_sha256": "96158de995a5bc233a0d22cf0157eda6dfa77924889162afa6ab879b6ec7fa4f",
+      "reason": "owner-approved-portable-intake-transfer"
     },
     {
       "path": "apatch/spec_ownership.py",
       "before_sha256": "4e90482772d373860682c4464808c9a6954ae4475dd2d0180069e860e68762ad",
-      "after_sha256": "10c4a650b0ae8287e59f6f7bb6dcdb34fbcb67db3bb2222327e72b0ac4f3fa15",
+      "after_sha256": "9f8a7af623e2fe2a83474a03d38458db6cf63cc2261721b7748729cab8564826",
       "reason": "spec-owned-move-destination"
+    },
+    {
+      "path": "apatch/strict_existing_signer.py",
+      "before_sha256": null,
+      "after_sha256": "b35d1c195fe391ac55d577244432d233675d32946a8e0c6b573fcf4621e22d4a",
+      "reason": "owner-approved-portable-intake-transfer"
     },
     {
       "path": "apatch/trust_identity.py",
       "before_sha256": "033413da201c7255d7f79d2b57d6487f6639bbcb8ecb16852012d81a53335949",
       "after_sha256": "7318826d4c9f833ef78f81da9b31acabcb17fb10b618e1f08701b73411b7e4a6",
-      "reason": "workspace-signer-isolation",
-      "reviewed_source_commit": "715e6f4904f9b770df0b1aed44376e309a4f5bce"
+      "reason": "workspace-signer-isolation"
     },
     {
       "path": "apatch/trustchain_helper.py",
       "before_sha256": "bf820d0f7297f2718405540b64af4a6c34841a886d34401ecc1f78caebf64bff",
-      "after_sha256": "550182fc6a2137280481747194c938f5532627f6b853600dfbec8c61c9429a03",
-      "reason": "workspace-signer-isolation",
-      "reviewed_source_commit": "715e6f4904f9b770df0b1aed44376e309a4f5bce"
+      "after_sha256": "7c6e7060537a16a4fb502acf5c3ebd7605d26e2d4d8f2eb70869df9c9d658d45",
+      "reason": "workspace-signer-isolation"
     },
     {
       "path": "docs/AGENTS.template.md",
@@ -15612,8 +15733,14 @@
     {
       "path": "docs/RFP-039-spec-owned-mutation-gate.md",
       "before_sha256": "74605443c201643cc0b0bc83b497ea9df8d2558b18094ead9588eefc6da4e813",
-      "after_sha256": "b04f365431c39bccec290c2184e5a484b5a6ca69ac96659fd2146a09ae2a8e46",
+      "after_sha256": "bc3f8313272a28eb9976d8c02859dc2c5816de5bc899a21065ce5d49e5ce2371",
       "reason": "portable-regression-or-release-integrity"
+    },
+    {
+      "path": "docs/RFP-050-OSS-CONTRACT-INTAKE-PORT.md",
+      "before_sha256": null,
+      "after_sha256": "13d8b752ffad7874e5085971afa6e397eb812d6d995040ad773e2efac85eeda2",
+      "reason": "owner-approved-portable-intake-transfer"
     },
     {
       "path": "docs/mcp_setup.md",
@@ -15628,22 +15755,46 @@
       "reason": "portable-regression-or-release-integrity"
     },
     {
+      "path": "docs/specs/SPEC-OSS-CONTRACT-INTAKE-EXECUTION-1.md",
+      "before_sha256": null,
+      "after_sha256": "ae0995b900cc889217f415eaba88cba7a02cd2670699fde29df6e86e6e07d307",
+      "reason": "owner-approved-portable-intake-transfer"
+    },
+    {
       "path": "docs/specs/SPEC-SPEC-OWNERSHIP-GATE-1.md",
       "before_sha256": "c0fb9a01062f034f54e2ab8c3ad7ff3dc31be73934557ec051d8b3808f4f3271",
-      "after_sha256": "49c2aec651ab98edca8fca15432357fea5a15fd128fe79ba8ec51b24f0947612",
+      "after_sha256": "6ec65b5d301ad3c9eeab9ddd5544949887139517616ef3df96fbf9519dfc4c77",
       "reason": "portable-regression-or-release-integrity"
     },
     {
       "path": "pyproject.toml",
       "before_sha256": "41fe12e1be0da72d9823ea25c61ff3fbe819c57873342dc63186af2d0fdbdfb4",
-      "after_sha256": "e1184821a2735beb09bdca854f455dc0d039a3ef7bf7142f7270a790d00ecd39",
+      "after_sha256": "f194750a4fc4eab34b21e8aa3885c6c5a5d4c8a5e880ec131751aa3352f3e943",
       "reason": "portable-regression-or-release-integrity"
+    },
+    {
+      "path": "tests/portable_intake/helper-pins.json",
+      "before_sha256": null,
+      "after_sha256": "859b0a5a19d26054c1d2b0040d5f80284e934397be8cdc5417ebf8023fa246ac",
+      "reason": "owner-approved-portable-intake-transfer"
+    },
+    {
+      "path": "tests/portable_intake/native_intake_fixture.py",
+      "before_sha256": null,
+      "after_sha256": "1a29ab298d55313b4564d1c638f8650572fead79b1f32b1967d30673391f5ab4",
+      "reason": "owner-approved-portable-intake-transfer"
+    },
+    {
+      "path": "tests/portable_intake/test_portable_intake.py",
+      "before_sha256": null,
+      "after_sha256": "66a468ab368467613a8c84b4603caf70ec6634e899ceaefdfb776e189c0fa23f",
+      "reason": "owner-approved-portable-intake-transfer"
     },
     {
       "path": "tests/test_artifact.py",
       "before_sha256": "00f3b50a4f44cd7acc421a39f30e694cafbe84f859ae3dcafec23d768ef54deb",
-      "reason": "target-pinned-legacy-signer-regressions",
-      "after_sha256": "9af10a52c0ac78e41efd165304cb34804b397c2eb71b23a57c9126da89790e3d"
+      "after_sha256": "9af10a52c0ac78e41efd165304cb34804b397c2eb71b23a57c9126da89790e3d",
+      "reason": "target-pinned-legacy-signer-regressions"
     },
     {
       "path": "tests/test_mcp_workspace_signer_scope.py",
@@ -15654,7 +15805,7 @@
     {
       "path": "tests/test_public_source_boundary.py",
       "before_sha256": "d1ed4b0a352ca642fda9cd14b8067ee237550e50da435ff7184b5bc0c5f70916",
-      "after_sha256": "5f38caf02f0357e9ac6cf34a40e774c7a0194b07e1597deee94d5f1905607812",
+      "after_sha256": "5d22ba46369296c44c240bbec6f542a5531044ac188630d811e2bb8b314278c1",
       "reason": "portable-regression-or-release-integrity"
     },
     {
@@ -15664,10 +15815,16 @@
       "reason": "portable-regression-or-release-integrity"
     },
     {
+      "path": "tests/test_spec_self_metadata_repair.py",
+      "before_sha256": null,
+      "after_sha256": "aa7bf85905099dc85e4c794d6ff94cfb6aaaf57fa2ec94dca01e2e11e9fdac73",
+      "reason": "owner-approved-portable-intake-transfer"
+    },
+    {
       "path": "tests/test_strip_lifecycle_imports.py",
       "before_sha256": "0166ab7ec8458ea9c8ba88daff23c835db8b839a2ea30c0bfa675f9de651dd2b",
-      "reason": "target-pinned-legacy-signer-regressions",
-      "after_sha256": "3b8a17fe87d415c98c8c65b939d9c7fb39e79f3c36d9c57127e3653dc7820bcb"
+      "after_sha256": "3b8a17fe87d415c98c8c65b939d9c7fb39e79f3c36d9c57127e3653dc7820bcb",
+      "reason": "target-pinned-legacy-signer-regressions"
     },
     {
       "path": "tests/test_workspace_signer_scope.py",

@@ -228,6 +228,33 @@ and list only the reviewed maintenance delta with current source hashes. Runtime
 counts, source-bound inventories and current source-boundary documentation SHALL
 remain truthful; historical qualification is not a new release acceptance.
 
+
+The owner-approved RFP-050 transfer extends this source inventory to the exact
+0.8.50 candidate, schema `apatch.public-source.v3`. The historical 0.8.48 manifest
+and its SHA-256 remain exact; the existing 0.8.49/v2 validator and all existing
+source-boundary test bodies remain intact. A versioned branch admits only the
+three declared generic runtime additions, the approved frozen judge assets,
+execution/RFP documents and prior bounded self-metadata judge. There are 269
+runtime files: 260 baseline-identical, six modified and three added. An extra
+source path, private/Pro path, missing or repeated item, wrong before/after hash,
+size, mode, count or frozen judge hash SHALL be red.
+
+The five intake runtime files SHALL bind to the real public transfer commit
+`77a5e19572df0fc14526881b8f9ecf6fdb6905a7`, which must exist and be an ancestor
+of candidate HEAD. Every bound file must match that actual Git blob and the
+current regular, non-symlink, single-link file. Existing signer source retains
+its R15 owner; the other four files bind to the intake execution R1. A fabricated
+commit, another existing public commit, unrelated real history or wrong
+requirement owner SHALL NOT establish provenance.
+
+The additive release-inventory judge contributes 27 cases: two positive
+controls, 20 single manifest corruptions, four real filesystem corruptions and
+one real orphan-history case. Each negative starts with a passing exact
+inventory control. Disposable source fixtures prove only the source inventory
+predicate, never the installed SDK/Studio pair, signatures, wheel/sdist contents
+or PyPI publication. RFP-050 PORT-6 and all unchanged functional, signing and
+distribution gates remain mandatory.
+
 (verify: python3 -m pytest tests/test_commit_attested.py tests/test_cli_commit_attested.py tests/test_remote_worker_protocol.py tests/test_remote_mcp_routing.py tests/test_mcp.py tests/test_public_source_boundary.py -q)
 ## R14 Environment-preserving MCP bootstrap and truthful health
 
@@ -318,3 +345,4 @@ that existing requirement and its verify command remain byte-identical.
 - Guessing the authorizing requirement.
 - Treating a bare SPEC artifact or editable status as completion.
 - Inferring implementation ownership from prose or filenames.
+
