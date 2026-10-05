@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from apatch.path_index import prune_walk_dirs
+from apatch.strict_existing_signer import ExistingSignerBinding, ExistingSignerRefused
 
 if TYPE_CHECKING:
     from apatch.backup import BackupManager
@@ -67,7 +68,13 @@ class TrustChainHelper:
     _MARKER_DIRS = (".git",)
     _MARKER_FILES = ("pyproject.toml", "CMakeLists.txt", "go.mod", "package.json")
 
-    def __init__(self, target_dir: str, auto_init: bool = True):
+    def __init__(
+        self, target_dir: str, auto_init: bool = True, *,
+        existing_signer: Optional[ExistingSignerBinding] = None,
+    ):
+        if existing_signer is not None and type(existing_signer) is not ExistingSignerBinding:
+            raise ExistingSignerRefused("EXISTING_SIGNER_EXPECTATION_INVALID")
+        self.existing_signer = existing_signer
         self.last_platform_push: Optional[dict] = None
         self.auto_init = auto_init
         self.target_dir = os.path.abspath(target_dir)
@@ -76,11 +83,22 @@ class TrustChainHelper:
         self._physical_backups: dict[str, "BackupManager"] = {}
         self._signature_index: Optional[Dict[str, str]] = None
         self._last_commit_evidence: Optional[Dict[str, Any]] = None
-        if not self.trustchain_dir and auto_init:
-            self._auto_init_trustchain()
-        if self.trustchain_dir:
-            self._ensure_reversibles()
+        if self.existing_signer is not None:
+            head = Path(self.trustchain_dir or "") / "HEAD"
+            try:
+                existing_head = head.read_text(encoding="utf-8").strip() if self.trustchain_dir else ""
+            except (OSError, UnicodeError):
+                existing_head = ""
+            if not existing_head:
+                raise ExistingSignerRefused("EXISTING_SIGNER_JOURNAL_REQUIRED")
+            # Existing-only construction must not initialize a journal or reversibles.
             self._ensure_policy_hooks()
+        else:
+            if not self.trustchain_dir and auto_init:
+                self._auto_init_trustchain()
+            if self.trustchain_dir:
+                self._ensure_reversibles()
+                self._ensure_policy_hooks()
         from apatch.enforcement import ensure_enforcement_hooks
 
         ensure_enforcement_hooks(self.workspace_root)
@@ -676,6 +694,8 @@ class TrustChainHelper:
 
     def _commit_identity(self):
         """Resolve once; configured/enforced/scoped signing may never be ephemeral."""
+        if self.existing_signer is not None:
+            return self.existing_signer.resolve(self.workspace_root)
         from apatch.trust_identity import (SigningIdentityError,
             active_workspace_identity_scope, load_local_identity)
         from apatch.enforcement import is_enforcement_enabled
@@ -697,6 +717,8 @@ class TrustChainHelper:
         if identity is None:
             identity = self._commit_identity()
         kwargs = dict(enable_chain=True, chain_storage="file", chain_dir=self.trustchain_dir)
+        if self.existing_signer is not None:
+            kwargs["enable_pki"] = False
         if identity is not None:
             params = inspect.signature(TrustChainConfig.__init__).parameters
             if "key_provider" not in params:
@@ -726,7 +748,7 @@ class TrustChainHelper:
                 pass
         return matches, valid
 
-    def _enrich_payload_from_governed_session(self, payload: dict) -> dict:
+    def _enrich_payload_from_governed_session(self, payload: dict, identity=None) -> dict:
         """Stamp active governed-session intent/artifacts onto ledger commits (RFP-006)."""
         try:
             raw = self._load_governed_session_state()
@@ -748,7 +770,7 @@ class TrustChainHelper:
             from apatch.ledger_actor import enrich_payload_with_actor
             from apatch.trust_identity import load_local_identity
 
-            ident = load_local_identity(self.workspace_root)
+            ident = identity if identity is not None else load_local_identity(self.workspace_root)
             if ident is not None:
                 enriched = enrich_payload_with_actor(enriched, agent_id=ident.agent_id)
         except Exception:
@@ -875,9 +897,17 @@ class TrustChainHelper:
         }
 
     def commit_action(self, tool_id: str, payload: dict) -> bool:
+        captured_identity = None
+        if self.existing_signer is not None:
+            # Clear any prior receipt before resolving/refusing this new operation.
+            self._last_commit_evidence = None
+            captured_identity = self._commit_identity()
+            self.existing_signer.require_payload_actor(payload)
+            from apatch.ledger_actor import enrich_payload_with_actor
+            payload = enrich_payload_with_actor(payload, agent_id=captured_identity.agent_id)
         if not self.has_trustchain():
             return False
-        payload = self._enrich_payload_from_governed_session(payload)
+        payload = self._enrich_payload_from_governed_session(payload, captured_identity)
         if not _artifact_file_partition_valid(payload):
             return False
         if not self._policy_allows(tool_id, payload):
@@ -887,8 +917,10 @@ class TrustChainHelper:
 
         self._last_commit_evidence = None
         try:
-            identity = self._commit_identity()
+            identity = captured_identity if captured_identity is not None else self._commit_identity()
         except Exception as exc:
+            if self.existing_signer is not None:
+                raise
             self._last_commit_evidence = {"persisted": False,
                 "error_type": "SIGNING_IDENTITY_UNAVAILABLE", "exception_type": type(exc).__name__}
             return False
@@ -898,6 +930,8 @@ class TrustChainHelper:
                 from trustchain import TrustChain
                 config = self._tc_config(identity)
             except ImportError as exc:
+                if self.existing_signer is not None:
+                    raise ExistingSignerRefused("EXISTING_SIGNER_COMMIT_FAILED") from None
                 # A dependency import failed before constructing/calling a signer.
                 if self.ledger_head() != before_head:
                     self._last_commit_evidence = {"persisted": False,
@@ -908,21 +942,36 @@ class TrustChainHelper:
                         before_head=before_head, identity=identity)
                     self._last_commit_evidence.setdefault("primary_exception_type", type(exc).__name__)
             except Exception as exc:
+                if self.existing_signer is not None:
+                    if isinstance(exc, ExistingSignerRefused):
+                        raise
+                    raise ExistingSignerRefused("EXISTING_SIGNER_COMMIT_FAILED") from None
                 self._last_commit_evidence = {"persisted": False,
                     "error_type": "PRIMARY_SIGNING_FAILED", "exception_type": type(exc).__name__}
                 ok = False
             else:
+                sign_attempted = False
                 try:
                     tc = TrustChain(config)
+                    if self.existing_signer is not None:
+                        self.existing_signer.require_native_key(tc)
                     chain = getattr(tc, "chain", None)
                     before_length = getattr(chain, "length", None)
+                    sign_attempted = True
                     signed = tc.sign(tool_id=tool_id, data=payload)
                     self._last_commit_evidence = self._validate_python_commit(
                         tc, signed, tool_id=tool_id, payload=payload,
                         before_length=before_length if isinstance(before_length, int) else None,
                         identity=identity)
                     ok = bool(self._last_commit_evidence.get("persisted"))
+                    if not ok and self.existing_signer is not None:
+                        raise ExistingSignerRefused("EXISTING_SIGNER_RECEIPT_INVALID", reconciliation_required=True)
                 except Exception as exc:
+                    if self.existing_signer is not None:
+                        if isinstance(exc, ExistingSignerRefused):
+                            raise
+                        raise ExistingSignerRefused("EXISTING_SIGNER_COMMIT_FAILED",
+                            reconciliation_required=sign_attempted) from None
                     # Denial, broker failure, and even a lazy ImportError must
                     # never issue a second biometric/sign request.
                     self._last_commit_evidence = {"persisted": False,
@@ -942,6 +991,8 @@ class TrustChainHelper:
             self._last_commit_evidence["identity_unchanged"] = unchanged
             if not unchanged:
                 self._last_commit_evidence.update(persisted=False, error_type="SIGNING_IDENTITY_CHANGED")
+                if self.existing_signer is not None:
+                    raise ExistingSignerRefused("EXISTING_SIGNER_BINDING_CHANGED", reconciliation_required=True)
                 ok = False
 
         if ok:

@@ -138,6 +138,10 @@ def _verify_seal(value: Mapping[str, Any], label: str) -> None:
 def load_profile_contract(target_dir: os.PathLike[str] | str) -> Dict[str, Any] | None:
     """Load the workspace's exact frozen SDD contract, if the owner enabled it."""
 
+    intake_pending = Path(os.path.abspath(os.fspath(target_dir))) / ".apatch" / "sdd" / "contract-intake-pending.json"
+    if intake_pending.exists() or intake_pending.is_symlink():
+        raise SddContractError("finish or reconcile the exact intake preparation transaction before implementation")
+
     path = Path(os.path.abspath(os.fspath(target_dir))) / ".apatch" / "sdd_verification_contract.json"
     if not path.is_file():
         return None
