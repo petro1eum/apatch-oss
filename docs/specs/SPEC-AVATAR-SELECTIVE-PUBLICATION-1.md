@@ -129,7 +129,12 @@ Cowork preview/publish, ContributionEvent validation and signed document fixture
 unchanged. The MCP schema has no token return field; explicit token input is marked
 secret and never echoed.
 
-(verify: python3 -m pytest -q tests/test_avatar_selective_publication.py::test_r7_mcp_surface_and_wire_compatibility tests/test_tool_paths.py::test_build_subprocess_env_drops_mcp_server_context)
+SDK-self workspace resolution is checked against the actual imported SDK root
+and must use the active interpreter before consumer candidates. An independent
+consumer workspace still selects its own executable. These are test-context
+corrections only: no tool resolver or Avatar behavior changes.
+
+(verify: python3 -m pytest -q tests/test_avatar_selective_publication.py::test_r7_mcp_surface_and_wire_compatibility tests/test_tool_paths.py::test_build_subprocess_env_drops_mcp_server_context tests/test_tool_paths.py::test_self_workspace_spec_verify_uses_active_python tests/test_tool_paths.py::test_sdk_self_workspace_selects_active_interpreter_before_consumer_candidates tests/test_tool_paths.py::test_independent_consumer_workspace_keeps_its_own_interpreter)
 
 ## R8 Cross-product acceptance with a red trap
 

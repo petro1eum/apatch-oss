@@ -46,7 +46,13 @@ judge/support namespaces exposed. No test is filtered or deselected and every
 observed failure/skip remains in the raw report. Historical v2 commands remain
 unchanged. Neither preparation nor a positive fixture establishes release.
 
-(verify: python3 -m pytest tests/test_oss_verification_profiles.py::test_full_run_is_unfiltered_and_isolated -q)
+Spawned verification workers SHALL replay only the same source-bound
+tests/scripts namespaces; the source SDK remains excluded from import paths.
+A real source-SDK trap must stay inactive in a spawned worker using the installed
+SDK. A real worker failure must remain a failed, complete raw observation.
+These two additive controls run together with every original R2 case.
+
+(verify: python3 -m pytest tests/test_oss_verification_profiles.py::test_full_run_is_unfiltered_and_isolated tests/test_oss_verification_profiles.py::test_intake_spawn_support_preserves_installed_sdk_and_child_failures -q)
 
 ## R3 Fail-closed standalone qualification
 

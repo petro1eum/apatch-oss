@@ -255,6 +255,14 @@ predicate, never the installed SDK/Studio pair, signatures, wheel/sdist contents
 or PyPI publication. RFP-050 PORT-6 and all unchanged functional, signing and
 distribution gates remain mandatory.
 
+For installed-SDK qualification, additionally review only the source guidance
+and SDK-self/consumer-toolchain judge amendments, and the owning R7 declaration.
+Guidance assertions still require all four public source inputs and all three
+statements; SDK-self resolution uses the actual imported runtime root, while an
+independent consumer keeps its own interpreter. Four additive controls prove
+these boundaries. No runtime module, signer rule or functional intake judge is
+changed. Public history and exact current file hashes remain mandatory.
+
 (verify: python3 -m pytest tests/test_commit_attested.py tests/test_cli_commit_attested.py tests/test_remote_worker_protocol.py tests/test_remote_mcp_routing.py tests/test_mcp.py tests/test_public_source_boundary.py -q)
 ## R14 Environment-preserving MCP bootstrap and truthful health
 
@@ -264,6 +272,11 @@ Sync SHALL retain the selected virtual environment instead of identifying Python
 environments by executable realpath. Matching, probe candidates and diagnostics
 SHALL preserve environment identity and distinguish executable from binary target.
 Homebrew normalization is allowed only for equivalent non-venv environments.
+
+The public source guidance check reads its four exact source-bound judge inputs
+from the test repository, not an unrelated installed SDK directory. The same
+three required statements in every file remain mandatory. Both source and wheel
+qualification retain this check; a missing statement remains a failure.
 
 Explicit sync/repair SHALL preserve existing env, full/compact profile and unrelated
 config fields; a profile change requires explicit selection. Automatic IDE discovery
@@ -345,4 +358,3 @@ that existing requirement and its verify command remain byte-identical.
 - Guessing the authorizing requirement.
 - Treating a bare SPEC artifact or editable status as completion.
 - Inferring implementation ownership from prose or filenames.
-

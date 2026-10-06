@@ -5,6 +5,7 @@ import os
 import sys
 from pathlib import Path
 
+from apatch import tool_paths as runtime_tool_paths
 from apatch.session_state import PHASE_VERIFY, enrich_tool_response
 from apatch.runtime.session import start_session
 from apatch.runtime.state_machine import OP_VERIFY, assert_operation
@@ -25,7 +26,7 @@ def test_resolve_executable_finds_npm():
 
 
 def test_self_workspace_spec_verify_uses_active_python():
-    root = Path(__file__).resolve().parents[1]
+    root = Path(runtime_tool_paths.__file__).resolve().parents[1]
     assert resolve_executable("python3", workspace=str(root)) == sys.executable
     command = materialize_verify_command("python3 -m pytest tests/test_tool_paths.py -q", str(root))
     assert command.startswith(sys.executable + " -m pytest")
@@ -121,3 +122,26 @@ def test_start_session_replaces_failed_session(tmp_path):
     assert second["session"]["intent"] == "fresh intent"
     raw = load_session_state(str(tmp_path))
     assert raw.get("failure") is None
+
+
+def test_sdk_self_workspace_selects_active_interpreter_before_consumer_candidates(monkeypatch):
+    root = Path(runtime_tool_paths.__file__).resolve().parents[1]
+    calls = []
+    def candidates(name, workspace):
+        calls.append((name, workspace))
+        return ["/must-not-select-consumer-python"]
+    monkeypatch.setattr(runtime_tool_paths, "_collect_candidates", candidates)
+    assert resolve_executable("python3", workspace=str(root)) == sys.executable
+    assert calls == []
+
+
+def test_independent_consumer_workspace_keeps_its_own_interpreter(tmp_path, monkeypatch):
+    chosen = tmp_path / "python3"
+    chosen.write_text("#!/bin/sh\nexit 0\n")
+    chosen.chmod(0o700)
+    assert tmp_path.resolve() != Path(runtime_tool_paths.__file__).resolve().parents[1]
+    monkeypatch.setattr(runtime_tool_paths, "_collect_candidates",
+                        lambda name, workspace: [str(chosen)])
+    actual = resolve_executable("python3", workspace=str(tmp_path))
+    assert actual == str(chosen)
+    assert actual != sys.executable

@@ -362,20 +362,25 @@ for name in ("tests", "scripts"):
         module = types.ModuleType(name)
         module.__path__ = [str(directory)]
         sys.modules[name] = module
-observer_path = Path(sys.argv[1])
-spec = importlib.util.spec_from_file_location("oss_profile_observer", observer_path)
-observer = importlib.util.module_from_spec(spec)
-sys.modules[spec.name] = observer
-spec.loader.exec_module(observer)
-raise SystemExit(pytest.main(["tests/", "-q", "-p", "no:cacheprovider",
-                              "--import-mode=importlib", "--junitxml=" + sys.argv[2]],
-                             plugins=[observer]))
+if __name__ == "__main__":
+    # multiprocessing spawn replays this exact support bootstrap, not the SDK root.
+    sys.modules["__main__"].__file__ = sys.argv[3]
+    observer_path = Path(sys.argv[1])
+    spec = importlib.util.spec_from_file_location("oss_profile_observer", observer_path)
+    observer = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = observer
+    spec.loader.exec_module(observer)
+    raise SystemExit(pytest.main(["tests/", "-q", "-p", "no:cacheprovider",
+                                  "--import-mode=importlib", "--junitxml=" + sys.argv[2]],
+                                 plugins=[observer]))
 """
 
 
 def intake_suite_command(output, plugin):
+    bootstrap = plugin / "intake_suite_bootstrap.py"
+    bootstrap.write_text(INTAKE_SUITE_BOOTSTRAP, encoding="utf-8")
     return [sys.executable, "-I", "-B", "-c", INTAKE_SUITE_BOOTSTRAP,
-            str(plugin / "oss_profile_observer.py"), str(output / "suite.xml")]
+            str(plugin / "oss_profile_observer.py"), str(output / "suite.xml"), str(bootstrap)]
 
 def snapshot_source(source, destination):
     """Copy only reviewed bytes; never clone ignored ledger, credentials or history."""

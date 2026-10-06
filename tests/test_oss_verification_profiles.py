@@ -830,3 +830,32 @@ def test_canonical_peer_without_public_manifest_keeps_unfiltered_legacy_run(tmp_
     assert len(observation["collected"]) == 3 and observation["deselected"] == []
     assert sorted(row["outcome"] for row in observation["outcomes"].values()) == ["failed", "passed", "skipped"]
     assert process["exit_code"] == 1 and process["command"][1:5] == ["-B", "-m", "pytest", "tests/"]
+
+
+@pytest.mark.parametrize("worker_fails", [False, True])
+def test_intake_spawn_support_preserves_installed_sdk_and_child_failures(tmp_path, worker_fails):
+    q = qualifier()
+    source = tmp_path / "source"
+    (source / "tests").mkdir(parents=True)
+    (source / "apatch").mkdir()
+    (source / "apatch/__init__.py").write_text("raise RuntimeError('SOURCE SDK TRAP')\n")
+    (source / "tests/test_spawn.py").write_text(
+        "import multiprocessing,pathlib,sys,apatch\n"
+        "def worker(queue):\n"
+        "    import apatch,pathlib,sys\n"
+        "    assert pathlib.Path(apatch.__file__).resolve().is_relative_to(pathlib.Path(sys.prefix).resolve())\n"
+        + ("    raise RuntimeError('RETAIN CHILD FAILURE')\n" if worker_fails else "")
+        + "    queue.put('INSTALLED SDK CHILD')\n"
+        "def test_actual_spawn():\n"
+        "    ctx=multiprocessing.get_context('spawn')\n"
+        "    queue=ctx.Queue(); child=ctx.Process(target=worker,args=(queue,))\n"
+        "    child.start(); child.join(10)\n"
+        "    assert child.exitcode == 0\n"
+        "    assert queue.get(timeout=2) == 'INSTALLED SDK CHILD'\n")
+    (source / "PUBLIC-SOURCE-MANIFEST.json").write_text(json.dumps({"schema": "apatch.public-source.v3"}))
+    observed, process = q.collect_suite(source, tmp_path / "evidence", timeout=30)
+    assert len(observed["collected"]) == 1 and not observed["deselected"]
+    assert observed["selection"]["args"] == ["tests/"]
+    assert process["command"][1:4] == ["-I", "-B", "-c"]
+    assert process["exit_code"] == (1 if worker_fails else 0)
+    assert list(observed["outcomes"].values())[0]["outcome"] == ("failed" if worker_fails else "passed")

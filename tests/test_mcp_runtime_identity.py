@@ -225,11 +225,39 @@ def test_canonical_snapshot_change_fails_closed(tmp_path, monkeypatch):
     assert report['status'] == 'config_changed'
 
 
-def test_agent_guidance_distinguishes_runtime_and_host_availability():
-    root = Path(health.__file__).resolve().parents[1]
+def _assert_source_agent_guidance(root):
     for name in ('docs/mcp_setup.md', 'docs/AGENTS.template.md',
                  'docs/agent-onboarding.md', 'apatch/consumer_profiles.py'):
         text = (root / name).read_text()
         assert 'not_checked_in_stdio' in text
         assert 'host tool availability' in text
         assert 'mcp check' in text
+
+
+
+def test_agent_guidance_distinguishes_runtime_and_host_availability():
+    # These four public source files are judge inputs, not installed SDK resources.
+    _assert_source_agent_guidance(Path(__file__).resolve().parents[1])
+
+
+def test_source_guidance_does_not_read_an_unrelated_sdk_directory(tmp_path, monkeypatch):
+    monkeypatch.setattr(health, "__file__", str(tmp_path / "foreign-sdk/apatch/mcp_health.py"))
+    test_agent_guidance_distinguishes_runtime_and_host_availability()
+
+
+def test_source_guidance_still_rejects_missing_required_statements(tmp_path):
+    names = ("docs/mcp_setup.md", "docs/AGENTS.template.md",
+             "docs/agent-onboarding.md", "apatch/consumer_profiles.py")
+    complete = "not_checked_in_stdio; host tool availability; mcp check"
+    for name in names:
+        path = tmp_path / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(complete)
+    _assert_source_agent_guidance(tmp_path)
+    for name in names:
+        path = tmp_path / name
+        for required in ("not_checked_in_stdio", "host tool availability", "mcp check"):
+            path.write_text(complete.replace(required, "REMOVED"))
+            with pytest.raises(AssertionError):
+                _assert_source_agent_guidance(tmp_path)
+            path.write_text(complete)

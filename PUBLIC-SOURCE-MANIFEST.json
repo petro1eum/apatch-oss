@@ -3105,8 +3105,8 @@
     },
     {
       "path": "docs/specs/SPEC-AVATAR-SELECTIVE-PUBLICATION-1.md",
-      "sha256": "c4a454f70aead64cced36dbc02b08f2dcd4127917bb57bbe4c3aae7a42c6e84c",
-      "bytes": 8021,
+      "sha256": "66d8746e468c22d010765e136c046e224e385b6e04bf5b580b79f0dbfd0fe99d",
+      "bytes": 8587,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -3469,8 +3469,8 @@
     },
     {
       "path": "docs/specs/SPEC-OSS-VERIFICATION-PROFILES-1.md",
-      "sha256": "1eddf171b6097707feef0484ef71ceb9ad2444c12fdd7b8420cecd8ae74b1001",
-      "bytes": 4115,
+      "sha256": "08b5fb36f17536e41127b4be61a0affcb6f94cc3188e2e80c3581393814a53ff",
+      "bytes": 4599,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -3623,8 +3623,8 @@
     },
     {
       "path": "docs/specs/SPEC-SPEC-OWNERSHIP-GATE-1.md",
-      "sha256": "6ec65b5d301ad3c9eeab9ddd5544949887139517616ef3df96fbf9519dfc4c77",
-      "bytes": 20815,
+      "sha256": "7fef8c24b8f5c6246c860bccca08e7f3d425689d4762763b3a61630938d0aa81",
+      "bytes": 21670,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -3994,8 +3994,8 @@
     },
     {
       "path": "scripts/qualify_oss.py",
-      "sha256": "ca98abc338d0a966b9ae95986a837f38a5dfb55e1136c1c3e9e400b4ab9bfae4",
-      "bytes": 52587,
+      "sha256": "d587307e899969ca69a8ab13626d00fd1ced9df399429c9769bc6f6b6a8f9c68",
+      "bytes": 52917,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -6605,8 +6605,8 @@
     },
     {
       "path": "tests/test_mcp_runtime_identity.py",
-      "sha256": "9077751f5a7676d5c5e68d489f59678abf171ca3e9f88e6e23ee612ee857ffe7",
-      "bytes": 10374,
+      "sha256": "611ed204565d7e155e5b86c404c6d5d7e775984db31cbfe57857720268c46d3a",
+      "bytes": 11602,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -6731,8 +6731,8 @@
     },
     {
       "path": "tests/test_oss_verification_profiles.py",
-      "sha256": "33f6c05593ed6273a72e7d744e1b677cbc9acb71eea666c39fbdfd6a6e2bfb9e",
-      "bytes": 49321,
+      "sha256": "144103b814d4a3cd8100c2ed4e507a8caa0c7c920c095c79544ff7111ea5694c",
+      "bytes": 51001,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -6878,8 +6878,8 @@
     },
     {
       "path": "tests/test_public_source_boundary.py",
-      "sha256": "f7f9201bf15752649b24176abd31ea40c9fd3dc1997b10d609eec9d3f7844aeb",
-      "bytes": 24711,
+      "sha256": "dc2497cab5fa60c4da5add705ec6e14c0da7b2a010ea233ef0e0d95e524c1a34",
+      "bytes": 24943,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -7599,8 +7599,8 @@
     },
     {
       "path": "tests/test_tool_paths.py",
-      "sha256": "2fc79588649c4b025343d9afc7665a4486f180081be870aa07564b67e12645e0",
-      "bytes": 4063,
+      "sha256": "fd83d78dbc71ae3c8383f4616e39c8e10b98deb66239d68714b2da4342ab025a",
+      "bytes": 5174,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -15770,12 +15770,12 @@
       "reason": "owner-frozen-qualification-alignment",
       "path": "docs/specs/SPEC-OSS-VERIFICATION-PROFILES-1.md",
       "before_sha256": "497e8bcc0c7019ba4d8be7a71ad4fb0e2e1ca4d6505e9dee5f16e1fd7d1a9bf4",
-      "after_sha256": "1eddf171b6097707feef0484ef71ceb9ad2444c12fdd7b8420cecd8ae74b1001"
+      "after_sha256": "08b5fb36f17536e41127b4be61a0affcb6f94cc3188e2e80c3581393814a53ff"
     },
     {
       "path": "docs/specs/SPEC-SPEC-OWNERSHIP-GATE-1.md",
       "before_sha256": "c0fb9a01062f034f54e2ab8c3ad7ff3dc31be73934557ec051d8b3808f4f3271",
-      "after_sha256": "6ec65b5d301ad3c9eeab9ddd5544949887139517616ef3df96fbf9519dfc4c77",
+      "after_sha256": "7fef8c24b8f5c6246c860bccca08e7f3d425689d4762763b3a61630938d0aa81",
       "reason": "portable-regression-or-release-integrity"
     },
     {
@@ -15788,7 +15788,7 @@
       "reason": "owner-frozen-qualification-alignment",
       "path": "scripts/qualify_oss.py",
       "before_sha256": "668e7f5c56b1ff76240f9748bb452981fa6c5fb574907d1cdd7aeb8e242cb30f",
-      "after_sha256": "ca98abc338d0a966b9ae95986a837f38a5dfb55e1136c1c3e9e400b4ab9bfae4"
+      "after_sha256": "d587307e899969ca69a8ab13626d00fd1ced9df399429c9769bc6f6b6a8f9c68"
     },
     {
       "path": "tests/portable_intake/helper-pins.json",
@@ -15824,12 +15824,12 @@
       "reason": "owner-frozen-qualification-alignment",
       "path": "tests/test_oss_verification_profiles.py",
       "before_sha256": "0151fc4996d30f726be13e5662236a3a342584a48c123c624f967e81feb83685",
-      "after_sha256": "33f6c05593ed6273a72e7d744e1b677cbc9acb71eea666c39fbdfd6a6e2bfb9e"
+      "after_sha256": "144103b814d4a3cd8100c2ed4e507a8caa0c7c920c095c79544ff7111ea5694c"
     },
     {
       "path": "tests/test_public_source_boundary.py",
       "before_sha256": "d1ed4b0a352ca642fda9cd14b8067ee237550e50da435ff7184b5bc0c5f70916",
-      "after_sha256": "f7f9201bf15752649b24176abd31ea40c9fd3dc1997b10d609eec9d3f7844aeb",
+      "after_sha256": "dc2497cab5fa60c4da5add705ec6e14c0da7b2a010ea233ef0e0d95e524c1a34",
       "reason": "portable-regression-or-release-integrity"
     },
     {
@@ -15861,6 +15861,24 @@
       "before_sha256": null,
       "after_sha256": "a9c5b89635872cdeb2aaeb5d4133b2c58a610c02869cb03ea01b66d8d060ffbb",
       "reason": "portable-regression-or-release-integrity"
+    },
+    {
+      "path": "tests/test_mcp_runtime_identity.py",
+      "before_sha256": "9077751f5a7676d5c5e68d489f59678abf171ca3e9f88e6e23ee612ee857ffe7",
+      "after_sha256": "611ed204565d7e155e5b86c404c6d5d7e775984db31cbfe57857720268c46d3a",
+      "reason": "owner-presented-installed-qualification-followup"
+    },
+    {
+      "path": "tests/test_tool_paths.py",
+      "before_sha256": "2fc79588649c4b025343d9afc7665a4486f180081be870aa07564b67e12645e0",
+      "after_sha256": "fd83d78dbc71ae3c8383f4616e39c8e10b98deb66239d68714b2da4342ab025a",
+      "reason": "owner-presented-installed-qualification-followup"
+    },
+    {
+      "path": "docs/specs/SPEC-AVATAR-SELECTIVE-PUBLICATION-1.md",
+      "before_sha256": "c4a454f70aead64cced36dbc02b08f2dcd4127917bb57bbe4c3aae7a42c6e84c",
+      "after_sha256": "66d8746e468c22d010765e136c046e224e385b6e04bf5b580b79f0dbfd0fe99d",
+      "reason": "owner-presented-installed-qualification-followup"
     }
   ]
 }
