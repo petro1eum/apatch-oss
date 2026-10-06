@@ -2860,15 +2860,15 @@
     },
     {
       "path": "docs/oss-verification-profiles.json",
-      "sha256": "f526e873e05999b556240008dffd35065520415b0c69d864ec3f41157d8699bc",
-      "bytes": 28402,
+      "sha256": "c2df50e5278870ea6f5c439650313bd45d1925a6a2bb76ae806c03642a032233",
+      "bytes": 28719,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
     {
       "path": "docs/oss-verification.md",
-      "sha256": "c6ebdf8827ced61cd8a63be2fec241735dedbf45b649a2822a068c3401e650df",
-      "bytes": 7312,
+      "sha256": "465e27365710218fea366fb2a9587a57f9d785d70a32b3884cb5f7524d287346",
+      "bytes": 7699,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -3469,8 +3469,8 @@
     },
     {
       "path": "docs/specs/SPEC-OSS-VERIFICATION-PROFILES-1.md",
-      "sha256": "497e8bcc0c7019ba4d8be7a71ad4fb0e2e1ca4d6505e9dee5f16e1fd7d1a9bf4",
-      "bytes": 3172,
+      "sha256": "1eddf171b6097707feef0484ef71ceb9ad2444c12fdd7b8420cecd8ae74b1001",
+      "bytes": 4115,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -3994,8 +3994,8 @@
     },
     {
       "path": "scripts/qualify_oss.py",
-      "sha256": "668e7f5c56b1ff76240f9748bb452981fa6c5fb574907d1cdd7aeb8e242cb30f",
-      "bytes": 48017,
+      "sha256": "ca98abc338d0a966b9ae95986a837f38a5dfb55e1136c1c3e9e400b4ab9bfae4",
+      "bytes": 52587,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -6731,8 +6731,8 @@
     },
     {
       "path": "tests/test_oss_verification_profiles.py",
-      "sha256": "0151fc4996d30f726be13e5662236a3a342584a48c123c624f967e81feb83685",
-      "bytes": 42021,
+      "sha256": "33f6c05593ed6273a72e7d744e1b677cbc9acb71eea666c39fbdfd6a6e2bfb9e",
+      "bytes": 49321,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -6878,8 +6878,8 @@
     },
     {
       "path": "tests/test_public_source_boundary.py",
-      "sha256": "5d22ba46369296c44c240bbec6f542a5531044ac188630d811e2bb8b314278c1",
-      "bytes": 24255,
+      "sha256": "f7f9201bf15752649b24176abd31ea40c9fd3dc1997b10d609eec9d3f7844aeb",
+      "bytes": 24711,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -15751,14 +15751,26 @@
     {
       "path": "docs/oss-verification-profiles.json",
       "before_sha256": "83f1ef14fdb02e9664ab70efda59d7646e7dd7a3980a4d855d07c46095e9c205",
-      "after_sha256": "f526e873e05999b556240008dffd35065520415b0c69d864ec3f41157d8699bc",
+      "after_sha256": "c2df50e5278870ea6f5c439650313bd45d1925a6a2bb76ae806c03642a032233",
       "reason": "portable-regression-or-release-integrity"
+    },
+    {
+      "reason": "owner-frozen-qualification-alignment",
+      "path": "docs/oss-verification.md",
+      "before_sha256": "c6ebdf8827ced61cd8a63be2fec241735dedbf45b649a2822a068c3401e650df",
+      "after_sha256": "465e27365710218fea366fb2a9587a57f9d785d70a32b3884cb5f7524d287346"
     },
     {
       "path": "docs/specs/SPEC-OSS-CONTRACT-INTAKE-EXECUTION-1.md",
       "before_sha256": null,
       "after_sha256": "ae0995b900cc889217f415eaba88cba7a02cd2670699fde29df6e86e6e07d307",
       "reason": "owner-approved-portable-intake-transfer"
+    },
+    {
+      "reason": "owner-frozen-qualification-alignment",
+      "path": "docs/specs/SPEC-OSS-VERIFICATION-PROFILES-1.md",
+      "before_sha256": "497e8bcc0c7019ba4d8be7a71ad4fb0e2e1ca4d6505e9dee5f16e1fd7d1a9bf4",
+      "after_sha256": "1eddf171b6097707feef0484ef71ceb9ad2444c12fdd7b8420cecd8ae74b1001"
     },
     {
       "path": "docs/specs/SPEC-SPEC-OWNERSHIP-GATE-1.md",
@@ -15771,6 +15783,12 @@
       "before_sha256": "41fe12e1be0da72d9823ea25c61ff3fbe819c57873342dc63186af2d0fdbdfb4",
       "after_sha256": "f194750a4fc4eab34b21e8aa3885c6c5a5d4c8a5e880ec131751aa3352f3e943",
       "reason": "portable-regression-or-release-integrity"
+    },
+    {
+      "reason": "owner-frozen-qualification-alignment",
+      "path": "scripts/qualify_oss.py",
+      "before_sha256": "668e7f5c56b1ff76240f9748bb452981fa6c5fb574907d1cdd7aeb8e242cb30f",
+      "after_sha256": "ca98abc338d0a966b9ae95986a837f38a5dfb55e1136c1c3e9e400b4ab9bfae4"
     },
     {
       "path": "tests/portable_intake/helper-pins.json",
@@ -15803,9 +15821,15 @@
       "reason": "portable-regression-or-release-integrity"
     },
     {
+      "reason": "owner-frozen-qualification-alignment",
+      "path": "tests/test_oss_verification_profiles.py",
+      "before_sha256": "0151fc4996d30f726be13e5662236a3a342584a48c123c624f967e81feb83685",
+      "after_sha256": "33f6c05593ed6273a72e7d744e1b677cbc9acb71eea666c39fbdfd6a6e2bfb9e"
+    },
+    {
       "path": "tests/test_public_source_boundary.py",
       "before_sha256": "d1ed4b0a352ca642fda9cd14b8067ee237550e50da435ff7184b5bc0c5f70916",
-      "after_sha256": "5d22ba46369296c44c240bbec6f542a5531044ac188630d811e2bb8b314278c1",
+      "after_sha256": "f7f9201bf15752649b24176abd31ea40c9fd3dc1997b10d609eec9d3f7844aeb",
       "reason": "portable-regression-or-release-integrity"
     },
     {

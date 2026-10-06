@@ -24,6 +24,11 @@ owns: scripts/qualify_oss.py, docs/oss-verification-profiles.json, docs/oss-veri
 
 An explicit dependency inventory names exact test and requirement identities, reasons and source hashes; unknown or changed declarations fail closed. Whole mixed modules cannot be excluded.
 
+For the approved 0.8.50 intake release the exact inventory has 269 runtime files;
+0.8.49 retains its 266-file historical declaration. Only the three generic
+additions and the reviewed current runtime hash changes are admitted. Historical
+provenance, external limitations and the optional Java skip are unchanged.
+
 (verify: python3 -m pytest tests/test_oss_verification_profiles.py::test_inventory_is_exact_and_hash_bound -q)
 
 ## R2 Complete, isolated verification runs
@@ -31,6 +36,15 @@ An explicit dependency inventory names exact test and requirement identities, re
 owns: scripts/qualify_oss.py, docs/oss-verification-profiles.json, docs/oss-verification.md, tests/test_oss_verification_profiles.py
 
 Both profiles preserve the complete suite and exhaustive CI-safe standing gate, use isolated workspaces, retain raw outputs and reject filtered, stale or incomplete runs. Timeouts terminate the process group.
+
+The v3 snapshot fetches only exact committed ancestry available from the public
+OSS repository. It never imports local Git objects/configuration, private or
+dangling refs, credentials, hooks or local runtime state. Missing, unrelated or
+unpublished ancestry blocks qualification. The full v3 suite runs in an isolated
+interpreter using the exact installed public SDK pair, with only source-bound
+judge/support namespaces exposed. No test is filtered or deselected and every
+observed failure/skip remains in the raw report. Historical v2 commands remain
+unchanged. Neither preparation nor a positive fixture establishes release.
 
 (verify: python3 -m pytest tests/test_oss_verification_profiles.py::test_full_run_is_unfiltered_and_isolated -q)
 

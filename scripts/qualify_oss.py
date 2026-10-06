@@ -296,6 +296,87 @@ def public_files(source):
     return files
 
 
+
+# The v3 source judge verifies real public Git ancestry. Import only a commit
+# available from the public OSS repository, never the local repository's object
+# directory, configuration, workspaces, keys, hooks or private/dangling refs.
+PUBLIC_SOURCE_REPOSITORY = "https://github.com/petro1eum/apatch-oss.git"
+
+
+def _snapshot_public_provenance(source, destination):
+    manifest = read_json(source / "PUBLIC-SOURCE-MANIFEST.json")
+    if manifest.get("schema") != "apatch.public-source.v3":
+        return
+    binding = manifest.get("contract_intake_source")
+    if not isinstance(binding, dict) or binding.get("schema") != "apatch.public-intake-source.v1":
+        raise InventoryError("missing public intake provenance")
+    anchor = binding.get("source_commit")
+    if not isinstance(anchor, str) or re.fullmatch(r"[0-9a-f]{40}", anchor) is None:
+        raise InventoryError("invalid public intake source commit")
+    options = ["-c", "credential.helper=", "-c", "core.hooksPath=/dev/null"]
+    environment = dict(os.environ, GIT_TERMINAL_PROMPT="0")
+    head = subprocess.run(["git", *options, "-C", str(source), "rev-parse", "--verify", "HEAD^{commit}"],
+                          capture_output=True, text=True, timeout=30, env=environment)
+    if head.returncode or re.fullmatch(r"[0-9a-f]{40}\n?", head.stdout) is None:
+        raise InventoryError("public source checkout has no exact commit")
+    commit = head.stdout.strip()
+    ancestor = subprocess.run(["git", *options, "-C", str(source), "merge-base", "--is-ancestor", anchor, commit],
+                              capture_output=True, timeout=30, env=environment)
+    if ancestor.returncode:
+        raise InventoryError("intake source is not an ancestor of public source")
+    fetched = subprocess.run(["git", *options, "-C", str(destination), "fetch", "--quiet", "--no-tags",
+                              "--no-write-fetch-head", PUBLIC_SOURCE_REPOSITORY, commit],
+                             capture_output=True, timeout=180, env=environment)
+    if fetched.returncode:
+        raise InventoryError("source commit is unavailable from the public OSS repository")
+    linked = subprocess.run(["git", *options, "-C", str(destination), "update-ref", "refs/heads/main", commit],
+                            capture_output=True, timeout=30, env=environment)
+    if linked.returncode:
+        raise InventoryError("cannot bind public snapshot HEAD")
+    actual = subprocess.run(["git", *options, "-C", str(destination), "merge-base", "--is-ancestor", anchor, "HEAD"],
+                            capture_output=True, timeout=30, env=environment)
+    if actual.returncode:
+        raise InventoryError("public repository does not contain reviewed intake ancestry")
+
+
+INTAKE_SUITE_BOOTSTRAP = r"""
+import importlib.util
+from pathlib import Path
+import sys
+import types
+import pytest
+
+# Expose only source-bound judge/support namespaces, not the source root.
+# The SDK remains the byte-qualified installed package under this interpreter.
+root = Path.cwd()
+for name in ("tests", "scripts"):
+    directory = root / name
+    initializer = directory / "__init__.py"
+    if initializer.is_file():
+        spec = importlib.util.spec_from_file_location(name, initializer,
+                                                     submodule_search_locations=[str(directory)])
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[name] = module
+        spec.loader.exec_module(module)
+    elif directory.is_dir():
+        module = types.ModuleType(name)
+        module.__path__ = [str(directory)]
+        sys.modules[name] = module
+observer_path = Path(sys.argv[1])
+spec = importlib.util.spec_from_file_location("oss_profile_observer", observer_path)
+observer = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = observer
+spec.loader.exec_module(observer)
+raise SystemExit(pytest.main(["tests/", "-q", "-p", "no:cacheprovider",
+                              "--import-mode=importlib", "--junitxml=" + sys.argv[2]],
+                             plugins=[observer]))
+"""
+
+
+def intake_suite_command(output, plugin):
+    return [sys.executable, "-I", "-B", "-c", INTAKE_SUITE_BOOTSTRAP,
+            str(plugin / "oss_profile_observer.py"), str(output / "suite.xml")]
+
 def snapshot_source(source, destination):
     """Copy only reviewed bytes; never clone ignored ledger, credentials or history."""
     files = public_files(source)
@@ -310,6 +391,7 @@ def snapshot_source(source, destination):
         target.chmod((source / name).stat().st_mode & 0o777)
     subprocess.run(["git", "init", "-b", "main", str(destination)], check=True,
                    capture_output=True, timeout=30)
+    _snapshot_public_provenance(source, destination)
     return files
 
 
@@ -391,7 +473,11 @@ def collect_suite(source, output, *, timeout=1800):
     run_id = uuid.uuid4().hex
     env.update(PYTHONPATH=str(plugin), APATCH_OSS_RUN_ID=run_id,
                APATCH_OSS_OBSERVATION=str(output / "observation.json"))
-    process = run_capture(suite_command(output), cwd=source, env=env, output=output, label="suite", timeout=timeout)
+    manifest_path = source / "PUBLIC-SOURCE-MANIFEST.json"
+    manifest = read_json(manifest_path) if manifest_path.is_file() else {}
+    command = (intake_suite_command(output, plugin)
+               if manifest.get("schema") == "apatch.public-source.v3" else suite_command(output))
+    process = run_capture(command, cwd=source, env=env, output=output, label="suite", timeout=timeout)
     if process["timed_out"]:
         raise InventoryError("full suite timed out; raw output retained")
     observation = read_json(output / "observation.json")

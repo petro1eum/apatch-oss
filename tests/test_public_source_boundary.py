@@ -104,7 +104,8 @@ def _validate_intake_release_manifest(manifest, root):
     assert set(files) == set(old_files) | EXPECTED_NEW_PATHS | INTAKE_NEW_PATHS
     delta = {item["path"]: item for item in manifest["release_delta"]}
     assert len(delta) == len(manifest["release_delta"])
-    reviewed = EXPECTED_REVIEWED_PATHS | INTAKE_NEW_PATHS | {"apatch/sdd_integrity.py"}
+    reviewed = (EXPECTED_REVIEWED_PATHS | INTAKE_NEW_PATHS | {"apatch/sdd_integrity.py"}
+                | set(["scripts/qualify_oss.py","tests/test_oss_verification_profiles.py","docs/specs/SPEC-OSS-VERIFICATION-PROFILES-1.md","docs/oss-verification.md"]))
     assert set(delta) == reviewed
     assert {p for p in files if files[p] != old_files.get(p)} == reviewed
     baseline_runtime = {p for p, item in old_files.items() if item["runtime_baseline_unchanged"]}
@@ -296,6 +297,9 @@ def intake_inventory_fixture(tmp_path_factory):
     # Judge bytes in this disposable repository are the proposed/current judge,
     # not altered runtime files and not artificial installed package metadata.
     (root / "tests/test_public_source_boundary.py").write_bytes(Path(__file__).read_bytes())
+    # The versioned qualification amendment is judge/support data only.
+    for p in ["scripts/qualify_oss.py","tests/test_oss_verification_profiles.py","docs/specs/SPEC-OSS-VERIFICATION-PROFILES-1.md","docs/oss-verification.md"]:
+        (root / p).write_bytes((ROOT / p).read_bytes())
     paths = sorted(set(old_files) | EXPECTED_NEW_PATHS | INTAKE_NEW_PATHS)
     baseline_runtime = {p for p, item in old_files.items() if item["runtime_baseline_unchanged"]}
     files = []
@@ -467,4 +471,3 @@ def test_intake_release_inventory_requires_actual_public_ancestor(
     finally:
         _git_at(root, "update-ref", "HEAD", head)
     _validate_release_manifest(manifest)
-

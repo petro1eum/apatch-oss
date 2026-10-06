@@ -61,7 +61,10 @@ def test_inventory_is_exact_and_hash_bound(tmp_path, change):
     # declares no absent-peer failures, peer requirements or Avatar skips.
     assert inv['schema'] == 'apatch.oss-verification-inventory.v2'
     assert 'absent_peer_failures' not in inv and 'peer_requirements' not in inv
-    assert len(inv['runtime_files']) == 266
+    # A release count is an exact versioned declaration, not a waived failure.
+    schema = json.loads((ROOT / "PUBLIC-SOURCE-MANIFEST.json").read_text())["schema"]
+    assert len(inv['runtime_files']) == {"apatch.public-source.v2": 266,
+                                       "apatch.public-source.v3": 269}[schema]
     assert len(inv['source_files']) == 2
     assert [row['dependency'] for row in inv['existing_optional_skips']] == ['tree_sitter_java']
     source = source_fixture(tmp_path, inv)
@@ -714,3 +717,116 @@ def test_report_never_claims_global_acceptance(tmp_path, monkeypatch, capsys, ca
         if case == 'report_pass':
             assert report['canonical_contract_checked'] is False
             assert report['classified_skips'] == ['tests/test_matcher.py::test_evaluate_java_body_match']
+
+# Additive controls for installed-pair qualification. Disposable local repositories
+# stand in for the public Git server only in these unit controls, never in a
+# release run; run_profile has no CLI override for PUBLIC_SOURCE_REPOSITORY.
+def _intake_provenance_fixture(tmp_path):
+    import subprocess
+    q = qualifier()
+    source = tmp_path / "public"
+    source.mkdir()
+    (source / "tests").mkdir()
+    data = b"def test_fixture(): assert True\n"
+    (source / "tests/test_fixture.py").write_bytes(data)
+    for args in (["init", "-q", "-b", "main"], ["add", "tests/test_fixture.py"],
+                 ["-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                  "-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "commit", "-qm", "public fixture"]):
+        subprocess.run(["git", "-C", str(source), *args], check=True, capture_output=True)
+    anchor = subprocess.check_output(["git", "-C", str(source), "rev-parse", "HEAD"], text=True).strip()
+    manifest = {"schema": "apatch.public-source.v3", "private_git_history_included": False,
+                "files": [{"path": "tests/test_fixture.py", "sha256": q.sha256(data)}],
+                "contract_intake_source": {"schema": "apatch.public-intake-source.v1", "source_commit": anchor}}
+    (source / "PUBLIC-SOURCE-MANIFEST.json").write_text(json.dumps(manifest) + "\n")
+    return q, source, manifest, anchor
+
+
+def test_intake_snapshot_retains_real_public_ancestry_without_local_state(tmp_path, monkeypatch):
+    import subprocess
+    q, source, manifest, anchor = _intake_provenance_fixture(tmp_path)
+    monkeypatch.setattr(q, "PUBLIC_SOURCE_REPOSITORY", str(source))
+    # A dangling blob and local runtime/configuration must never be copied.
+    private_blob = subprocess.run(["git", "-C", str(source), "hash-object", "-w", "--stdin"],
+                                  input=b"DISPOSABLE NONSECRET PRIVATE BLOB", capture_output=True, check=True).stdout.decode().strip()
+    (source / ".trustchain").mkdir()
+    (source / ".trustchain/disposable-key-placeholder").write_text("NOT A REAL KEY")
+    (source / ".apatch").mkdir()
+    (source / ".apatch/local-runtime.json").write_text("{}")
+    subprocess.run(["git", "-C", str(source), "config", "release.disposable-local-config", "must-not-copy"], check=True)
+    destination = tmp_path / "snapshot"
+    q.snapshot_source(source, destination)
+    assert subprocess.run(["git", "-C", str(destination), "merge-base", "--is-ancestor", anchor, "HEAD"]).returncode == 0
+    assert subprocess.run(["git", "-C", str(destination), "cat-file", "-e", private_blob], capture_output=True).returncode != 0
+    assert subprocess.run(["git", "-C", str(destination), "config", "--get", "release.disposable-local-config"], capture_output=True).returncode != 0
+    assert not (destination / ".trustchain").exists() and not (destination / ".apatch").exists()
+    assert (destination / "tests/test_fixture.py").read_bytes() == (source / "tests/test_fixture.py").read_bytes()
+
+
+@pytest.mark.parametrize("case", ["missing_binding", "bad_commit", "missing_commit", "unpublished_head"])
+def test_intake_snapshot_provenance_rejection_has_working_positive_control(tmp_path, monkeypatch, case):
+    import subprocess
+    q, source, manifest, anchor = _intake_provenance_fixture(tmp_path)
+    monkeypatch.setattr(q, "PUBLIC_SOURCE_REPOSITORY", str(source))
+    q.snapshot_source(source, tmp_path / "positive")
+    if case == "missing_binding":
+        manifest.pop("contract_intake_source")
+    elif case == "bad_commit":
+        manifest["contract_intake_source"]["source_commit"] = "not-a-commit"
+    elif case == "missing_commit":
+        manifest["contract_intake_source"]["source_commit"] = "0" * 40
+    else:
+        public = tmp_path / "server"
+        subprocess.run(["git", "clone", "--quiet", "--bare", str(source), str(public)], check=True)
+        monkeypatch.setattr(q, "PUBLIC_SOURCE_REPOSITORY", str(public))
+        subprocess.run(["git", "-C", str(source), "-c", "user.name=Fixture",
+                        "-c", "user.email=fixture@example.invalid", "-c", "commit.gpgsign=false",
+                        "-c", "core.hooksPath=/dev/null", "commit", "--allow-empty", "-qm", "unpublished fixture"], check=True)
+    (source / "PUBLIC-SOURCE-MANIFEST.json").write_text(json.dumps(manifest) + "\n")
+    with pytest.raises(q.InventoryError):
+        q.snapshot_source(source, tmp_path / "negative")
+
+
+def test_intake_suite_uses_installed_sdk_without_deselecting_tests(tmp_path):
+    q = qualifier()
+    source = tmp_path / "source"
+    (source / "tests").mkdir(parents=True)
+    # A source SDK trap proves that the installed SDK, not a local overlay, runs.
+    (source / "apatch").mkdir()
+    (source / "apatch/__init__.py").write_text("raise RuntimeError('SOURCE SDK TRAP')\n")
+    (source / "tests/test_real.py").write_text(
+        "import pathlib,sys,pytest,apatch\n"
+        "def test_installed():\n"
+        "    assert pathlib.Path(apatch.__file__).resolve().is_relative_to(pathlib.Path(sys.prefix).resolve())\n"
+        "def test_observable_failure(): assert False, 'RETAIN THIS FAILURE'\n"
+        "def test_observable_skip(): pytest.skip('RETAIN THIS SKIP')\n")
+    (source / "PUBLIC-SOURCE-MANIFEST.json").write_text(json.dumps({"schema": "apatch.public-source.v3"}))
+    observation, process = q.collect_suite(source, tmp_path / "evidence", timeout=30)
+    assert len(observation["collected"]) == 3
+    assert sorted(row["outcome"] for row in observation["outcomes"].values()) == ["failed", "passed", "skipped"]
+    assert observation["deselected"] == [] and process["exit_code"] == 1
+    assert observation["selection"]["args"] == ["tests/"]
+    assert not observation["selection"]["keyword"] and not observation["selection"]["markexpr"]
+    assert process["command"][1:4] == ["-I", "-B", "-c"]
+
+
+def test_intake_source_inventory_matches_every_declared_runtime_byte():
+    q = qualifier()
+    inv = inventory()
+    result = q.verify_inventory_source(inv, ROOT)
+    assert result["inventory_validated"] is True
+    assert result["pinned_runtime_files"] == 269
+    assert result["profile_passed"] is False and result["release_authorized"] is False
+
+def test_canonical_peer_without_public_manifest_keeps_unfiltered_legacy_run(tmp_path):
+    q = qualifier()
+    source = tmp_path / "canonical"
+    (source / "tests").mkdir(parents=True)
+    (source / "tests/test_peer.py").write_text(
+        "import pytest\n"
+        "def test_schema(): assert True\n"
+        "def test_visible_failure(): assert False, 'CANONICAL FAILURE'\n"
+        "def test_visible_skip(): pytest.skip('CANONICAL SKIP')\n")
+    observation, process = q.collect_suite(source, tmp_path / "evidence", timeout=30)
+    assert len(observation["collected"]) == 3 and observation["deselected"] == []
+    assert sorted(row["outcome"] for row in observation["outcomes"].values()) == ["failed", "passed", "skipped"]
+    assert process["exit_code"] == 1 and process["command"][1:5] == ["-B", "-m", "pytest", "tests/"]

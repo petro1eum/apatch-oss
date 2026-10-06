@@ -32,6 +32,12 @@ changed run pass: review the change and its evidence first.
 Use a clean POSIX qualification environment, not the running MCP environment.
 Install a wheel built from this exact checkout with its public verification
 dependencies (`dev`, `mcp`, `trustchain`, `yaml`, `platform`; `languages` is optional).
+For the 0.8.50 intake qualification, install the exact built public Studio 0.1.5
+wheel alongside the exact Core wheel. The full frozen intake suite verifies that
+pair; Studio is a release-test prerequisite, not a base dependency of Core.
+The v3 runner preserves committed public provenance and executes all tests
+against installed SDK bytes. The historical v2 profile remains distinct.
+
 Do not use an editable install: installed runtime and packaged consumer-resource
 bytes must match the reviewed source. Python 3.10 needs the declared `tomli`
 development dependency. Pin the resolved environment for repeatable release runs;

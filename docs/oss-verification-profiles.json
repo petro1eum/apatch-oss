@@ -211,7 +211,7 @@
     "apatch/scale_config.py": "3cf250e82d85d4e13e5ee20ee8e99ca538176100b648114d6e1a50f0c5140602",
     "apatch/scip_ingest.py": "7b2dc3d886b6adea561f21b34f47a6835e2edc47ad42fefcbe5e12d49f738f84",
     "apatch/scip_producer.py": "86c8da82907b8ec400d321f5ff76da5136e47d26bd91e21fba24835bb47e0dda",
-    "apatch/sdd_integrity.py": "0b67954e874fef0567451173351ce806d00f5c082bfdaa554e05ea67385f23e4",
+    "apatch/sdd_integrity.py": "759e8927762d365e8701fb64935066f876cd5a8932ad3ed7855abc23658954d2",
     "apatch/semantic_parser.py": "473ccb42a938ec5c8bcfee5e978bb9d45e5cf581089cd53e334507bd4484ac59",
     "apatch/semantic_verify.py": "d09982c2b098d83b99659a1c41becc30b820e00c5bb13b31b691d762fddad35d",
     "apatch/service_secret.py": "a43b97693e65c426e901211bd52f1a96230d97f9cd72bc66ef941e895bc4760f",
@@ -232,7 +232,7 @@
     "apatch/spec_interference.py": "7f8c9ba8e8683b64a7d23c65e950b9f2645a4b9b10bfe3f5d39d770b3f1ab71b",
     "apatch/spec_interference_l0.py": "533529155a00cd8fbb46496c416ac96b0d464a52e2bc561c1ab769bc173e41a9",
     "apatch/spec_needles_scaffold.py": "1a1f317eed4b3f418c900b7d25e0feaf58946d50eadc5e6b5eec8b62848ea03c",
-    "apatch/spec_ownership.py": "10c4a650b0ae8287e59f6f7bb6dcdb34fbcb67db3bb2222327e72b0ac4f3fa15",
+    "apatch/spec_ownership.py": "9f8a7af623e2fe2a83474a03d38458db6cf63cc2261721b7748729cab8564826",
     "apatch/spec_plan.py": "f5a727a5b87b0810797e44fcc0171b8ae53c66f7b50b56528fb56279b9a8e7df",
     "apatch/spec_rebind.py": "3e6fb64f0f6fcdfc34936714043bc4cd7a5e8f74a2e4d50622075a45177d2c3c",
     "apatch/spec_registry.py": "b08799f9fd690a31a31d8dfd41586f35fa1a669d66274ae71fb51e3fb12098b6",
@@ -250,7 +250,7 @@
     "apatch/toolchain.py": "64e178818e76280fac4e2beef47668a6b2ce595488a6cb06677de67e69b1eaf4",
     "apatch/traceability.py": "619a019a75b5d6a72a2912ef1bebe14e50d178eb96fdc229d073c06d93ee8298",
     "apatch/trust_identity.py": "7318826d4c9f833ef78f81da9b31acabcb17fb10b618e1f08701b73411b7e4a6",
-    "apatch/trustchain_helper.py": "550182fc6a2137280481747194c938f5532627f6b853600dfbec8c61c9429a03",
+    "apatch/trustchain_helper.py": "7c6e7060537a16a4fb502acf5c3ebd7605d26e2d4d8f2eb70869df9c9d658d45",
     "apatch/tui.py": "d7e28d7c67a019dded7476c1269dfaade3fae8fb5e355383f2b9c22a6b384cc8",
     "apatch/ux_audit.py": "90acdd1485333b09ad68050845c9699f1107635cdffb99ae40773cee6c642131",
     "apatch/verify_baseline.py": "c8c713bab9c3e0698f05dcc0cb272d5adc9d349ac64994c33d5bd0eb99368541",
@@ -272,7 +272,10 @@
     "apatch_search_workflows/slug_cockpit.py": "8570304a483a8745f78da4f2b0867ce2981194e161b6dfc497b46d81c831933c",
     "apatch_search_workflows/slug_feedback_lint.py": "287962fc53b96da97f75c536260ceaa9f65522a317ae6d53716fdf99b5a2ffc5",
     "apatch_search_workflows/slug_intake.py": "be69c3d4b9b54a22e91f4ea6198c09b076b18d60804b60526e0087fb96394111",
-    "apatch_search_workflows/slug_ratify.py": "6aebc3cdb317531ebea20eb399f125c8f0a7cde8479c42976a66fcba580d6cba"
+    "apatch_search_workflows/slug_ratify.py": "6aebc3cdb317531ebea20eb399f125c8f0a7cde8479c42976a66fcba580d6cba",
+    "apatch/sdd_contract_intake.py": "a493318100574b4bf84cfbb2a9c8284cd497e27405854beace042b25b4262b6e",
+    "apatch/sdd_preparation_io.py": "96158de995a5bc233a0d22cf0157eda6dfa77924889162afa6ab879b6ec7fa4f",
+    "apatch/strict_existing_signer.py": "b35d1c195fe391ac55d577244432d233675d32946a8e0c6b573fcf4621e22d4a"
   },
   "source_files": {
     "docs/specs/SPEC-AVATAR-CONTRACT-1.md": "b375fe307613f9fc03a0ae6c7e3d00d29b96969f5b4bea8a87927b3fd36df836",
