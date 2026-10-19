@@ -4,6 +4,8 @@ import sys
 import difflib
 import tempfile
 import subprocess
+from contextlib import nullcontext
+from apatch.sandbox import SandboxError
 from typing import Any, Dict, List, Optional
 from rich.console import Console
 from rich.panel import Panel
@@ -39,6 +41,10 @@ class InteractiveTUI:
     ):
         self.candidates = candidates
         self.target_dir = os.path.abspath(target_dir)
+        # Bound by the workflow after admission; direct component use is unchanged.
+        self.write_lease: Optional[Dict[str, Any]] = None
+        self._effect_ids = []
+        self._effect_candidate_index = 0
         self.path_index = PathIndex.build(self.target_dir)
         self.match_session = MatchSession()
         self.non_interactive = non_interactive
@@ -99,6 +105,12 @@ class InteractiveTUI:
             session_id=self.tc_checkpoint_name,
         )
 
+    def _write_scope(self, target_path: str):
+        if self.write_lease is None:
+            return nullcontext()
+        from apatch.path_leases import fence_path_write
+        return fence_path_write(self.target_dir, target_path, self.write_lease)
+
     def _commit_write(self, target_path: str, content: str, action_type: str, matcher) -> None:
         """Apply a resolved change to disk: delete, or write with safe encoding.
 
@@ -106,22 +118,34 @@ class InteractiveTUI:
         falls back to UTF-8 when the proposed content contains characters the
         original encoding cannot represent (avoids UnicodeEncodeError corruption).
         """
+        from apatch.runtime.effects import prepare_effect, assert_effect_preimage, written_effect, _image
         if action_type == "DELETE":
-            if os.path.exists(target_path):
-                os.remove(target_path)
+            effect = prepare_effect(self, target_path, None, action_type)
+            with self._write_scope(target_path):
+                assert_effect_preimage(self.target_dir, effect)
+                if os.path.exists(target_path):
+                    os.remove(target_path)
+            written_effect(self, effect)
             self.match_session.invalidate(target_path)
             return
 
         if action_type == "CHMOD":
             from apatch.file_modes import mode_to_int
 
-            os.chmod(target_path, mode_to_int(content))
+            after = _image(target_path)
+            after["mode"] = mode_to_int(content)
+            effect = prepare_effect(self, target_path, after, action_type)
+            with self._write_scope(target_path):
+                assert_effect_preimage(self.target_dir, effect)
+                os.chmod(target_path, mode_to_int(content))
+            written_effect(self, effect)
             self.match_session.invalidate(target_path)
             return
 
         parent = os.path.dirname(target_path)
-        if parent:
-            os.makedirs(parent, exist_ok=True)
+        if parent and not os.path.isdir(parent):
+            with self._write_scope(target_path):
+                os.makedirs(parent, exist_ok=True)
         formatted_content = matcher.restore_formatting(content)
         encoding = matcher.encoding
         try:
@@ -146,7 +170,11 @@ class InteractiveTUI:
                 f.write(formatted_content)
                 f.flush()
                 os.fsync(f.fileno())
-            os.replace(tmp_path, target_path)
+            effect = prepare_effect(self, target_path, _image(tmp_path), action_type)
+            with self._write_scope(target_path):
+                assert_effect_preimage(self.target_dir, effect)
+                os.replace(tmp_path, target_path)
+            written_effect(self, effect)
         except BaseException:
             try:
                 os.unlink(tmp_path)
@@ -193,8 +221,11 @@ class InteractiveTUI:
 
     def _build_files_metadata(self, file_paths) -> dict:
         import hashlib
-
+        import json
         files_metadata = {}
+        # Shared escaped-JSON preview budget, not a per-file allowance. Full
+        # content identities remain signed even when a preview is abbreviated.
+        preview_remaining = 16384
         for fpath in file_paths:
             if not os.path.exists(fpath):
                 continue
@@ -207,6 +238,8 @@ class InteractiveTUI:
                 fhash = "unknown"
             rel_path = os.path.relpath(fpath, self.target_dir)
             diff_text = ""
+            before_hash = None
+            diff_status = "unavailable"
             mode = None
             mode_before = None
             try:
@@ -219,6 +252,8 @@ class InteractiveTUI:
                         break
                 if backup_file and os.path.exists(backup_file):
                     mode_before = f"{os.stat(backup_file).st_mode & 0o777:03o}"
+                    with open(backup_file, "rb") as f_before:
+                        before_hash = hashlib.sha256(f_before.read()).hexdigest()
                     with open(backup_file, "r", encoding="utf-8") as f_old:
                         old_lines = f_old.readlines()
                     with open(fpath, "r", encoding="utf-8") as f_new:
@@ -229,9 +264,27 @@ class InteractiveTUI:
                         tofile=f"b/{rel_path}",
                     ))
                     diff_text = "".join(diff_lines)
+                    diff_status = "full"
             except Exception:
                 pass
-            metadata = {"sha256": fhash, "diff": diff_text}
+            full_diff = diff_text.encode("utf-8")
+            # Count JSON escapes (including non-ASCII), not Python characters.
+            # Binary search truncates only between complete Unicode characters.
+            low, high = 0, len(diff_text)
+            while low < high:
+                middle = (low + high + 1) // 2
+                if len(json.dumps(diff_text[:middle], ensure_ascii=True)) - 2 <= preview_remaining:
+                    low = middle
+                else:
+                    high = middle - 1
+            preview = diff_text[:low]
+            preview_remaining -= len(json.dumps(preview, ensure_ascii=True)) - 2
+            truncated = low < len(diff_text)
+            metadata = {"sha256": fhash, "sha256_before": before_hash,
+                        "diff": preview,
+                        "diff_sha256": hashlib.sha256(full_diff).hexdigest() if diff_status != "unavailable" else None,
+                        "diff_bytes": len(full_diff) if diff_status != "unavailable" else None,
+                        "diff_status": "truncated" if truncated else diff_status}
             if mode:
                 metadata["mode"] = mode
             if mode_before and mode and mode_before != mode:
@@ -249,12 +302,29 @@ class InteractiveTUI:
             "checkpoint_ref": self.tc_checkpoint_name or "",
             "action": label,
             "files": files_metadata,
+            "effect_ids": list(self._effect_ids),
         }
         from apatch.enforcement import is_enforcement_enabled, verify_commit_produced_block
 
-        ok = bool(self.tc_helper.commit_action(tool_id="apatch", payload=payload))
-        if ok and is_enforcement_enabled(self.target_dir):
-            ok = verify_commit_produced_block(self.tc_helper)
+        from apatch.notarization_failure import capture_targets, recover_notarization_exception
+        targets = capture_targets(self)
+        try:
+            head_before = self.tc_helper.ledger_head()
+        except Exception:
+            head_before = None
+        try:
+            ok = bool(self.tc_helper.commit_action(tool_id="apatch", payload=payload))
+            if is_enforcement_enabled(self.target_dir):
+                if ok:
+                    ok = verify_commit_produced_block(self.tc_helper)
+                if not ok:
+                    from apatch.runtime.effects import EffectRecoveryError
+                    evidence = self.tc_helper.last_commit_evidence
+                    evidence = evidence if isinstance(evidence, dict) and evidence.get("persisted") is False else {}
+                    code = evidence.get("error_code") or evidence.get("error_type") or "NOTARIZATION_COMMIT_UNCONFIRMED"
+                    raise EffectRecoveryError(code, "Notarization commit was not confirmed")
+        except Exception as error:
+            raise recover_notarization_exception(self, error, head_before, targets) from None
         if ok:
             self.trustchain_committed = True
         return ok
@@ -311,6 +381,7 @@ class InteractiveTUI:
             "dry_run": self.dry_run,
             "checkpoint": self.tc_checkpoint_name,
             "verify_rollback": self.verify_rollback,
+            "notarization_failure": getattr(self, "notarization_failure", None),
             "applied": sum(1 for e in self.report_entries if e["outcome"] == "applied"),
             "skipped": sum(1 for e in self.report_entries if e["outcome"] in ("skipped", "failed", "error", "rolled_back")),
             "entries": self.report_entries,
@@ -367,6 +438,7 @@ class InteractiveTUI:
         return False
 
     def run_apply_loop(self):
+        from apatch.runtime.effects import EffectRecoveryError
         total = len(self.candidates)
         if total == 0:
             self.console.print("[bold yellow]No patch candidates found in the logs.[/bold yellow]")
@@ -411,6 +483,7 @@ class InteractiveTUI:
 
             for cand in step_candidates:
                 global_idx += 1
+                self._effect_candidate_index = global_idx
                 target_path = self._resolve_smart_path(cand.target_file, cand.action_type)
                 if not target_path:
                     self.console.print(f"[bold red]Error: Could not resolve target file path for '{cand.target_file}' under project root.[/bold red]")
@@ -517,6 +590,8 @@ class InteractiveTUI:
                                 self.console.print(f"[bold green]✔ Auto-applied patch {global_idx}/{total} and wrote to {target_path}![/bold green]")
                                 applied_candidates_in_step.append((cand, target_path, replaced_content, matcher.encoding, matcher.newline_format))
                             self._record(cand, target_path, "applied", strategy, confidence, match_warnings)
+                        except (SandboxError, EffectRecoveryError):
+                            raise
                         except Exception as e:
                             self.console.print(f"[bold red]Failed to auto-write target file: {e}[/bold red]")
                             self._record(cand, target_path, "error", strategy, confidence, match_warnings, reason=str(e))
@@ -566,6 +641,8 @@ class InteractiveTUI:
                             self.console.print(f"[bold green]✔ Safely applied patch and wrote to {target_path}![/bold green]")
                             applied_candidates_in_step.append((cand, target_path, replaced_content, matcher.encoding, matcher.newline_format))
                         self._record(cand, target_path, "applied", strategy, confidence, match_warnings)
+                    except (SandboxError, EffectRecoveryError):
+                        raise
                     except Exception as e:
                         self.console.print(f"[bold red]Failed to write target file: {e}[/bold red]")
                         self._record(cand, target_path, "error", strategy, confidence, match_warnings, reason=str(e))
@@ -607,6 +684,8 @@ class InteractiveTUI:
                         else:
                             self.console.print("[bold white]No manual changes detected. Skipped.[/bold white]")
                             skipped_candidates_in_step.append(cand)
+                    except (SandboxError, EffectRecoveryError):
+                        raise
                     except Exception as e:
                         self.console.print(f"[bold red]Failed to execute system editor: {e}[/bold red]")
                         skipped_candidates_in_step.append(cand)

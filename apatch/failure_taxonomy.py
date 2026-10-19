@@ -158,6 +158,21 @@ def classify_failure(result: Dict[str, Any], tool_name: str) -> Optional[Failure
         return None
 
     explicit = result.get("error_type") or ""
+    if explicit in (ERROR_NOTARIZATION_FAILED, "NOTARIZATION_ROLLBACK_INCOMPLETE"):
+        # A restored signing failure is not a failed verification. Preserve
+        # reconciliation and partial-recovery evidence across the runtime API.
+        return _failure(
+            explicit,
+            str(result.get("error") or "Notarization failed."),
+            tool=tool_name,
+            recoverable=result.get("recoverable"),
+            recommended_action=result.get("recommended_action") or "recover_owned_checkpoint",
+            details={key: result[key] for key in (
+                "cause_type", "cause_code", "committed", "reconciliation_required",
+                "ledger_preserved", "checkpoint", "rollback_performed",
+                "source_restored", "restored_files", "failed_restore_files",
+            ) if key in result},
+        )
     if explicit == ERROR_REMOTE_TIMEOUT:
         return _failure(
             ERROR_REMOTE_TIMEOUT,

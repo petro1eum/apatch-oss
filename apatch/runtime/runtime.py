@@ -358,8 +358,6 @@ class MutationRuntime:
             binding = None
             if self.enforce_binding or self.session_id or not preview:
                 binding = self._capture_binding("rollback")
-            if not preview:
-                assert_operation(self.target_dir, OP_ROLLBACK)
             rollback_session = session_id
             rollback_paths: List[str] = []
             if binding is not None:
@@ -372,6 +370,19 @@ class MutationRuntime:
                 )
                 rollback_session = str(resolved["checkpoint"])
                 rollback_paths = list(resolved.get("paths") or [])
+            if not preview:
+                try:
+                    assert_operation(self.target_dir, OP_ROLLBACK)
+                except RuntimeTransitionError as error:
+                    # A crash can leave owned backups before the state checkpoint.
+                    # Only the already capability-bound resolved checkpoint admits
+                    # rollback from applying; foreign/ended sessions still fail.
+                    if not (binding is not None and rollback_paths
+                            and error.lifecycle == "applying"
+                            and error.operation == OP_ROLLBACK):
+                        raise
+                # Reconcile may have advanced the revision; capture before effects.
+                binding = self._capture_binding("rollback")
             if binding is not None and rollback_paths and not preview:
                 from apatch.sandbox import acquire_lease, load_active_lease
 
@@ -464,16 +475,45 @@ class MutationRuntime:
             ).to_dict()
 
         before = current_lifecycle(self.target_dir)
+        from apatch.apply_session import default_session_path, load_session
+        from apatch.runtime.reconcile import SIGNING_RECOVERY_HINT, signing_recovery_required
+
+        apply_state = load_session(default_session_path(self.target_dir)) or {}
+        apply_owner = apply_state.get("governed_session_id") or apply_state.get("session_id")
+        if apply_state and apply_owner != binding.session_id:
+            return SessionBindingError(
+                "Saved apply progress belongs to another governed session.",
+                error_type="SESSION_MISMATCH",
+                expected=binding.session_id,
+                actual=apply_owner,
+            ).to_dict()
+        chunks = apply_state.get("chunks") or []
+        done = int(apply_state.get("chunk_index") or 0)
+        progress = {
+            "chunks_done": done,
+            "chunks_total": len(chunks),
+            "percent": int(100 * done / len(chunks)) if chunks else 0,
+        }
         failure = raw.get("failure") if isinstance(raw.get("failure"), dict) else {}
         details = failure.get("details") if isinstance(failure.get("details"), dict) else {}
         reapply = bool(
             failure.get("error_type") == "VERIFY_FAILED"
             and details.get("rollback_performed") is True
         )
-        resume_mode = "reapply" if reapply else "verify"
+        reconcile = not reapply and signing_recovery_required(raw, apply_state)
+        resume_mode = ("reapply" if reapply else "reconcile" if reconcile
+                       else "apply" if done < len(chunks) else "verify")
+        next_action = {
+            "reapply": "apatch_generate_batch(corrected needles), then apatch_apply_session(reset=true, ...)",
+            "reconcile": SIGNING_RECOVERY_HINT,
+            "apply": "apatch_apply_session() — continue from the saved chunk; do not reset.",
+            "verify": "apatch_verify_run() then apatch_attest()",
+        }[resume_mode]
         session_token = secrets.token_urlsafe(32)
-        raw["failure"] = None
-        raw["phase"] = "apply" if reapply else "verify"
+        if not reconcile:
+            raw["failure"] = None
+        raw["phase"] = ("blocked" if reconcile else "apply" if resume_mode in {"apply", "reapply"} else "verify")
+        raw["next_action"] = next_action
         raw["session_capability_version"] = 1
         raw["session_token_hash"] = hash_session_token(session_token)
         try:
@@ -502,12 +542,13 @@ class MutationRuntime:
                 "session_token": session_token,
             },
             "resume_mode": resume_mode,
-            "next_action": (
-                "apatch_generate_batch(corrected needles), then "
-                "apatch_apply_session(reset=true, ...)"
-                if reapply
-                else "apatch_verify_run() then apatch_attest()"
-            ),
+            "intent": raw.get("intent"),
+            "artifacts": raw.get("artifacts") or [],
+            "checkpoint": raw.get("checkpoint"),
+            **({"progress": progress} if chunks else {}),
+            "next_action": next_action,
+            "message": ("Task and progress preserved. A new caller process must obtain its own "
+                        "Secrets signing consent; session recovery does not transfer it."),
         }
 
     def recover_session(self) -> Dict[str, Any]:
@@ -860,7 +901,16 @@ class MutationRuntime:
         except (RuntimeTransitionError, SessionBindingError) as e:
             return e.to_dict()
 
-    def noop_attest(
+    def noop_attest(self, covered_by, *, message=None, evidence=None, reverification=None):
+        from apatch.spec_reverification import FileReverification
+        try:
+            return self._noop_attest_guarded(covered_by, message=message, evidence=evidence,
+                                            reverification=reverification)
+        finally:
+            if isinstance(reverification, FileReverification):
+                reverification.close()
+
+    def _noop_attest_guarded(
         self,
         covered_by,
         *,
@@ -904,6 +954,7 @@ class MutationRuntime:
                     raise ReverificationError("internal pre-verification snapshot required")
                 payload["file_reverification"] = reverification.payload(self.target_dir, artifacts)
                 self._capture_binding("noop_attest")
+                reverification.assert_live()
             except SessionBindingError as exc:
                 return exc.to_dict()
             except ReverificationError as exc:
@@ -1012,7 +1063,7 @@ class MutationRuntime:
             self._expected_revision = int(raw.get("revision") or 0)
         return self._finish("apatch_session_end", result)
 
-    def sdd_verify(self, *, timeout: int = 300) -> Dict[str, Any]:
+    def sdd_verify(self, *, timeout: int | None = None) -> Dict[str, Any]:
         """Run only the exact frozen judge bound to this governed session."""
 
         from apatch.sdd_integrity import (

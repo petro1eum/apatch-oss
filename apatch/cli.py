@@ -974,6 +974,37 @@ def mcp_hygiene_cmd(target_dir, sweep_leases, as_json):
         console.print(f"Lease: {lease}")
 
 
+@mcp_group.command("project-setup")
+@click.option("--alias", required=True, help="An already registered workspace alias.")
+@click.option("--registry", required=True, type=click.Path(exists=True, dir_okay=False))
+@click.option("--hook-config", required=True, type=click.Path(exists=True, dir_okay=False))
+@click.option("--hook-config-sha256", required=True)
+@click.option("--admission-policy", required=True, type=click.Path(exists=True, dir_okay=False))
+@click.option("--admission-policy-sha256", required=True)
+@click.option("--trust-anchor", required=True, type=click.Path(exists=True, dir_okay=False))
+@click.option("--trust-anchor-sha256", required=True)
+@click.option("--signer-helper-sha256", default=None, help="Separately reviewed known broker helper pin; not an authority or grant.")
+@click.option("--json", "as_json", is_flag=True)
+def mcp_project_setup_cmd(alias, registry, hook_config, hook_config_sha256, admission_policy,
+                          admission_policy_sha256, trust_anchor, trust_anchor_sha256,
+                          signer_helper_sha256, as_json):
+    """Operator-only setup using an existing pinned mandate and enrolled identity.
+
+    Installs project data and signs once; does not trust a host or enroll anyone.
+    """
+    from apatch.mcp.project_admission import install_project_admission
+
+    result = install_project_admission(alias, registry_path=os.path.abspath(registry),
+        hook_config_path=os.path.abspath(hook_config), hook_config_sha256=hook_config_sha256,
+        admission_policy_path=os.path.abspath(admission_policy), admission_policy_sha256=admission_policy_sha256,
+        anchor_path=os.path.abspath(trust_anchor), anchor_sha256=trust_anchor_sha256,
+        signer_helper_sha256=signer_helper_sha256)
+    click.echo(json.dumps(result, ensure_ascii=False, indent=2) if as_json else
+               result.get("status", result.get("error_type", "project setup failed")))
+    if not result.get("ok"):
+        raise click.exceptions.Exit(1)
+
+
 @mcp_group.command("sync")
 @click.option("--target-dir", default=".", type=click.Path(file_okay=True))
 @click.option("--force", is_flag=True, help="Overwrite existing apatch MCP blocks.")
@@ -1762,12 +1793,13 @@ def policy_group():
 
 @policy_group.command("sign")
 @click.option("--target-dir", default=".", type=click.Path(exists=True, file_okay=False))
+@click.option("--project-admission", is_flag=True, help="Also bind the project MCP and passport configuration; does not authorize a host session.")
 @click.option("--json", "as_json", is_flag=True)
-def policy_sign_cmd(target_dir, as_json):
+def policy_sign_cmd(target_dir, project_admission, as_json):
     """Sign the monitor config (sandbox/enforcement/hooks) with the enrolled identity."""
     from apatch.policy_lock import sign_policy
 
-    result = sign_policy(target_dir)
+    result = sign_policy(target_dir, project_admission=project_admission)
     if as_json:
         click.echo(json.dumps(result, indent=2, ensure_ascii=False))
     elif result.get("ok"):

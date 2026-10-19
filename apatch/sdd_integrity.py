@@ -14,6 +14,12 @@ import os
 import re
 import secrets
 import subprocess
+import shutil
+import signal
+import sys
+from contextvars import ContextVar
+
+_VERIFIER_SANDBOX = ContextVar("apatch_verifier_sandbox", default=None)
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Sequence, Set
 
@@ -614,7 +620,7 @@ def admit_effect(capability: Mapping[str, Any], effect: Mapping[str, Any]) -> Di
                 reasons.append("remote_not_allowed")
         elif surface == "service":
             service = str(effect.get("service") or "")
-            if action not in ("status", "restart", "logs", "healthcheck", "exec") or service not in envelope["services"]:
+            if action not in ("status", "restart", "logs", "healthcheck", "exec", "run") or service not in envelope["services"]:
                 reasons.append("service_not_allowed")
     elif not reasons and role == "verifier":
         if surface != "local_runner" or action != "run":
@@ -848,6 +854,93 @@ def _workspace_file(target_dir: str, value: Any, label: str) -> tuple[str, Path]
     return relative, candidate
 
 
+def _persist_verifier_diagnostic(target_dir: str, payload: bytes) -> Dict[str, Any]:
+    """Keep retrievable owner-local output, with secrets redacted before disk."""
+    text = payload.decode("utf-8", errors="replace")
+    for key, value in os.environ.items():
+        if len(value) >= 4 and re.search(r"secret|token|password|private.?key", key, re.I):
+            text = text.replace(value, "[REDACTED]")
+    text = re.sub(r"(?i)(authorization\s*:\s*bearer\s+)\S+", r"\1[REDACTED]", text)
+    text = re.sub(r"(?i)((?:password|secret|token|api[_-]?key)\s*[=:]\s*)[^\s,;]+", r"\1[REDACTED]", text)
+    text = re.sub(r"\b[A-Za-z0-9_]*(?:SECRET|TOKEN|PASSWORD)[A-Za-z0-9_]*\b", "[REDACTED]", text)
+    directory = Path(target_dir) / ".apatch" / "diagnostics"
+    directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+    artifact_id = "verify-" + secrets.token_hex(16) + ".log"
+    path = directory / artifact_id
+    data = text.encode("utf-8")
+    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(descriptor, "wb") as handle:
+        handle.write(data)
+        handle.flush()
+        os.fsync(handle.fileno())
+    return {"diagnostic_ref": ".apatch/diagnostics/" + artifact_id,
+            "diagnostic_sha256": _sha256_bytes(data), "diagnostic_bytes": len(data),
+            "diagnostic_redacted": True}
+
+
+def _prepare_verifier_workspace(target_dir, envelope, obligations, run_id):
+    """Copy only admitted files; never place a mutant in the caller tree."""
+    source = Path(target_dir).resolve()
+    run = source / ".apatch" / "verification-runs" / run_id
+    workspace = run / "workspace"
+    workspace.mkdir(parents=True, mode=0o700)
+    patterns = list(envelope.get("allowed_reads") or []) + list(envelope.get("allowed_writes") or [])
+    exact = {str(asset.get("path") or "") for ob in obligations for asset in ob.get("judge_assets") or []}
+    exact.update(str((ob.get("falsification") or {}).get("target_path") or "") for ob in obligations)
+    for parent, directories, files in os.walk(source, followlinks=False):
+        relative_parent = Path(parent).relative_to(source)
+        directories[:] = [name for name in directories if name not in {".apatch", ".git", ".trustchain", "__pycache__"}]
+        for name in files:
+            original = Path(parent) / name
+            relative = (relative_parent / name).as_posix()
+            if relative not in exact and not any(_path_matches(relative, pattern) for pattern in patterns):
+                continue
+            if original.is_symlink():
+                raise SddContractError("isolated verifier inputs must be regular workspace files")
+            destination = workspace / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(original, destination)
+    if sys.platform == "linux":
+        from apatch.linux_verifier import capability, SandboxUnavailable
+        try:
+            backend = capability()
+        except SandboxUnavailable as exc:
+            raise SddContractError("isolated verifier write sandbox unavailable: " + str(exc)) from None
+        policy = run / "sandbox.linux.json"
+        policy.write_text(json.dumps({**backend, "workspace": str(workspace.resolve())}), encoding="utf-8")
+    else:
+        if not Path("/usr/bin/sandbox-exec").is_file():
+            raise SddContractError("isolated verifier write sandbox is unavailable on this platform")
+        policy = run / "sandbox.sb"
+        policy.write_text('(version 1)\n(allow default)\n(deny file-write*)\n'
+            '(allow file-write* (subpath ' + json.dumps(str(workspace)) + '))\n'
+            '(allow file-write* (literal "/dev/null"))\n(deny network*)\n', encoding="utf-8")
+    # This durable reference exists before execution, so crash/fault observers
+    # can identify the actual isolated judge workspace without guessing paths.
+    from apatch.runtime.atomic_io import atomic_write_json
+    atomic_write_json(str(run / "execution.json"), {
+        "schema": "apatch.sdd.isolated-execution.v1", "verification_run_id": run_id,
+        "workspace": ".apatch/verification-runs/" + run_id + "/workspace",
+        "state": "prepared", "caller_source_mutated": False,
+    })
+    return workspace, policy
+
+
+def _verification_incidents(target_dir, contract_hash, acceptance_id, run_id, decision):
+    """A retry cannot erase failure under the same frozen acceptance contract."""
+    from apatch.runtime.atomic_io import atomic_write_json, exclusive_file_lock, read_json_file
+    path = str(Path(target_dir) / ".apatch" / "verification_incidents.json")
+    key = canonical_hash({"contract_hash": contract_hash, "acceptance_id": acceptance_id})
+    with exclusive_file_lock(path):
+        history = read_json_file(path, {})
+        records = list(history.get(key) or [])
+        if decision.get("accepted") is not True:
+            records.append({"verification_run_id": run_id, "decision_hash": canonical_hash(decision), "status": "unresolved"})
+            history[key] = records
+            atomic_write_json(path, history)
+    return records
+
+
 def _run_frozen_argv(
     target_dir: str,
     command: Sequence[str],
@@ -857,20 +950,49 @@ def _run_frozen_argv(
     """Run one authority-frozen argv without exposing its output."""
 
     try:
-        completed = subprocess.run(
-            list(command),
-            cwd=target_dir,
-            shell=False,
-            capture_output=True,
-            timeout=max(1, int(timeout)),
-            check=False,
+        policy = _VERIFIER_SANDBOX.get()
+        if policy and sys.platform == "linux":
+            bound = json.loads(Path(policy).read_text(encoding="utf-8"))
+            workspace = str(Path(target_dir).resolve())
+            if bound.get("backend") != "landlock-seccomp" or bound.get("workspace") != workspace:
+                raise SddContractError("isolated verifier Linux policy binding mismatch")
+            launcher = Path(__file__).with_name("linux_verifier.py")
+            prefix = [sys.executable, "-I", "-B", str(launcher), workspace, "--"]
+        else:
+            prefix = ["/usr/bin/sandbox-exec", "-f", str(policy)] if policy else []
+        argv = prefix + list(command)
+        process = subprocess.Popen(
+            argv, cwd=target_dir, shell=False, stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            start_new_session=(os.name == "posix"), close_fds=True,
         )
+        try:
+            stdout, stderr = process.communicate(timeout=max(1, int(timeout)))
+        except subprocess.TimeoutExpired:
+            if os.name == "posix":
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+            else:
+                process.kill()
+            stdout, stderr = process.communicate(timeout=2)
+            raise subprocess.TimeoutExpired(argv, timeout, output=stdout, stderr=stderr)
+        finally:
+            # A successful judge must not leave delayed children running either.
+            if os.name == "posix":
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+        completed = subprocess.CompletedProcess(argv, process.returncode, stdout, stderr)
         payload = (completed.stdout or b"") + b"\x00" + (completed.stderr or b"")
         return {
             "ok": completed.returncode == 0,
             "returncode": int(completed.returncode),
             "output_hash": _sha256_bytes(payload),
             "output_bytes": len(payload),
+            **_persist_verifier_diagnostic(target_dir, payload),
         }
     except subprocess.TimeoutExpired as exc:
         payload = (exc.stdout or b"") + b"\x00" + (exc.stderr or b"")
@@ -880,6 +1002,7 @@ def _run_frozen_argv(
             "timed_out": True,
             "output_hash": _sha256_bytes(payload),
             "output_bytes": len(payload),
+            **_persist_verifier_diagnostic(target_dir, payload),
         }
     except OSError as exc:
         return {
@@ -986,6 +1109,67 @@ def _preflight_frozen_obligation(
     return None
 
 
+def _verification_input_binding(
+    target_dir: str,
+    envelope: Mapping[str, Any],
+    obligations: Sequence[Mapping[str, Any]],
+) -> Dict[str, Any]:
+    """Fingerprint admitted inputs, including the environment actually inherited.
+
+    No raw environment value or source content is included in the result. The
+    current frozen runner inherits all of os.environ, so the full mapping is an
+    input until an explicitly isolated verifier environment is supported.
+    """
+    root = Path(target_dir).resolve()
+    patterns = list(envelope.get("allowed_reads") or []) + list(
+        envelope.get("allowed_writes") or []
+    )
+    exact = {
+        str(asset.get("path") or "")
+        for obligation in obligations
+        for asset in obligation.get("judge_assets") or []
+    }
+    exact.update(
+        str((obligation.get("falsification") or {}).get("target_path") or "")
+        for obligation in obligations
+    )
+    files: Dict[str, Any] = {}
+    for entry in sorted(root.rglob("*")):
+        relative = entry.relative_to(root).as_posix()
+        # Runtime bookkeeping is output, never a source dependency. Frozen
+        # judge assets are preflighted separately and cannot use these roots.
+        if relative.split("/", 1)[0] in {".apatch", ".trustchain", ".git"}:
+            continue
+        if relative not in exact and not any(
+            _path_matches(relative, pattern) for pattern in patterns
+        ):
+            continue
+        if entry.is_symlink():
+            # Bind link topology as well as referent bytes. Do not follow links
+            # outside the admitted workspace to discover additional inputs.
+            resolved = entry.resolve()
+            try:
+                resolved.relative_to(root)
+            except ValueError as exc:
+                raise SddContractError("verification input resolves outside workspace") from exc
+            files[relative] = {"link": canonical_hash(os.readlink(entry))}
+        if entry.is_file():
+            files.setdefault(relative, {}).update({
+                "sha256": _sha256_bytes(entry.read_bytes()),
+                "mode": entry.stat().st_mode & 0o7777,
+            })
+    return {
+        "schema": "apatch.sdd.verification-inputs.v1",
+        "files_hash": canonical_hash(files),
+        "file_count": len(files),
+        "environment_hash": canonical_hash(dict(os.environ)),
+        "commands_hash": canonical_hash([
+            list(obligation.get("command") or []) for obligation in obligations
+        ]),
+        "envelope_hash": envelope.get("document_hash"),
+    }
+
+
 def _run_frozen_falsification(
     target_dir: str,
     obligation: Mapping[str, Any],
@@ -1042,6 +1226,9 @@ def _run_frozen_falsification(
         "restored_green": bool(restored.get("ok") and bytes_restored and mode_restored),
         "red_result_hash": canonical_hash(red),
         "restored_result_hash": canonical_hash(restored),
+        "bytes_restored": bytes_restored,
+        "mode_restored": mode_restored,
+        "restored_result": restored,
     }
 
 
@@ -1049,7 +1236,7 @@ def run_frozen_session_verification(
     target_dir: str,
     *,
     expected_session_id: str | None = None,
-    timeout: int = 300,
+    timeout: int | None = None,
 ) -> Dict[str, Any]:
     """Execute and atomically record the exact judge bound to one SDD session."""
 
@@ -1076,7 +1263,29 @@ def run_frozen_session_verification(
     envelope = capability.get("envelope")
     if not isinstance(envelope, Mapping):
         raise SddContractError("active session capability has no task envelope")
+    # Only the exact frozen session capability may supply a verifier budget.
+    capability_body = dict(capability)
+    capability_hash = capability_body.pop("capability_hash", None)
+    _verify_seal(
+        {**capability_body, "document_hash": capability_hash},
+        "session capability",
+    )
+    _verify_seal(envelope, "task envelope")
     checked_envelope = validate_task_envelope(envelope)
+    if (
+        checked_envelope["document_hash"] != sdd.get("envelope_hash")
+        or checked_envelope["document_hash"] != capability.get("envelope_hash")
+        or checked_envelope["contract_hash"] != contract["document_hash"]
+        or capability.get("contract_hash") != contract["document_hash"]
+    ):
+        raise SddContractError("verifier budget requires the exact bound frozen envelope")
+    signed_seconds = checked_envelope["budgets"]["seconds"]
+    effective_timeout = signed_seconds if signed_seconds > 0 else 300
+    if timeout is not None:
+        if type(timeout) is not int or timeout <= 0:
+            raise SddContractError("runtime timeout must be a positive integer cap")
+        effective_timeout = min(effective_timeout, timeout)
+    timeout = effective_timeout
     obligations = _selected_frozen_obligations(contract, checked_envelope)
 
     for obligation in obligations:
@@ -1090,50 +1299,54 @@ def run_frozen_session_verification(
                 "session_id": session_id,
             }
 
-    before_fingerprint = _git_source_fingerprint(root)
-    commands: List[Dict[str, Any]] = []
-    passed = 0
-    failed = 0
-    for obligation in obligations:
-        outcome = _run_frozen_argv(
-            root, list(obligation.get("command") or []), timeout=timeout
-        )
-        commands.append(
-            {
-                "acceptance_id": obligation.get("acceptance_id"),
-                "command_hash": obligation.get("command_hash"),
-                **outcome,
-            }
-        )
-        if outcome.get("ok"):
-            passed += 1
-        else:
-            failed += 1
-
-    material = [item for item in obligations if bool(item.get("material"))]
-    falsification_results: List[Dict[str, Any]] = []
-    if failed == 0:
-        for obligation in material:
-            falsification_results.append(
-                _run_frozen_falsification(
-                    root, obligation, session_id=session_id, timeout=timeout
-                )
+    before_inputs = _verification_input_binding(root, checked_envelope, obligations)
+    verification_run_id = "sddvr_" + secrets.token_hex(16)
+    execution_root, execution_policy = _prepare_verifier_workspace(root, checked_envelope, obligations, verification_run_id)
+    execution_inputs = _verification_input_binding(str(execution_root), checked_envelope, obligations)
+    sandbox_token = _VERIFIER_SANDBOX.set(str(execution_policy))
+    try:
+        commands: List[Dict[str, Any]] = []
+        passed = 0
+        failed = 0
+        for obligation in obligations:
+            outcome = _run_frozen_argv(
+                str(execution_root), list(obligation.get("command") or []), timeout=timeout
             )
-    observed_red = not material or (
-        len(falsification_results) == len(material)
-        and all(item.get("observed_red") is True for item in falsification_results)
-    )
-    restored_green = not material or (
-        len(falsification_results) == len(material)
-        and all(item.get("restored_green") is True for item in falsification_results)
-    )
+            commands.append(
+                {
+                    "acceptance_id": obligation.get("acceptance_id"),
+                    "command_hash": obligation.get("command_hash"),
+                    **outcome,
+                }
+            )
+            if outcome.get("ok"):
+                passed += 1
+            else:
+                failed += 1
 
-    after_fingerprint = _git_source_fingerprint(root)
-    verifier_mutated = (
-        before_fingerprint is not None
-        and after_fingerprint is not None
-        and before_fingerprint != after_fingerprint
-    )
+        material = [item for item in obligations if bool(item.get("material"))]
+        falsification_results: List[Dict[str, Any]] = []
+        if failed == 0:
+            for obligation in material:
+                falsification_results.append(
+                    _run_frozen_falsification(
+                        str(execution_root), obligation, session_id=session_id, timeout=timeout
+                    )
+                )
+        observed_red = not material or (
+            len(falsification_results) == len(material)
+            and all(item.get("observed_red") is True for item in falsification_results)
+        )
+        restored_green = not material or (
+            len(falsification_results) == len(material)
+            and all(item.get("restored_green") is True for item in falsification_results)
+        )
+
+    finally:
+        _VERIFIER_SANDBOX.reset(sandbox_token)
+    execution_drift = execution_inputs != _verification_input_binding(str(execution_root), checked_envelope, obligations)
+    after_inputs = _verification_input_binding(root, checked_envelope, obligations)
+    verifier_mutated = execution_drift or before_inputs != after_inputs
     perspectives = sorted(
         {
             str(perspective)
@@ -1166,12 +1379,15 @@ def run_frozen_session_verification(
         "material": bool(material),
     }
     decision = evaluate_verification(aggregate, result)
-    verification_run_id = "sddvr_" + secrets.token_hex(16)
+    incidents = _verification_incidents(root, sdd.get("contract_hash"), aggregate["acceptance_id"], verification_run_id, decision)
+    if incidents and decision.get("accepted") is True:
+        decision = {**decision, "accepted": False, "reasons": list(decision.get("reasons") or []) + ["unresolved_verification_incident"]}
     verification = _seal(
         {
             "schema": "apatch.sdd.session-verification.v1",
             "obligation_id": aggregate["acceptance_id"],
             "verification_run_id": verification_run_id,
+            "input_binding": after_inputs,
             "decision": decision,
             "result": result,
         }
@@ -1187,6 +1403,9 @@ def run_frozen_session_verification(
             "verification_run_id": verification_run_id,
             "observed_red": observed_red,
             "restored_green": restored_green,
+            "bytes_restored": all(item.get("bytes_restored") is True for item in falsification_results),
+            "mode_restored": all(item.get("mode_restored") is True for item in falsification_results),
+            "restored_result": {"ok": all((item.get("restored_result") or {}).get("ok") is True for item in falsification_results), "checks": [item.get("restored_result") for item in falsification_results]},
             "result_hashes": result_hashes,
         }
     )
@@ -1196,6 +1415,7 @@ def run_frozen_session_verification(
             "verification": verification,
             "falsification": falsification,
             "verification_run_id": verification_run_id,
+            "unresolved_incidents": incidents,
         }
     )
     _save_sdd_binding(root, raw, updated_sdd)
@@ -1213,6 +1433,8 @@ def run_frozen_session_verification(
         "ok": accepted,
         "verification_run_id": verification_run_id,
         "session_id": session_id,
+        "execution_workspace": ".apatch/verification-runs/" + verification_run_id + "/workspace",
+        "unresolved_incidents": incidents,
         "verification": verification,
         "falsification": falsification,
         "mutation_performed": False,
@@ -1319,6 +1541,16 @@ def build_session_attestation_evidence(
     decision = verification.get("decision") if isinstance(verification, Mapping) else None
     if not isinstance(decision, Mapping) or decision.get("accepted") is not True:
         raise SddContractError("meaningful verifier result is required before attestation")
+    if verification.get("verification_run_id"):
+        _verify_seal(verification, "session verification")
+        contract = sdd.get("verification_contract") or {}
+        envelope = (sdd.get("capability") or {}).get("envelope") or {}
+        obligations = _selected_frozen_obligations(contract, envelope)
+        expected_inputs = verification.get("input_binding")
+        if not isinstance(expected_inputs, Mapping) or expected_inputs != _verification_input_binding(
+            target_dir, envelope, obligations
+        ):
+            raise SddContractError("frozen verification inputs drifted; run the frozen verifier again")
     falsification = sdd.get("falsification")
     if bool(sdd.get("material_gate_required")) and not (
         isinstance(falsification, Mapping)

@@ -284,6 +284,67 @@ def registry_transaction(root: str) -> Iterator[Tuple[str, Dict[str, Any]]]:
                 _sync_compat_sentinel(workspace, registry)
 
 
+@contextmanager
+def fence_path_write(
+    root: str, path: str, expected: Dict[str, Any]
+) -> Iterator[None]:
+    """Keep one file effect atomic with release/reassignment of its exact lease.
+
+    Stage content before entering this scope. Do not format, fsync staged
+    content, run verification, or acquire another lease while holding it.
+    """
+    from apatch.sandbox import SandboxError
+
+    workspace = canonical_workspace_root(root)
+    # Match registry_transaction's lock order without migration, pruning or
+    # compatibility-sentinel writes in this read/check/effect critical section.
+    with exclusive_file_lock(legacy_lease_path(workspace)):
+        with exclusive_file_lock(lease_registry_path(workspace)):
+            current = _read_registry(workspace)["leases"].get(expected.get("lease_id"))
+            identity_fields = ("lease_id", "issued_at", "governed_session_id", "pid")
+            valid = (
+                isinstance(current, dict)
+                and expected.get("pid") == os.getpid()
+                and all(current.get(key) == expected.get(key) for key in identity_fields)
+                and lease_valid(current)
+            )
+            if valid:
+                try:
+                    requested = canonicalize_paths(workspace, [path])
+                    # A renewed lease may grow; it must still cover this effect,
+                    # and the capability admitted for this apply must cover it too.
+                    # Coverage is directional: a child grant cannot authorize
+                    # changing its ancestor, even though those paths conflict.
+                    for cap in (expected, current):
+                        held = cap.get("canonical_paths") or canonicalize_paths(
+                            workspace, cap.get("paths") or []
+                        )
+                        valid = valid and bool(requested) and all(
+                            any(
+                                item["canonical_key"] == grant["canonical_key"]
+                                or item["canonical_key"].startswith(
+                                    grant["canonical_key"].rstrip("/") + "/"
+                                )
+                                for grant in held
+                            )
+                            for item in requested
+                        )
+                except ValueError:
+                    # Path/topology drift outside the workspace is a lost-scope
+                    # denial, not a generic TUI error that could report success.
+                    valid = False
+            if not valid:
+                raise SandboxError(
+                    "LEASE_LOST: exact write lease no longer owns {} (lease {}, session {})".format(
+                        path, expected.get("lease_id"), expected.get("governed_session_id")
+                    ),
+                    error_type="LEASE_LOST",
+                    details={"path": path, "lease_id": expected.get("lease_id"),
+                             "governed_session_id": expected.get("governed_session_id")},
+                )
+            yield
+
+
 def load_active_leases(root: str) -> List[Dict[str, Any]]:
     registry = _read_registry(root)
     active = [dict(cap) for cap in registry.get("leases", {}).values() if lease_valid(cap)]
@@ -458,7 +519,7 @@ def writer_protocol_status(
     enforce_runtime_match: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """Describe writer compatibility without acquiring a lease or creating a session."""
-    from apatch import __version__
+    from apatch import __version__, _LOADED_SOURCE_IDENTITY, _source_identity
 
     workspace = canonical_workspace_root(root)
     registry = _read_registry(workspace)
@@ -479,7 +540,9 @@ def writer_protocol_status(
         else bool(enforce_runtime_match)
     )
     protocol_ok = int(current_protocol) >= required_protocol
-    runtime_ok = not check_runtime or not installed or loaded == installed
+    disk_source_identity = _source_identity()
+    source_current = disk_source_identity == _LOADED_SOURCE_IDENTITY
+    runtime_ok = (not check_runtime or not installed or loaded == installed) and source_current
     ready = protocol_ok and runtime_ok
     reload_required = not ready
     status: Dict[str, Any] = {
@@ -512,6 +575,9 @@ def writer_protocol_status(
             "base_prefix": sys.base_prefix,
             "pid": os.getpid(),
             "canonical": check_runtime,
+            "loaded_source_sha256": _LOADED_SOURCE_IDENTITY,
+            "disk_source_sha256": disk_source_identity,
+            "source_current": source_current,
         },
         "reload_required": reload_required,
     }
@@ -528,6 +594,9 @@ def writer_protocol_status(
             f"running MCP writer protocol v{current_protocol} is older than workspace "
             f"protocol v{required_protocol}; restart APatch MCP before mutation"
         )
+    elif not source_current:
+        error_type = "MCP_RUNTIME_SOURCE_MISMATCH"
+        error = "APatch source changed since this process loaded; reload this isolated MCP before mutation"
     else:
         error_type = "MCP_RUNTIME_VERSION_MISMATCH"
         error = (

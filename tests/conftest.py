@@ -6,6 +6,8 @@ import shutil
 
 import pytest
 
+pytest_plugins = ["tests.scoped_spec_signer"]
+
 
 def pytest_configure(config):
     config.addinivalue_line(

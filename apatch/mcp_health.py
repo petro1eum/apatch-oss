@@ -385,7 +385,17 @@ def discover_mcp_configs(workspace: str) -> List[Dict[str, Any]]:
         "path": path,
         "command": apatch_cfg.get("command"),
         "args": apatch_cfg.get("args") or [],
-        "env": apatch_cfg.get("env") or {},
+        # Diagnostics are not a launch configuration. Keep only known public
+        # routing/display settings; unknown provider credentials are redacted.
+        "env": {
+            key: value if key in {
+                "PYTHONIOENCODING", "PYTHONUTF8", "LANG", "LC_ALL",
+                "APATCH_MCP_GUIDANCE", "APATCH_MCP_PROFILE", "APATCH_LANE",
+                "APATCH_AGENT_ID", "APATCH_WORKSPACE", "APATCH_TARGET_DIR",
+                "APATCH_MCP_BOUND",
+            } and isinstance(value, str) else "[REDACTED]"
+            for key, value in (apatch_cfg.get("env") or {}).items()
+        },
     }
     row["command_ok"] = _config_command_matches(apatch_cfg, workspace)
     row["env_ok"] = _config_env_matches(apatch_cfg, workspace)

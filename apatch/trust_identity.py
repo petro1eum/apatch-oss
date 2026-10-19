@@ -145,6 +145,82 @@ class _PemKeyProvider:
             return False
 
 
+_SECRETS_SIGNING_MESSAGES = {
+    "CONSENT_WINDOW_NOT_VISIBLE": "Secrets could not show the consent window.",
+    "CONSENT_TIMED_OUT": "Secrets did not receive consent in time.",
+    "USER_DECLINED": "The user declined the signing request.",
+    "TOUCH_ID_TIMED_OUT": "Touch ID confirmation timed out.",
+    "TOUCH_ID_CANCELLED": "Touch ID confirmation was cancelled.",
+    "TOUCH_ID_UNAVAILABLE": "Touch ID is unavailable.",
+    "CALLER_CHANGED": "The signing caller changed.",
+    "CALLER_DISCONNECTED": "The signing caller disconnected.",
+    "SIGNING_FAILED": "Secrets could not complete signing.",
+    "TOUCH_ID_DENIED": "Touch ID authorization was denied.",
+    "REQUEST_REJECTED": "Secrets rejected the signing request.",
+    "SIGNING_RESULT_UNKNOWN": "The signing request already exists; its result must be reconciled.",
+}
+
+
+def _secrets_signing_cause(stderr: bytes) -> Optional[dict[str, str]]:
+    """Decode bounded diagnostics, never proof of cancellation or retry authority."""
+    import json
+    from uuid import UUID
+
+    if not isinstance(stderr, bytes) or len(stderr) > 4096:
+        return None
+    prefix = "trustchain-secrets-signer: SECRETS_SIGNING_ERROR "
+
+    def unique_fields(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate diagnostic field")
+            result[key] = value
+        return result
+
+    try:
+        text = stderr.decode("utf-8").rstrip("\r\n")
+        if not text.startswith(prefix):
+            return None
+        body = json.loads(text[len(prefix):], object_pairs_hook=unique_fields)
+        if not isinstance(body, dict) or set(body) != {"request_id", "error_code", "message"}:
+            return None
+        request_id, code = body["request_id"], body["error_code"]
+        if not all(isinstance(body[key], str) for key in body):
+            return None
+        if code not in _SECRETS_SIGNING_MESSAGES or str(UUID(request_id)) != request_id:
+            return None
+    except (ValueError, UnicodeError, RecursionError):
+        return None
+    # Do not expose arbitrary stderr/message contents, which may contain secrets.
+    return {"source": "trustchain-secrets", "request_id": request_id,
+            "error_code": code, "message": _SECRETS_SIGNING_MESSAGES[code]}
+
+
+class CommandSigningError(SigningIdentityError):
+    """Safe command failure; a timed-out client does not prove remote cancellation."""
+
+    def __init__(self, code: str, *, timeout_seconds=None, returncode=None,
+                 reconciliation_required: bool = True, cause=None, signing_request=None):
+        super().__init__(code)
+        self.code = code
+        self.timeout_seconds = timeout_seconds
+        self.returncode = returncode
+        self.reconciliation_required = reconciliation_required
+        self.cause = dict(cause) if cause is not None else None
+        self.signing_request = dict(signing_request) if signing_request is not None else None
+
+    def to_dict(self):
+        result = {"error_type": "SIGN_COMMAND_ERROR", "error_code": self.code,
+                  "timeout_seconds": self.timeout_seconds, "returncode": self.returncode,
+                  "reconciliation_required": self.reconciliation_required}
+        if self.cause is not None:
+            result["cause"] = dict(self.cause)
+        if self.signing_request is not None:
+            result["signing_request"] = dict(self.signing_request)
+        return result
+
+
 class CommandKeyProvider:
     """Hard-KMS bridge: signs via an external command; seed never enters apatch.
 
@@ -158,6 +234,20 @@ class CommandKeyProvider:
 
     * receives the raw bytes to sign on **stdin**;
     * writes the Ed25519 signature, **base64-encoded**, to **stdout**.
+
+    A Secrets helper advertising ``signing-result-v1`` is upgraded in memory
+    to ``--result-json``. Its request id binds the binding, pinned key and exact
+    bytes, so a recreated provider can read the same public result. Generic
+    commands and older helpers retain the stdin/base64 contract.
+
+    ``APATCH_AGENT_SIGN_TIMEOUT_SECONDS`` is an integer from 1 through 120,
+    default 90. For a Secrets helper advertising ``signing-budget-v1``, the
+    effective timeout is at least its complete budget plus delivery reserve;
+    a shorter configured value cannot truncate attended consent or Touch ID.
+    Generic/older commands retain the configured timeout. This bounds one
+    invocation; it does not extend broker grants or certificates.
+    A timeout kills/reaps the direct child, never retries, and requires remote
+    reconciliation because a broker may already have processed the request.
 
     The public key (``APATCH_AGENT_PUBKEY``: base64 raw 32-byte Ed25519, or a
     path to such) is supplied out-of-band so apatch can verify locally without
@@ -181,6 +271,64 @@ class CommandKeyProvider:
         if not self._cmd:
             raise ValueError("APATCH_AGENT_SIGN_CMD is empty")
         self._key_id = key_id
+        self._secrets_binding = None
+        self.last_signing_request = None
+        self.last_signing_result = None
+        self.signing_budget = None
+        raw_timeout = os.environ.get("APATCH_AGENT_SIGN_TIMEOUT_SECONDS", "90").strip()
+        if (not raw_timeout or not raw_timeout.isascii() or not raw_timeout.isdecimal()
+                or len(raw_timeout) > 3 or not 1 <= int(raw_timeout) <= 120):
+            raise CommandSigningError("SIGN_COMMAND_TIMEOUT_INVALID",
+                                      reconciliation_required=False)
+        self._timeout_seconds = int(raw_timeout)
+        self._configure_secrets_result_protocol()
+
+    def _configure_secrets_result_protocol(self) -> None:
+        from uuid import UUID
+        native_arguments = len(self._cmd) == 2 or (len(self._cmd) == 3 and self._cmd[-1] == "--result-json")
+        if native_arguments and os.path.basename(self._cmd[0]) == "TrustChainSecretsSigner":
+            import json
+            import subprocess
+            # This native entry point explicitly promises no signing, socket
+            # or Keychain access. Never probe generic HSM/Vault commands.
+            try:
+                probe = subprocess.run([self._cmd[0], "--capabilities"], input=b"",
+                    capture_output=True, timeout=min(self._timeout_seconds, 5))
+                if probe.returncode == 0 and len(probe.stdout) <= 4096:
+                    capabilities = json.loads(probe.stdout)
+                    if (isinstance(capabilities, dict)
+                            and capabilities.get("schema") == "trustchain.signer-capabilities.v1"
+                            and isinstance(capabilities.get("features"), list)
+                            and capabilities.get("side_effects") == {"sign": False, "keychain": False, "socket": False}):
+                        if "signing-result-v1" in capabilities["features"] and self._cmd[-1] != "--result-json":
+                            self._cmd.append("--result-json")
+                        if "signing-budget-v1" in capabilities["features"]:
+                            self._apply_secrets_timeout_budget(capabilities.get("signing_budget"))
+            except (OSError, subprocess.TimeoutExpired, ValueError, TypeError, RecursionError):
+                pass  # An older helper continues using the existing contract.
+        if self._cmd[-1] == "--result-json":
+            if len(self._cmd) < 3:
+                raise ValueError("Secrets result protocol requires a binding UUID")
+            self._secrets_binding = str(UUID(self._cmd[-2]))
+
+    def _apply_secrets_timeout_budget(self, budget) -> None:
+        import math
+        stages = ("presentation_seconds", "consent_seconds", "biometric_seconds",
+                  "metadata_seconds", "processing_seconds")
+        fields = (*stages, "helper_seconds", "client_reserve_seconds")
+        valid = isinstance(budget, dict) and budget.get("schema") == "trustchain.secrets.signing-budget.v1"
+        if valid:
+            valid = all(isinstance(budget.get(key), (int, float))
+                and not isinstance(budget[key], bool) and 0 < budget[key] <= 300
+                and math.isfinite(budget[key]) for key in fields)
+        if valid:
+            valid = (math.isclose(sum(budget[key] for key in stages), budget["helper_seconds"], abs_tol=1e-9)
+                     and 1 <= budget["client_reserve_seconds"] <= 60)
+        if not valid:
+            raise CommandSigningError("SIGN_COMMAND_TIMEOUT_BUDGET_INVALID", reconciliation_required=False)
+        self.signing_budget = dict(budget)
+        self._timeout_seconds = max(self._timeout_seconds,
+            budget["helper_seconds"] + budget["client_reserve_seconds"])
 
     def get_metadata(self):
         from trustchain.kms import KeyProviderMetadata
@@ -208,21 +356,104 @@ class CommandKeyProvider:
 
     def sign(self, data: bytes) -> bytes:
         import base64 as _b64
+        import hashlib
         import subprocess
 
-        proc = subprocess.run(
-            self._cmd, input=data, capture_output=True, timeout=30
-        )
-        if proc.returncode != 0:
-            raise RuntimeError(
-                f"sign command failed (exit {proc.returncode}): "
-                f"{proc.stderr.decode('utf-8', 'replace')[-500:]}"
+        self.last_signing_result = None
+        self.last_signing_request = None
+        command_options = {}
+        if self._secrets_binding is not None:
+            from uuid import UUID, uuid5
+            digest = hashlib.sha256(data).hexdigest()
+            # Identical bytes under the same binding/key name the same request,
+            # including after the provider/process is recreated. Not authority.
+            request_id = str(uuid5(UUID(self._secrets_binding), self._pub_raw.hex() + ":" + digest))
+            self.last_signing_request = {"request_id": request_id,
+                "binding_id": self._secrets_binding, "payload_sha256": digest}
+            command_options["env"] = {**os.environ, "APATCH_SIGNING_REQUEST_ID": request_id}
+        try:
+            proc = subprocess.run(
+                self._cmd, input=data, capture_output=True, timeout=self._timeout_seconds,
+                **command_options
             )
-        sig = _b64.b64decode(proc.stdout.strip())
-        # Fail-closed: verify the device actually produced a valid signature.
+        except subprocess.TimeoutExpired:
+            raise CommandSigningError("SIGN_COMMAND_TIMEOUT",
+                                      timeout_seconds=self._timeout_seconds,
+                                      signing_request=self.last_signing_request) from None
+        except OSError:
+            raise CommandSigningError("SIGN_COMMAND_START_FAILED",
+                                      reconciliation_required=False,
+                                      signing_request=self.last_signing_request) from None
+        if proc.returncode != 0:
+            # Exit codes/localized stderr do not establish user cancellation.
+            raise CommandSigningError("SIGN_COMMAND_FAILED", returncode=proc.returncode,
+                                      cause=_secrets_signing_cause(proc.stderr),
+                                      signing_request=self.last_signing_request)
+        if self._secrets_binding is not None:
+            return self._secrets_result(data, proc.stdout)
+        try:
+            sig = _b64.b64decode(proc.stdout.strip(), validate=True)
+        except (ValueError, _b64.binascii.Error):
+            raise CommandSigningError("SIGN_COMMAND_RESPONSE_INVALID") from None
+        if len(sig) != 64:
+            raise CommandSigningError("SIGN_COMMAND_RESPONSE_INVALID")
+        # Only the configured public key and exact current bytes are accepted.
         if not self.verify(data, sig):
-            raise RuntimeError("sign command returned a signature that does not verify")
+            raise CommandSigningError("SIGN_COMMAND_SIGNATURE_INVALID")
         return sig
+
+    def _secrets_result(self, data: bytes, output: bytes) -> bytes:
+        """Accept only a pinned signature and its request-bound signed receipt."""
+        import base64
+        import hashlib
+        import json
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+        def unique_fields(pairs):
+            result = {}
+            for key, value in pairs:
+                if key in result:
+                    raise ValueError("duplicate result field")
+                result[key] = value
+            return result
+
+        def canonical(value):
+            return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode()
+
+        try:
+            if len(output) > 96 * 1024:
+                raise ValueError("oversized result")
+            result = json.loads(output.decode("utf-8"), object_pairs_hook=unique_fields)
+            if result["schema"] != "trustchain.secrets.signing-result.v1":
+                raise ValueError("unknown signing result")
+            if any(result[key] != value for key, value in self.last_signing_request.items()):
+                raise ValueError("signing request mismatch")
+            signature = base64.b64decode(result["signature_b64"], validate=True)
+            if base64.b64decode(result["public_key_b64"], validate=True) != self._pub_raw or not self.verify(data, signature):
+                raise ValueError("signing key or payload mismatch")
+            receipt = result["receipt"]
+            envelope_bytes = receipt["receipt_envelope_json"].encode("utf-8")
+            envelope = json.loads(envelope_bytes, object_pairs_hook=unique_fields)
+            if canonical(envelope) != envelope_bytes or envelope["version"] != 1 or envelope["outcome"] != "success":
+                raise ValueError("invalid receipt envelope")
+            expected = {**self.last_signing_request, "receipt_id": receipt["id"],
+                        "result_sha256": hashlib.sha256(signature).hexdigest()}
+            if any(envelope[key] != value for key, value in expected.items()):
+                raise ValueError("receipt request mismatch")
+            attestation_raw = base64.b64decode(receipt["attestation_public_key_b64"], validate=True)
+            if attestation_raw == self._pub_raw:
+                raise ValueError("receipt key not separated")
+            statement = canonical({"domain": "trustchain-secrets/broker-attestation-key/v1",
+                "binding_id": self._secrets_binding, "attestation_public_key_b64": receipt["attestation_public_key_b64"]})
+            self._pub.verify(base64.b64decode(receipt["attestation_key_proof_b64"], validate=True), statement)
+            Ed25519PublicKey.from_public_bytes(attestation_raw).verify(
+                base64.b64decode(receipt["receipt_signature_b64"], validate=True), envelope_bytes)
+        except Exception:
+            raise CommandSigningError("SIGN_COMMAND_RESPONSE_INVALID",
+                                      signing_request=self.last_signing_request) from None
+        self.last_signing_result = {**expected, "receipt": {key: receipt[key] for key in (
+            "receipt_envelope_json", "attestation_public_key_b64", "attestation_key_proof_b64", "receipt_signature_b64")}}
+        return signature
 
     def verify(self, data: bytes, signature: bytes) -> bool:
         try:
@@ -300,6 +531,8 @@ def resolve_key_provider(
             return None
         try:
             return CommandKeyProvider(sign_cmd, pub_b64, key_id=agent_id), "command", None
+        except CommandSigningError:
+            raise
         except Exception:
             return None
 

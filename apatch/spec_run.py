@@ -591,6 +591,7 @@ _FAILURE_PASSTHROUGH_FIELDS = (
     "diagnostics_artifact",
     "verify_rollback",
     "rollback_performed",
+    "rollback_results",
     "chunk_result",
     "checkpoint",
     "rollback_hint",
@@ -637,6 +638,7 @@ def _run_one_requirement(
     previously_failed: bool = False,
     verify_override: Optional[str] = None,
     completion_summary: Optional[str] = None,
+    artifacts: Optional[List[Any]] = None,
 ) -> Dict[str, Any]:
     """Governed cycle for a single Rk: session → mutate → finalize."""
     from apatch.runtime.runtime import MutationRuntime
@@ -650,6 +652,7 @@ def _run_one_requirement(
         root,
         spec=spec_id,
         requirement=req_token,
+        artifacts=artifacts,
         skip_lint=True,
         check_dependencies=False,
     )
@@ -663,105 +666,110 @@ def _run_one_requirement(
         from apatch.tool_paths import run_shell_verify
 
         snapshot = None
-        if not needles:
-            from apatch.spec_reverification import capture_reverification, ReverificationError
-            try:
-                snapshot = capture_reverification(root, spec_id, [req_row])
-                if snapshot is not None and verify_cmd != req_row.get("verify"):
-                    raise ReverificationError("exact requirement verification required")
-            except ReverificationError as exc:
+        try:
+            if not needles:
+                from apatch.spec_reverification import capture_reverification, ReverificationError
+                try:
+                    snapshot = capture_reverification(root, spec_id, [req_row])
+                    if snapshot is not None and verify_cmd != req_row.get("verify"):
+                        raise ReverificationError("exact requirement verification required")
+                except ReverificationError as exc:
+                    rt = MutationRuntime(root)
+                    bind_runtime_to_active_session(rt, root)
+                    rt.close_session()
+                    steps.append("session_end")
+                    return _blocked_run(
+                        str(exc), error_type="REVERIFICATION_INVALID",
+                        recommended_action="restore_requirement_evidence",
+                        requirement_token=req_token, current_requirement=req_row,
+                        steps_completed=steps,
+                    )
+            v_ok, _ = run_shell_verify(verify_cmd, root)
+            if not needles:
                 rt = MutationRuntime(root)
                 bind_runtime_to_active_session(rt, root)
-                rt.close_session()
-                steps.append("session_end")
-                return _blocked_run(
-                    str(exc), error_type="REVERIFICATION_INVALID",
-                    recommended_action="restore_requirement_evidence",
-                    requirement_token=req_token, current_requirement=req_row,
-                    steps_completed=steps,
+                if not v_ok:
+                    steps.append("verify_precheck_failed")
+                    end = rt.close_session()
+                    steps.append("session_end")
+                    blocked = _blocked_run(
+                        "verify-only requirement failed before noop attestation",
+                        error_type=ERROR_SPEC_RUN_BLOCKED,
+                        recommended_action="fix_forward",
+                        requirement_token=req_token,
+                        current_requirement=req_row,
+                        steps_completed=steps,
+                    )
+                    blocked["session_end"] = end
+                    return blocked
+
+                noop = rt.noop_attest(
+                    [req_id], message=f"verify-only {req_token}",
+                    **({"reverification": snapshot.verified({req_id: True})} if snapshot is not None else {}),
                 )
-        v_ok, _ = run_shell_verify(verify_cmd, root)
-        if not needles:
-            rt = MutationRuntime(root)
-            bind_runtime_to_active_session(rt, root)
-            if not v_ok:
-                steps.append("verify_precheck_failed")
+                steps.append("verify_precheck_passed")
+                steps.append("noop_attest")
                 end = rt.close_session()
                 steps.append("session_end")
-                blocked = _blocked_run(
-                    "verify-only requirement failed before noop attestation",
-                    error_type=ERROR_SPEC_RUN_BLOCKED,
-                    recommended_action="fix_forward",
-                    requirement_token=req_token,
-                    current_requirement=req_row,
-                    steps_completed=steps,
+                if not noop.get("ok"):
+                    noop["steps_completed"] = steps
+                    noop["requirement_token"] = req_token
+                    noop["session_end"] = end
+                    return noop
+                if not end.get("ok"):
+                    end["steps_completed"] = steps
+                    end["requirement_token"] = req_token
+                    return end
+                from apatch.spec import spec_status_workspace
+
+                refreshed = spec_status_workspace(root, spec=spec_id)
+                att_row = None
+                if refreshed.get("ok"):
+                    att_row = next(
+                        (r for r in refreshed.get("requirements") or [] if r.get("id") == req_id),
+                        None,
+                    )
+                return {
+                    "ok": True,
+                    "requirement_token": req_token,
+                    "requirement": att_row or req_row,
+                    "requirement_attested": (att_row or {}).get("state") == "attested",
+                    "steps_completed": steps,
+                    "skipped_mutations": True,
+                    "spec_status": refreshed,
+                }
+
+            # Retry path: if a previous mutation failed but the requirement now verifies,
+            # finish the existing governed session without applying another patch.
+            if v_ok and previously_failed:
+                fin = execute_next_workspace(
+                    root,
+                    spec=spec_id,
+                    requirement=req_token,
+                    finalize=True,
+                    completion_summary=completion_summary,
+                    verify_override=verify_override,
+                    skip_lint=True,
+                    check_dependencies=False,
                 )
-                blocked["session_end"] = end
-                return blocked
+                steps.append("verify_precheck_passed")
+                steps.extend(fin.get("steps_completed") or [])
+                if not fin.get("ok"):
+                    fin["steps_completed"] = steps
+                    fin["requirement_token"] = req_token
+                    return fin
+                return {
+                    "ok": True,
+                    "requirement_token": req_token,
+                    "requirement": req_row,
+                    "requirement_attested": fin.get("requirement_attested"),
+                    "steps_completed": steps,
+                    "skipped_mutations": True,
+                }
 
-            noop = rt.noop_attest(
-                [req_id], message=f"verify-only {req_token}",
-                **({"reverification": snapshot.verified({req_id: True})} if snapshot is not None else {}),
-            )
-            steps.append("verify_precheck_passed")
-            steps.append("noop_attest")
-            end = rt.close_session()
-            steps.append("session_end")
-            if not noop.get("ok"):
-                noop["steps_completed"] = steps
-                noop["requirement_token"] = req_token
-                noop["session_end"] = end
-                return noop
-            if not end.get("ok"):
-                end["steps_completed"] = steps
-                end["requirement_token"] = req_token
-                return end
-            from apatch.spec import spec_status_workspace
-
-            refreshed = spec_status_workspace(root, spec=spec_id)
-            att_row = None
-            if refreshed.get("ok"):
-                att_row = next(
-                    (r for r in refreshed.get("requirements") or [] if r.get("id") == req_id),
-                    None,
-                )
-            return {
-                "ok": True,
-                "requirement_token": req_token,
-                "requirement": att_row or req_row,
-                "requirement_attested": (att_row or {}).get("state") == "attested",
-                "steps_completed": steps,
-                "skipped_mutations": True,
-                "spec_status": refreshed,
-            }
-
-        # Retry path: if a previous mutation failed but the requirement now verifies,
-        # finish the existing governed session without applying another patch.
-        if v_ok and previously_failed:
-            fin = execute_next_workspace(
-                root,
-                spec=spec_id,
-                requirement=req_token,
-                finalize=True,
-                completion_summary=completion_summary,
-                verify_override=verify_override,
-                skip_lint=True,
-                check_dependencies=False,
-            )
-            steps.append("verify_precheck_passed")
-            steps.extend(fin.get("steps_completed") or [])
-            if not fin.get("ok"):
-                fin["steps_completed"] = steps
-                fin["requirement_token"] = req_token
-                return fin
-            return {
-                "ok": True,
-                "requirement_token": req_token,
-                "requirement": req_row,
-                "requirement_attested": fin.get("requirement_attested"),
-                "steps_completed": steps,
-                "skipped_mutations": True,
-            }
+        finally:
+            if snapshot is not None:
+                snapshot.close()
 
     mut = execute_next_workspace(
         root,
@@ -769,6 +777,9 @@ def _run_one_requirement(
         requirement=req_token,
         needles=needles,
         logs_path=logs_path,
+        # This orchestrator owns the final verification and attestation. Do not
+        # execute the same command as both a TUI baseline/final and finalize.
+        defer_verify=True,
         verify_deferred=verify_deferred,
         verify_override=verify_override,
         skip_lint=True,
@@ -793,7 +804,7 @@ def _run_one_requirement(
     while apply_out.get("continue"):
         apply_out = rt.apply_session(
             abs_logs,
-            verify=verify_cmd,
+            verify=None,
             verify_deferred=verify_deferred,
             quiet=True,
         )
@@ -816,6 +827,26 @@ def _run_one_requirement(
     )
     steps.extend(fin.get("steps_completed") or [])
     if not fin.get("ok"):
+        # Verification moved out of apply, so preserve its failure rollback
+        # guarantee through the native session-bound rollback facade. Never
+        # attest a failed command or reuse a result from different inputs.
+        if fin.get("error_type") == ERROR_VERIFY_FAILED:
+            checkpoints = _result_checkpoints(apply_out)
+            rollbacks = []
+            for checkpoint in reversed(checkpoints):
+                bind_runtime_to_active_session(rt, root)
+                restored = rt.rollback(session_id=checkpoint)
+                rollbacks.append(restored)
+                steps.append("rollback")
+                if not restored.get("ok"):
+                    break
+            fin["rollback_results"] = rollbacks
+            fin["verify_rollback"] = bool(checkpoints) and len(rollbacks) == len(checkpoints) and all(
+                row.get("ok") for row in rollbacks
+            )
+            fin["rollback_performed"] = fin["verify_rollback"]
+            if not fin["verify_rollback"]:
+                fin["recommended_action"] = "recover_exact_owned_checkpoint"
         fin["steps_completed"] = steps
         fin["requirement_token"] = req_token
         return fin
@@ -1356,6 +1387,7 @@ def spec_run_workspace(
             previously_failed=was_failed,
             verify_override=entry.get("verify_override"),
             completion_summary=entry.get("completion_summary"),
+            artifacts=entry.get("artifacts"),
         )
         steps_completed.extend(result.get("steps_completed") or [])
         last_result = result

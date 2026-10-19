@@ -193,6 +193,7 @@ def prepare_execution_root(
     target_dir: str,
     *,
     spec: Optional[str] = None,
+    read_only: bool = False,
 ) -> Dict[str, Any]:
     """Pick the real workspace root for mutations (auto worktree when manifest + spec)."""
     from apatch.lane import lane_info
@@ -219,7 +220,13 @@ def prepare_execution_root(
             "worktree_note": f"no lane for {spec} in manifests/worktrees.yaml",
         }
 
-    wt_path = ensure_lane_worktree(manifest, lane)
+    wt_path = lane_worktree_path(manifest, lane) if read_only else ensure_lane_worktree(manifest, lane)
+    if read_only and not os.path.isdir(wt_path):
+        return {
+            "path": os.path.abspath(wt_path), "requested": root,
+            "retargeted": True, "spec": spec, "lane_id": lane.get("id"),
+            "missing_worktree": True, "mutation_performed": False,
+        }
     retargeted = os.path.abspath(wt_path) != os.path.abspath(root)
     return {
         "path": os.path.abspath(wt_path),

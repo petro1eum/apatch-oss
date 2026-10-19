@@ -28,6 +28,21 @@ The acceptance check of each requirement (``verify:``) is surfaced to the agent 
 from __future__ import annotations
 
 import hashlib
+from contextlib import contextmanager
+from contextvars import ContextVar
+
+_SPEC_INSPECTION = ContextVar("apatch_spec_inspection", default=False)
+
+
+@contextmanager
+def read_only_spec_queries():
+    """Keep discovery query caches and ledger initialization read-only."""
+    token = _SPEC_INSPECTION.set(True)
+    try:
+        yield
+    finally:
+        _SPEC_INSPECTION.reset(token)
+
 import os
 import re
 from dataclasses import dataclass, field
@@ -586,7 +601,7 @@ def _remember_spec(target_dir: str, spec: Spec) -> None:
     Merges into an existing RFP-014 needles registry (``.apatch/specs/<ID>.json``)
     when present — must not wipe ``requirements`` written by ``update_spec_registry``.
     """
-    if not spec.source_path:
+    if _SPEC_INSPECTION.get() or not spec.source_path:
         return
     try:
         import json
@@ -674,7 +689,7 @@ def _load_spec(
 def _ledger_entries(target_dir: str) -> Tuple[List[Dict[str, Any]], bool]:
     from apatch.trustchain_helper import TrustChainHelper
 
-    tc = TrustChainHelper(target_dir, auto_init=False)
+    tc = TrustChainHelper(target_dir, auto_init=False, read_only=_SPEC_INSPECTION.get())
     if not tc.has_trustchain():
         return [], False
     return list(tc.iter_ledger_entries()), True

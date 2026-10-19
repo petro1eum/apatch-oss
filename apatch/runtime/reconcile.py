@@ -10,11 +10,27 @@ from apatch.runtime.domain import derive_lifecycle
 from apatch.runtime.hints import hint_apply_session, hint_attest, hint_session_end
 from apatch.session_state import (
     PHASE_APPLY,
+    PHASE_BLOCKED,
     PHASE_COMPLETE,
     PHASE_VERIFY,
     load_session_state,
     save_session_state,
 )
+
+SIGNING_RECOVERY_HINT = "Reconcile the saved signing request and checkpoint; do not reset or reapply."
+
+
+def signing_recovery_required(state: Dict[str, Any], apply_state: Dict[str, Any]) -> bool:
+    failure = state.get("failure") if isinstance(state.get("failure"), dict) else {}
+    details = failure.get("details") if isinstance(failure.get("details"), dict) else {}
+    return bool(
+        apply_state.get("blocked_failure")
+        or failure.get("error_type") in {
+            "NOTARIZATION_FAILED", "NOTARIZATION_ROLLBACK_INCOMPLETE", "TRUSTCHAIN_REJECTED",
+        }
+        or details.get("reconciliation_required")
+        or details.get("signing_request")
+    )
 
 
 @dataclass
@@ -105,7 +121,14 @@ def reconcile_governed_session(target_dir: str) -> ReconcileResult:
             changes["failure"] = None
 
     apply_data = _load_apply_session(root)
-    if apply_data and apply_data.get("session_id") == session_id:
+    owned_apply = apply_data if apply_data and (
+        apply_data.get("governed_session_id") or apply_data.get("session_id")
+    ) == session_id else {}
+    if signing_recovery_required(raw, owned_apply):
+        # A restarted caller or a pending chunk is not proof of a signing outcome.
+        changes = {"phase": PHASE_BLOCKED}
+        next_action = SIGNING_RECOVERY_HINT
+    elif owned_apply:
         if _apply_in_progress(apply_data):
             changes.setdefault("phase", PHASE_APPLY)
             changes["failure"] = None

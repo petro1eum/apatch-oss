@@ -524,6 +524,112 @@ def verify_paths_notarized(
     return result
 
 
+class _NotarizationDiscoveryError(RuntimeError):
+    pass
+
+
+def _discover_notarization_paths(root, *, staged, working_tree):
+    """Discover scope without turning unavailable evidence into an empty success."""
+    from pathlib import Path
+    from apatch.sandbox import is_path_protected, load_sandbox_config
+    from apatch.session_state import load_session_state
+
+    if not staged and not working_tree:
+        raise _NotarizationDiscoveryError("NO_DISCOVERY_SCOPE")
+    git = shutil.which("git")
+    if not git:
+        raise _NotarizationDiscoveryError("GIT_UNAVAILABLE")
+    workspace = Path(root).resolve()
+
+    def command(arguments):
+        try:
+            process = subprocess.run([git, "-C", str(workspace), *arguments],
+                                     capture_output=True, timeout=10, check=False)
+        except (OSError, subprocess.TimeoutExpired):
+            raise _NotarizationDiscoveryError("GIT_DISCOVERY_FAILED") from None
+        if process.returncode:
+            raise _NotarizationDiscoveryError("GIT_DISCOVERY_FAILED")
+        try:
+            names = process.stdout.decode("utf-8").split("\0")
+        except UnicodeDecodeError:
+            raise _NotarizationDiscoveryError("GIT_DISCOVERY_FAILED") from None
+        result = set()
+        for name in names:
+            if not name:
+                continue
+            path = Path(name)
+            if path.is_absolute() or ".." in path.parts:
+                raise _NotarizationDiscoveryError("GIT_DISCOVERY_FAILED")
+            result.add(path.as_posix())
+        return result
+
+    paths = set()
+    if staged:
+        paths.update(command(["diff", "--cached", "--relative", "--name-only", "-z",
+                              "--diff-filter=ACMRD", "--", "."]))
+    if working_tree:
+        paths.update(command(["diff", "--relative", "--name-only", "-z",
+                              "--diff-filter=ACMRD", "--", "."]))
+        config = load_sandbox_config(str(workspace))
+        paths.update(name for name in command(["ls-files", "--others", "--exclude-standard", "-z", "--", "."])
+                     if is_path_protected(name, config))
+
+    owned = set()
+    state = load_session_state(str(workspace))
+    owner = state.get("session_id") if working_tree and not state.get("ended_at") else None
+    backup_root = workspace / ".apatch" / "backups"
+    if owner and backup_root.exists():
+        try:
+            if backup_root.resolve() != backup_root:
+                raise ValueError("unsafe backup root")
+            for folder in backup_root.iterdir():
+                if not folder.is_dir():
+                    continue
+                metadata_path = folder / "metadata.json"
+                if metadata_path.resolve() != metadata_path:
+                    raise ValueError("unsafe metadata")
+                metadata = json.loads(metadata_path.read_bytes())
+                if not isinstance(metadata, dict):
+                    raise ValueError("invalid metadata")
+                if metadata.get("governed_session_id") != owner:
+                    continue
+                rows = metadata.get("backups")
+                if metadata.get("session_id") != folder.name or not isinstance(rows, list) or not rows:
+                    raise ValueError("invalid owned metadata")
+                for row in rows:
+                    if not isinstance(row, dict) or row.get("action") not in {"created", "modified", "deleted"}:
+                        raise ValueError("invalid owned target")
+                    name = row.get("original_file")
+                    if not isinstance(name, str):
+                        raise ValueError("invalid owned path")
+                    path = Path(name)
+                    if (not path.is_absolute() or path.resolve() != path or path == workspace
+                            or not path.is_relative_to(workspace)):
+                        raise ValueError("unsafe owned path")
+                    relative = path.relative_to(workspace).as_posix()
+                    if not _should_track(relative):
+                        continue
+                    if not path.is_file():
+                        # Existing index API has no signed deletion proof. Absence
+                        # must not be mistaken for successful notarization.
+                        raise _NotarizationDiscoveryError("OWNED_TARGET_MISSING")
+                    owned.add(relative)
+        except _NotarizationDiscoveryError:
+            raise
+        except (OSError, ValueError, TypeError):
+            raise _NotarizationDiscoveryError("OWNED_BACKUP_INVALID") from None
+    paths.update(owned)
+    for name in paths:
+        if not _should_track(name):
+            continue
+        path = workspace / name
+        if path.resolve() != path or not path.is_relative_to(workspace):
+            raise _NotarizationDiscoveryError("TARGET_PATH_UNSAFE")
+        if not path.is_file():
+            raise _NotarizationDiscoveryError("TARGET_MISSING")
+    return sorted(paths), sorted(owned)
+
+
 def verify_notarization_workspace(
     target_dir: str = ".",
     *,
@@ -532,11 +638,15 @@ def verify_notarization_workspace(
     rebuild_index: bool = False,
 ) -> Dict[str, Any]:
     root = os.path.abspath(target_dir)
-    paths: Set[str] = set()
-    if staged:
-        paths.update(_git_staged_files(root))
-    if working_tree:
-        paths.update(_git_unstaged_modified(root))
+    try:
+        paths, owned = _discover_notarization_paths(root, staged=staged, working_tree=working_tree)
+    except _NotarizationDiscoveryError as error:
+        return {"ok": False, "error_type": "NOTARIZATION_DISCOVERY_INCOMPLETE",
+                "enforcement": is_enforcement_enabled(root), "checked": 0,
+                "violations": [], "coverage_complete": False,
+                "discovery": {"status": "inconclusive", "cause": str(error)},
+                "recommended_action": "repair_path_discovery",
+                "error": "Notarization scope could not be established; no coverage claim was made."}
     if not paths:
         tc = TrustChainHelper(root, auto_init=False)
         index = rebuild_notarized_index_from_ledger(root) if rebuild_index else load_notarized_index(root)
@@ -549,11 +659,15 @@ def verify_notarization_workspace(
             "ledger_entries": ledger_meta.get("entries"),
             "ledger_head": tc.ledger_head() or ledger_meta.get("head"),
             "ledger_scan": "full_rebuild" if rebuild_index else "cached",
-            "message": "no paths to check",
+            "message": "no changed paths in the selected scope",
+            "coverage_complete": False,
+            "discovery": {"status": "no_changes", "owned_paths": owned},
         }
-    result = verify_paths_notarized(root, sorted(paths), rebuild_index=rebuild_index)
+    result = verify_paths_notarized(root, paths, rebuild_index=rebuild_index)
     tc = TrustChainHelper(root, auto_init=False)
     result["trustchain_active"] = tc.has_trustchain()
+    result["discovery"] = {"status": "discovered", "owned_paths": owned}
+    result["coverage_complete"] = bool(result.get("ok") and result.get("checked", 0) > 0)
     if not result.get("ok"):
         result["agent_message"] = result.get("rejection_prompt") or result.get("agent_prompt")
     return result

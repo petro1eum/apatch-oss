@@ -110,6 +110,7 @@ def rollback_trustchain_checkpoint(
 ) -> Dict[str, Any]:
     """Soft-reset TrustChain HEAD to an apatch session checkpoint (mirrors CLI rollback)."""
     result: Dict[str, Any] = {"reset": False, "checkpoint": None, "warning": None, "preview": preview}
+    tc_helper = None
     try:
         tc_helper = TrustChainHelper(target_dir)
         if not tc_helper.has_trustchain():
@@ -145,7 +146,11 @@ def rollback_trustchain_checkpoint(
             else:
                 reset = tc_helper.rollback_checkpoint(target_ckpt)
             result["reset"] = bool(reset)
+            result.update(getattr(tc_helper, "last_rollback_result", {}))
+            if result.get("compensation_required") and not result.get("compensation_recorded"):
+                result["warning"] = "Signed rollback compensation was not recorded."
     except Exception as e:
+        result.update(getattr(tc_helper, "last_rollback_result", {}))
         result["warning"] = str(e)
     return result
 
@@ -238,6 +243,22 @@ def rollback_workspace(
         session_id,
         governed_session_id=governed_session_id,
     )
+    if tc.get("compensation_required") and not tc.get("compensation_recorded"):
+        # Keep owned backup metadata for a later authorized compensation retry.
+        # Physical restoration alone must not finalize a signed rollback.
+        restored = list(tc.get("restored") or [])
+        return {
+            "ok": False,
+            "restored": restored,
+            "count": len(restored),
+            "physical_restored": bool(tc.get("physical_restored")),
+            "trustchain": tc,
+            "error": "Rollback compensation signing failed; owned recovery evidence retained.",
+            "error_type": "ROLLBACK_NOTARIZATION_FAILED",
+            "recoverable": True,
+            "recommended_action": "retry_owned_rollback_after_signer_recovery",
+            "checkpoint": session_id or tc.get("checkpoint"),
+        }
     restored: List[str] = []
     error: Optional[str] = None
     backup_session = session_id or tc.get("checkpoint")
@@ -605,7 +626,13 @@ def apply_from_logs(
             tool="apatch_apply",
             dry_run=dry_run,
             owns_lease=sandbox_owns_lease,
-        ):
+        ) as write_lease:
+            if not dry_run and lease_paths and write_lease is None:
+                raise SandboxError(
+                    "LEASE_LOST: admitted write lease disappeared before apply",
+                    error_type="LEASE_LOST",
+                )
+            tui.write_lease = dict(write_lease) if write_lease is not None else None
             tui.run_apply_loop()
     except SandboxError as exc:
         raise WorkflowError(str(exc)) from exc

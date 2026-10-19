@@ -156,6 +156,12 @@ def _validate_intake_release_manifest(manifest, root):
 
 
 def _validate_release_manifest(manifest):
+    if manifest.get('schema') == 'apatch.public-source.v5':
+        from scripts.check_public_stabilization_v5 import validate
+        return validate(manifest, ROOT)
+    if manifest.get('schema') == 'apatch.public-source.v4':
+        from scripts.check_public_stabilization import validate
+        return validate(manifest, ROOT)
     if manifest.get('schema') == 'apatch.public-source.v3':
         return _validate_intake_release_manifest(manifest, ROOT)
     assert manifest['schema'] == 'apatch.public-source.v2'

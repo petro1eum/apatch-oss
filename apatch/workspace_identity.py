@@ -29,7 +29,14 @@ def load_workspace_identity(workspace_root: Optional[str]) -> Optional[dict[str,
     """
     if not workspace_root:
         return None
-    path = os.path.join(os.path.abspath(workspace_root), ".apatch", "agent-identity.json")
+    # Native metadata administration retains this fence until its exact signed
+    # completion is verified. Presence (including a broken link) always denies;
+    # an invalid marker is not permission to borrow an ambient signer.
+    absolute_workspace_root = os.path.abspath(workspace_root)
+    pending = os.path.join(absolute_workspace_root, ".apatch", "agent-identity-bootstrap-pending.json")
+    if os.path.lexists(pending):
+        return None
+    path = os.path.join(absolute_workspace_root, ".apatch", "agent-identity.json")
     if not os.path.isfile(path):
         return None
     try:

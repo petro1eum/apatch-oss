@@ -262,7 +262,7 @@ def workspace_from_artifact_path(path: str) -> str:
     norm = abs_path.replace("\\", "/")
     marker = "/.apatch/"
     if marker in norm:
-        return norm.split(marker)[0]
+        return norm.rsplit(marker, 1)[0]
     return os.path.dirname(abs_path)
 
 
@@ -984,6 +984,11 @@ def gc_delete_allowed(
 ) -> bool:
     if entry is None or not entry.registered:
         return False
+    if (entry.lineage or {}).get("created_by_tool") == "apatch_gc_reconcile" and (
+        (entry.lineage or {}).get("reason") == "inferred artifact backfill"
+    ):
+        # Classification by a filename is discovery, never deletion authority.
+        return False
     if _is_atomic_lock_path(path):
         return False
     if is_static_replay_critical(path):
@@ -1296,15 +1301,9 @@ def collect_gc_safe_candidates(
             else:
                 skipped.add(path)
         elif path in inferred:
-            cls = inferred[path]["class_name"]
-            if (
-                cls in (ArtifactClass.EPHEMERAL.value, ArtifactClass.GARBAGE.value)
-                and default_gc_allowed(cls)
-                and not is_static_replay_critical(path)
-            ):
-                delete.add(path)
-            else:
-                skipped.add(path)
+            # Unregistered files may be permanent user fixtures. Only an
+            # explicit producer registration can authorize safe deletion.
+            skipped.add(path)
         else:
             skipped.add(path)
     return delete, skipped, registry
@@ -1398,7 +1397,7 @@ def register_inferred_artifacts(
             class_name=cls,
             created_by_tool="apatch_gc_reconcile",
             reason="inferred artifact backfill",
-            gc_allowed=_DEFAULT_GC_ALLOWED.get(cls, False),
+            gc_allowed=False,
             replay_critical=_DEFAULT_REPLAY_CRITICAL.get(cls, False),
         )
         registered.append(path)

@@ -305,8 +305,16 @@ PUBLIC_SOURCE_REPOSITORY = "https://github.com/petro1eum/apatch-oss.git"
 
 def _snapshot_public_provenance(source, destination):
     manifest = read_json(source / "PUBLIC-SOURCE-MANIFEST.json")
-    if manifest.get("schema") != "apatch.public-source.v3":
+    if manifest.get("schema") not in {"apatch.public-source.v3", "apatch.public-source.v4", "apatch.public-source.v5"}:
         return
+    is_stabilization = manifest.get("schema") in {"apatch.public-source.v4", "apatch.public-source.v5"}
+    if is_stabilization:
+        # Fetch only the already-public baseline; reviewed current bytes remain
+        # independently bound by the v4 judge and full installed profile.
+        historical = manifest["historical_public_source"]
+        if historical["public_commit"] != "a06a47d5059029d5016f925af988e1fcf4a981c3":
+            raise InventoryError("unreviewed stabilization baseline")
+        manifest = historical["manifest"]
     binding = manifest.get("contract_intake_source")
     if not isinstance(binding, dict) or binding.get("schema") != "apatch.public-intake-source.v1":
         raise InventoryError("missing public intake provenance")
@@ -319,7 +327,7 @@ def _snapshot_public_provenance(source, destination):
                           capture_output=True, text=True, timeout=30, env=environment)
     if head.returncode or re.fullmatch(r"[0-9a-f]{40}\n?", head.stdout) is None:
         raise InventoryError("public source checkout has no exact commit")
-    commit = head.stdout.strip()
+    commit = "a06a47d5059029d5016f925af988e1fcf4a981c3" if is_stabilization else head.stdout.strip()
     ancestor = subprocess.run(["git", *options, "-C", str(source), "merge-base", "--is-ancestor", anchor, commit],
                               capture_output=True, timeout=30, env=environment)
     if ancestor.returncode:
@@ -481,7 +489,7 @@ def collect_suite(source, output, *, timeout=1800):
     manifest_path = source / "PUBLIC-SOURCE-MANIFEST.json"
     manifest = read_json(manifest_path) if manifest_path.is_file() else {}
     command = (intake_suite_command(output, plugin)
-               if manifest.get("schema") == "apatch.public-source.v3" else suite_command(output))
+               if manifest.get("schema") in {"apatch.public-source.v3", "apatch.public-source.v4", "apatch.public-source.v5"} else suite_command(output))
     process = run_capture(command, cwd=source, env=env, output=output, label="suite", timeout=timeout)
     if process["timed_out"]:
         raise InventoryError("full suite timed out; raw output retained")

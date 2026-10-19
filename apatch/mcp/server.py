@@ -1883,6 +1883,7 @@ if mcp is not None:
         requirement_ids: Optional[List[str]] = None,
         exclude_requirement_ids: Optional[List[str]] = None,
         target_dir: str = ".",
+        lane: str = "",
     ) -> Dict[str, Any]:
         """Re-anchor file_drift-stale requirements of a spec in one call.
 
@@ -1894,18 +1895,23 @@ if mcp is not None:
         from apatch.session_state import enrich_tool_response
         from apatch.spec_rebind import rebind_stale_requirements
 
-        return enrich_tool_response(
-            "apatch_rebind_stale",
-            rebind_stale_requirements(
-                target_dir,
-                spec=spec or None,
-                spec_path=spec_path or None,
-                run_verify=run_verify,
-                requirement_ids=requirement_ids,
-                exclude_requirement_ids=exclude_requirement_ids,
-            ),
-            target_dir=target_dir,
+        # Explicit lane also applies to native public calls, which do not pass
+        # through the transport wrapper. Preserve inherited context if omitted.
+        if lane:
+            from apatch.lane_context import bind_lane_from_kwargs
+            bind_lane_from_kwargs({"lane": lane, "spec": spec, "target_dir": target_dir})
+        # A missing spec or rejected filter must not mutate lane session state.
+        result = rebind_stale_requirements(
+            target_dir,
+            spec=spec or None,
+            spec_path=spec_path or None,
+            run_verify=run_verify,
+            requirement_ids=requirement_ids,
+            exclude_requirement_ids=exclude_requirement_ids,
         )
+        if not result.get("ok"):
+            return result
+        return enrich_tool_response("apatch_rebind_stale", result, target_dir=target_dir)
 
     @mcp.tool()
     def apatch_probe(
@@ -2844,6 +2850,7 @@ if mcp is not None:
         needles: Optional[List[Dict[str, Any]]] = None,
         logs_path: str = "patches.jsonl",
         verify_deferred: bool = True,
+        defer_verify: bool = False,
         skip_lint: bool = False,
         check_dependencies: bool = True,
         governed_session_id: str = "",
@@ -2873,6 +2880,7 @@ if mcp is not None:
             needles=needles,
             logs_path=logs_path,
             verify_deferred=verify_deferred,
+            defer_verify=defer_verify,
             skip_lint=skip_lint,
             check_dependencies=check_dependencies,
             governed_session_id=governed_session_id or None,
@@ -4043,11 +4051,11 @@ if mcp is not None:
         )
 
     @mcp.tool()
-    def apatch_policy_sign(target_dir: str = ".") -> Dict[str, Any]:
+    def apatch_policy_sign(target_dir: str = ".", project_admission: bool = False) -> Dict[str, Any]:
         """Sign the monitor config (sandbox/enforcement/hooks) with the enrolled identity → .apatch/policy.lock.json. Makes out-of-channel tampering detectable (RFP-005 §0.3). Requires APATCH_AGENT_ID + APATCH_AGENT_KEY."""
         from apatch.policy_lock import sign_policy
 
-        return sign_policy(target_dir)
+        return sign_policy(target_dir, project_admission=project_admission)
 
     @mcp.tool()
     def apatch_policy_verify(target_dir: str = ".") -> Dict[str, Any]:

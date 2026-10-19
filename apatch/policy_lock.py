@@ -46,15 +46,19 @@ def policy_lock_path(root: str) -> str:
     return os.path.join(os.path.abspath(root), POLICY_LOCK_REL)
 
 
-def compute_policy_manifest(root: str = ".") -> Dict[str, Any]:
+def compute_policy_manifest(root: str = ".", *, project_admission: bool = False) -> Dict[str, Any]:
     """Canonical {rel_path: sha256} manifest of the monitor config that exists."""
     root = os.path.abspath(root)
     files: Dict[str, str] = {}
-    for rel in POLICY_FILES:
+    project_files = (".apatch/mcp.json", ".apatch/passport-hook.json") if project_admission else ()
+    for rel in POLICY_FILES + project_files:
         abs_p = os.path.join(root, rel)
         if os.path.isfile(abs_p):
             files[rel.replace("\\", "/")] = file_sha256(abs_p)
-    return {"version": 1, "files": files}
+    manifest = {"version": 1, "files": files}
+    if project_admission:
+        manifest["profile"] = "project_admission.v1"
+    return manifest
 
 
 def _canonical(manifest: Dict[str, Any]) -> bytes:
@@ -72,7 +76,7 @@ def load_policy_lock(root: str = ".") -> Optional[Dict[str, Any]]:
         return None
 
 
-def sign_policy(root: str = ".", *, identity: Any = None) -> Dict[str, Any]:
+def sign_policy(root: str = ".", *, identity: Any = None, project_admission: bool = False, _expected_manifest: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Sign the current policy manifest with apatch's enrolled identity.
 
     Writes ``.apatch/policy.lock.json``. Requires an enrolled identity
@@ -80,6 +84,12 @@ def sign_policy(root: str = ".", *, identity: Any = None) -> Dict[str, Any]:
     be anchored and signing is refused (an ephemeral signature would be
     forgeable by anyone with repo access, defeating the purpose).
     """
+    if project_admission:
+        for relative in (".apatch/mcp.json", ".apatch/passport-hook.json"):
+            candidate = Path(root).absolute() / relative
+            if (not candidate.is_file() or candidate.is_symlink() or
+                    any(parent.is_symlink() for parent in candidate.parents)):
+                return {"ok": False, "error": "project configuration must exist without symbolic links before signing"}
     from apatch.trust_identity import anchor_status, load_local_identity
 
     identity = identity or load_local_identity(root)
@@ -93,7 +103,9 @@ def sign_policy(root: str = ".", *, identity: Any = None) -> Dict[str, Any]:
             ),
         }
 
-    manifest = compute_policy_manifest(root)
+    manifest = compute_policy_manifest(root, project_admission=True) if project_admission else compute_policy_manifest(root)
+    if _expected_manifest is not None and manifest != _expected_manifest:
+        return {"ok": False, "error": "policy inputs changed from the reviewed manifest"}
     payload = _canonical(manifest)
     signature = identity.key_provider.sign(payload)
     pub_raw = identity.key_provider.get_public_key()
@@ -184,7 +196,11 @@ def verify_policy(root: str = ".") -> Dict[str, Any]:
     except Exception as exc:
         errors.append(f"signature invalid: {exc}")
 
-    current = compute_policy_manifest(root)
+    profile = signed_manifest.get("profile") if isinstance(signed_manifest, dict) else None
+    profile_supported = profile in (None, "project_admission.v1")
+    if not profile_supported:
+        errors.append("unsupported policy manifest profile")
+    current = compute_policy_manifest(root, project_admission=True) if profile == "project_admission.v1" else compute_policy_manifest(root)
     signed_files = (signed_manifest.get("files") or {}) if isinstance(signed_manifest, dict) else {}
     cur_files = current["files"]
     drift: Dict[str, List[str]] = {"added": [], "removed": [], "changed": []}
@@ -203,7 +219,7 @@ def verify_policy(root: str = ".") -> Dict[str, Any]:
     secure = _signer_is_anchored(lock, root=root)
 
     return {
-        "ok": signature_ok and not has_drift,
+        "ok": signature_ok and not has_drift and profile_supported,
         "signed": True,
         "signature_ok": signature_ok,
         "drift": drift,

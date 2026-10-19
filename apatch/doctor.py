@@ -68,7 +68,7 @@ def build_trustchain_status(
 
     return {
         "active": tc_active,
-        "path": TrustChainHelper(workspace, auto_init=False).trustchain_dir if tc_active else None,
+        "path": TrustChainHelper(workspace, auto_init=False, read_only=True).trustchain_dir if tc_active else None,
         "mode": mode,
         "summary": summary,
         "enforcement_active": enforcement_on,
@@ -106,7 +106,7 @@ def build_policy_snapshot(workspace: str) -> Dict[str, Any]:
     from apatch.sandbox import sandbox_status_workspace
 
     workspace = os.path.abspath(workspace)
-    tc = TrustChainHelper(workspace, auto_init=False)
+    tc = TrustChainHelper(workspace, auto_init=False, read_only=True)
     tc_active = tc.has_trustchain()
     enforcement_on = is_enforcement_enabled(workspace)
     return {
@@ -141,6 +141,40 @@ def _governed_workflow_for_agent() -> List[str]:
     return governed_workflow_steps(with_artifacts=True)
 
 
+def _effective_config(workspace: str, trust_anchor: Dict[str, Any]) -> Dict[str, Any]:
+    """Explain the identity already resolved by anchor_status; never select a signer."""
+    from apatch.trust_identity import active_workspace_identity_scope
+
+    scope = active_workspace_identity_scope()
+    identity_file = {
+        "kind": "file",
+        "path": os.path.join(scope or workspace, ".apatch", "agent-identity.json"),
+        "field": "agent_id",
+    }
+    ambient = {"kind": "environment", "field": "APATCH_AGENT_ID"}
+    fallback = {"kind": "default", "field": "ephemeral"}
+    signer = trust_anchor.get("agent_id")
+    if scope is not None:
+        source = identity_file
+        precedence = ["verified workspace identity; ambient identity ignored", "invalid scoped identity is refused; no fallback"]
+    else:
+        source = ambient if os.environ.get("APATCH_AGENT_ID", "").strip() else identity_file
+        precedence = ["APATCH_AGENT_ID environment", ".apatch/agent-identity.json agent_id", "no usable provider: ephemeral"]
+        if signer is None:
+            source = fallback
+    return {
+        "signer": {"value": signer, "source": source, "precedence": precedence},
+        "workspace": {
+            "value": workspace,
+            "source": {"kind": "argument", "field": "target_dir"},
+            "precedence": [
+                "run_doctor uses the supplied target_dir (default '.')",
+                "MCP target routing resolves the bound workspace or approved alias before this call",
+            ],
+        },
+    }
+
+
 def run_doctor(target_dir: str = ".") -> Dict[str, Any]:
     """Diagnostics JSON for CLI ``apatch doctor`` and MCP ``apatch_doctor``.
 
@@ -148,7 +182,7 @@ def run_doctor(target_dir: str = ".") -> Dict[str, Any]:
     ``sandbox``, ``toolchain``, ``agent_protocol``, ``warnings``.
     """
     workspace = os.path.abspath(target_dir)
-    tc = TrustChainHelper(workspace, auto_init=False)
+    tc = TrustChainHelper(workspace, auto_init=False, read_only=True)
     grammars: List[Dict[str, Any]] = []
     for name in sorted(_LANG_MODULES):
         lang = load_language(name)
@@ -199,7 +233,7 @@ def run_doctor(target_dir: str = ".") -> Dict[str, Any]:
     from apatch.policy_lock import policy_status
 
     policy = policy_status(workspace)
-    inclusion = inclusion_status(workspace)
+    inclusion = inclusion_status(workspace, read_only=True)
     if (
         inclusion.get("anchored")
         and inclusion.get("uncovered")
@@ -279,6 +313,7 @@ def run_doctor(target_dir: str = ".") -> Dict[str, Any]:
         "lane": lane_info(workspace),
         "trustchain": trustchain_status,
         "trust_anchor": trust_anchor,
+        "effective_config": _effective_config(workspace, trust_anchor),
         "policy": policy,
         "inclusion": inclusion,
         "recommended_workflow": _governed_workflow_for_agent(),

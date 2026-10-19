@@ -28,3 +28,22 @@ def _package_version() -> str:
 
 
 __version__ = _package_version()
+
+
+def _source_identity() -> str:
+    """Identify the exact source tree present when this package was loaded."""
+    import hashlib
+    digest = hashlib.sha256()
+    root = Path(__file__).resolve().parent
+    for path in sorted(root.rglob("*.py")):
+        relative = path.relative_to(root).as_posix().encode("utf-8")
+        digest.update(len(relative).to_bytes(4, "big"))
+        digest.update(relative)
+        digest.update(hashlib.sha256(path.read_bytes()).digest())
+    return digest.hexdigest()
+
+
+# Capture before submodules load. Re-reading disk at inspection time cannot be
+# mistaken for the identity of code already imported by this process.
+_LOADED_SOURCE_IDENTITY = _source_identity()
+

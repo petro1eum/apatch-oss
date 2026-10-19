@@ -13,7 +13,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, NoEncryption
 import pytest
 
-from apatch.trust_identity import (SigningIdentityError, _PemKeyProvider,
+from apatch.trust_identity import (CommandKeyProvider, CommandSigningError, SigningIdentityError, _PemKeyProvider,
     active_workspace_identity_scope, load_local_identity, workspace_identity_scope)
 from apatch.trustchain_helper import TrustChainHelper
 
@@ -234,23 +234,86 @@ def test_scoped_pem_pin_cannot_be_replaced_by_caller_command_provider(project, t
     assert dict(os.environ) == before
 
 
-def test_refusing_command_signer_never_downgrades_or_retries(project, tmp_path, monkeypatch):
+SECRETS_REASON_CODES = (
+    "CONSENT_WINDOW_NOT_VISIBLE", "CONSENT_TIMED_OUT", "USER_DECLINED",
+    "TOUCH_ID_TIMED_OUT", "TOUCH_ID_CANCELLED", "TOUCH_ID_UNAVAILABLE",
+    "CALLER_CHANGED", "CALLER_DISCONNECTED", "SIGNING_FAILED",
+    "TOUCH_ID_DENIED", "REQUEST_REJECTED",
+)
+SECRETS_REQUEST_ID = "61cab062-b7fe-4637-b55c-a8d363a75a77"
+SECRETS_ERROR_PREFIX = "trustchain-secrets-signer: SECRETS_SIGNING_ERROR "
+
+
+def secrets_error_stderr(**overrides):
+    body = {"request_id": SECRETS_REQUEST_ID, "error_code": "USER_DECLINED",
+            "message": "KEY_MATERIAL_MUST_NOT_ESCAPE"}
+    body.update(overrides)
+    return (SECRETS_ERROR_PREFIX + json.dumps(body) + "\n").encode()
+
+
+@pytest.mark.parametrize("reason", [None, *SECRETS_REASON_CODES])
+def test_refusing_command_signer_never_downgrades_or_retries(project, tmp_path, monkeypatch, reason):
     root = workspace_pin(tmp_path / "refusing-command", backend="command")
     data = json.loads((root / ".apatch/agent-identity.json").read_text())
     script = root.parent / (root.name + "-command.py")
     calls = root.parent / "refused-sign-calls"
-    script.write_text("from pathlib import Path\np=Path(" + repr(str(calls)) + ")\n"
-        + "p.write_text(p.read_text()+'x' if p.exists() else 'x')\nraise SystemExit(42)\n")
+    stderr = secrets_error_stderr(error_code=reason) if reason else b""
+    script.write_text("from pathlib import Path\nimport sys\np=Path(" + repr(str(calls)) + ")\n"
+        + "p.write_text(p.read_text()+'x' if p.exists() else 'x')\n"
+        + "sys.stderr.buffer.write(" + repr(stderr) + ")\nraise SystemExit(42)\n")
     with workspace_identity_scope(str(root)):
         helper = TrustChainHelper(str(root), auto_init=False)
         monkeypatch.setattr(helper, "_commit_via_subprocess", lambda *args, **kwargs: pytest.fail("denial cannot retry in child"))
         before_head = helper.ledger_head()
         assert helper.commit_action("apatch", {"files":{"src/must-not-notarize.py":{"sha256":"2"*64}}}) is False
-        assert helper.last_commit_evidence["error_type"] == "PRIMARY_SIGNING_FAILED"
+        evidence = helper.last_commit_evidence
+        assert evidence["error_type"] == "PRIMARY_SIGNING_FAILED"
+        assert evidence["error_code"] == "SIGN_COMMAND_FAILED"
+        assert evidence["reconciliation_required"] is True
+        if reason:
+            assert evidence["cause"]["source"] == "trustchain-secrets"
+            assert evidence["cause"]["error_code"] == reason
+            assert evidence["cause"]["request_id"] == SECRETS_REQUEST_ID
+            assert evidence["cause"]["message"]
+        else:
+            assert "cause" not in evidence
+        assert "KEY_MATERIAL_MUST_NOT_ESCAPE" not in json.dumps(evidence)
         assert calls.read_text() == "x"
         assert helper.ledger_head() == before_head
         assert not list((root / ".trustchain/objects").glob("op_*.json"))
         assert not (root / ".apatch/notarized_index.json").exists()
+
+
+@pytest.mark.parametrize("stderr", [
+    b"KEY_MATERIAL_MUST_NOT_ESCAPE",
+    secrets_error_stderr().replace(b"trustchain-secrets-signer:", b"other-signer:"),
+    SECRETS_ERROR_PREFIX.encode() + b"{broken-json}",
+    SECRETS_ERROR_PREFIX.encode() + b"\xff",
+    secrets_error_stderr(request_id="not-a-request-id"),
+    secrets_error_stderr(error_code="UNKNOWN_REASON"),
+    secrets_error_stderr(message=42),
+    secrets_error_stderr(extra="KEY_MATERIAL_MUST_NOT_ESCAPE"),
+    secrets_error_stderr(message="x" * 4096),
+    secrets_error_stderr() + secrets_error_stderr(),
+    secrets_error_stderr().replace(b'{', b'{"error_code":"TOUCH_ID_CANCELLED",', 1),
+])
+def test_command_signer_ignores_invalid_secrets_diagnostics(monkeypatch, stderr):
+    monkeypatch.delenv("APATCH_AGENT_SIGN_TIMEOUT_SECONDS", raising=False)
+    provider = CommandKeyProvider("unused-signer", base64.b64encode(bytes(32)).decode(), "fixture")
+    calls = []
+
+    def refuse(argv, **kwargs):
+        calls.append(kwargs["input"])
+        return subprocess.CompletedProcess(argv, 2, b"", stderr)
+
+    monkeypatch.setattr(subprocess, "run", refuse)
+    with pytest.raises(CommandSigningError) as caught:
+        provider.sign(b"exact-fixture-payload")
+    assert caught.value.to_dict() == {
+        "error_type": "SIGN_COMMAND_ERROR", "error_code": "SIGN_COMMAND_FAILED",
+        "timeout_seconds": None, "returncode": 2, "reconciliation_required": True,
+    }
+    assert calls == [b"exact-fixture-payload"]
 
 
 def test_enforced_unconfigured_workspace_refuses_ephemeral_signing(tmp_path, monkeypatch):

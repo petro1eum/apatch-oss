@@ -70,19 +70,34 @@ class TrustChainHelper:
 
     def __init__(
         self, target_dir: str, auto_init: bool = True, *,
-        existing_signer: Optional[ExistingSignerBinding] = None,
+        existing_signer: Optional[ExistingSignerBinding] = None, read_only: bool = False,
     ):
         if existing_signer is not None and type(existing_signer) is not ExistingSignerBinding:
             raise ExistingSignerRefused("EXISTING_SIGNER_EXPECTATION_INVALID")
         self.existing_signer = existing_signer
         self.last_platform_push: Optional[dict] = None
-        self.auto_init = auto_init
+        self.auto_init = auto_init and not read_only
         self.target_dir = os.path.abspath(target_dir)
-        self.workspace_root = self.resolve_workspace_root(self.target_dir)
+        if self.existing_signer is not None:
+            # Existing-signer requests bind an explicit workspace, not an ancestor.
+            root = Path(self.target_dir).resolve()
+            if not root.is_dir():
+                raise ExistingSignerRefused("EXISTING_SIGNER_WORKSPACE_SCOPE_INVALID")
+            self.target_dir = self.workspace_root = str(root)
+            for relative in (".apatch", ".apatch/agent-identity.json", ".trustchain",
+                             ".trustchain/HEAD", ".trustchain/objects", ".trustchain/chain",
+                             ".trustchain/refs"):
+                if (root / relative).is_symlink():
+                    raise ExistingSignerRefused("EXISTING_SIGNER_WORKSPACE_SCOPE_INVALID")
+        else:
+            self.workspace_root = self.resolve_workspace_root(self.target_dir)
         self.trustchain_dir = self._detect_trustchain_dir()
         self._physical_backups: dict[str, "BackupManager"] = {}
         self._signature_index: Optional[Dict[str, str]] = None
         self._last_commit_evidence: Optional[Dict[str, Any]] = None
+        # Discovery suppresses constructor writes without changing signer scope.
+        if read_only and self.existing_signer is None:
+            return
         if self.existing_signer is not None:
             head = Path(self.trustchain_dir or "") / "HEAD"
             try:
@@ -91,6 +106,8 @@ class TrustChainHelper:
                 existing_head = ""
             if not existing_head:
                 raise ExistingSignerRefused("EXISTING_SIGNER_JOURNAL_REQUIRED")
+            if read_only:
+                return
             # Existing-only construction must not initialize a journal or reversibles.
             self._ensure_policy_hooks()
         else:
@@ -109,15 +126,18 @@ class TrustChainHelper:
         cur = os.path.abspath(start_path)
         if os.path.isfile(cur):
             cur = os.path.dirname(cur)
-        best = cur
+        start = cur
+        best = None
         while True:
             if os.path.exists(os.path.join(cur, ".git")):
                 return cur
-            if any(os.path.exists(os.path.join(cur, name)) for name in cls._MARKER_FILES):
+            if any(os.path.isdir(os.path.join(cur, name)) for name in (".apatch", ".trustchain")):
+                return best or cur
+            if best is None and any(os.path.exists(os.path.join(cur, name)) for name in cls._MARKER_FILES):
                 best = cur
             parent = os.path.dirname(cur)
             if parent == cur:
-                return best
+                return best or start
             cur = parent
 
     def _detect_trustchain_dir(self) -> Optional[str]:
@@ -350,7 +370,10 @@ class TrustChainHelper:
         restored: List[str] = []
         for entry in mgr._load_existing_backups():
             orig = entry.get("original_file")
-            if orig and mgr.restore_file(orig):
+            if orig and entry.get("action") == "created" and not os.path.lexists(orig):
+                # The owned CREATE preimage is absence; repeated restore is complete.
+                restored.append(orig)
+            elif orig and mgr.restore_file(orig):
                 restored.append(orig)
         if not restored:
             from apatch.backup import BackupManager as _BackupManager
@@ -448,17 +471,27 @@ class TrustChainHelper:
                 absolute = os.path.join(self.workspace_root, rel)
                 if os.path.isfile(absolute):
                     restored_meta[rel] = {"sha256": self._file_sha256(absolute)}
-            recorded = self.commit_action(
-                "apatch",
-                {
-                    "action": "rollback_compensation",
-                    "checkpoint": name,
-                    "governed_session_id": lease_owner,
-                    "files": restored_meta,
-                },
-            )
-            release_rollback_lease()
-            return files_ok or recorded
+            self.last_rollback_result = {
+                "physical_restored": files_ok,
+                "compensation_required": True,
+                "compensation_recorded": False,
+                "restored": [os.path.join(self.workspace_root, rel) for rel in backup_paths]
+                if files_ok else [],
+            }
+            try:
+                recorded = self.commit_action(
+                    "apatch",
+                    {
+                        "action": "rollback_compensation",
+                        "checkpoint": name,
+                        "governed_session_id": lease_owner,
+                        "files": restored_meta,
+                    },
+                )
+                self.last_rollback_result["compensation_recorded"] = bool(recorded)
+                return files_ok and bool(recorded)
+            finally:
+                release_rollback_lease()
 
         try:
             ref_path = os.path.join(self.trustchain_dir, "refs", "checkpoints", f"{name}.ref")
@@ -897,6 +930,7 @@ class TrustChainHelper:
         }
 
     def commit_action(self, tool_id: str, payload: dict) -> bool:
+        from apatch.trust_identity import CommandSigningError
         captured_identity = None
         if self.existing_signer is not None:
             # Clear any prior receipt before resolving/refusing this new operation.
@@ -918,6 +952,16 @@ class TrustChainHelper:
         self._last_commit_evidence = None
         try:
             identity = captured_identity if captured_identity is not None else self._commit_identity()
+        except ExistingSignerRefused:
+            raise
+        except CommandSigningError as exc:
+            self._last_commit_evidence = {"persisted": False, **exc.to_dict()}
+            if self.existing_signer is not None:
+                raise ExistingSignerRefused(exc.code,
+                    reconciliation_required=exc.reconciliation_required) from None
+            self._last_commit_evidence.update(
+                error_type="SIGNING_IDENTITY_UNAVAILABLE", exception_type=type(exc).__name__)
+            return False
         except Exception as exc:
             if self.existing_signer is not None:
                 raise
@@ -966,6 +1010,15 @@ class TrustChainHelper:
                     ok = bool(self._last_commit_evidence.get("persisted"))
                     if not ok and self.existing_signer is not None:
                         raise ExistingSignerRefused("EXISTING_SIGNER_RECEIPT_INVALID", reconciliation_required=True)
+                except CommandSigningError as exc:
+                    self._last_commit_evidence = {"persisted": False, **exc.to_dict()}
+                    if self.existing_signer is not None:
+                        raise ExistingSignerRefused(exc.code, reconciliation_required=True) from None
+                    self._last_commit_evidence.update(
+                        error_type=("PRIMARY_SIGNING_PARTIAL_APPEND"
+                            if self.ledger_head() != before_head else "PRIMARY_SIGNING_FAILED"),
+                        exception_type=type(exc).__name__)
+                    ok = False
                 except Exception as exc:
                     if self.existing_signer is not None:
                         if isinstance(exc, ExistingSignerRefused):
@@ -979,6 +1032,12 @@ class TrustChainHelper:
                             if self.ledger_head() != before_head else "PRIMARY_SIGNING_FAILED"),
                         "exception_type": type(exc).__name__}
                     ok = False
+
+        if identity is not None and self._last_commit_evidence is not None:
+            for field in ("last_signing_request", "last_signing_result"):
+                value = getattr(identity.key_provider, field, None)
+                if value is not None:
+                    self._last_commit_evidence[field.removeprefix("last_")] = value
 
         if ok and identity is not None:
             try:
@@ -1222,7 +1281,7 @@ class TrustChainHelper:
             "import base64,json,os\n"
             "from contextlib import nullcontext\n"
             "from trustchain import TrustChain,TrustChainConfig\n"
-            "from apatch.trust_identity import load_local_identity,workspace_identity_scope\n"
+            "from apatch.trust_identity import load_local_identity,workspace_identity_scope,CommandSigningError\n"
             "root=os.environ['TC_WORKSPACE_ROOT']\n"
             "expected=json.loads(os.environ['TC_EXPECTED_IDENTITY'])\n"
             "scope=workspace_identity_scope(root) if os.environ['TC_IDENTITY_SCOPE']=='workspace' else nullcontext()\n"
@@ -1235,8 +1294,15 @@ class TrustChainHelper:
             "    kwargs=dict(enable_chain=True,chain_storage='file',chain_dir=os.environ['TC_CHAIN_DIR'])\n"
             "    if identity is not None: kwargs['key_provider']=identity.key_provider\n"
             "    tc=TrustChain(TrustChainConfig(**kwargs))\n"
-            "    signed=tc.sign(tool_id=os.environ['TC_TOOL_ID'],data=json.loads(os.environ['TC_PAYLOAD']))\n"
-            "    print(json.dumps({'signature':signed.signature,'length':tc.chain.length}))\n"
+            "    try:\n"
+            "        signed=tc.sign(tool_id=os.environ['TC_TOOL_ID'],data=json.loads(os.environ['TC_PAYLOAD']))\n"
+            "    except CommandSigningError as exc:\n"
+            "        print(json.dumps({'command_signing_error':exc.to_dict()}))\n"
+            "        raise SystemExit(2)\n"
+            "    provider=identity.key_provider if identity is not None else None\n"
+            "    print(json.dumps({'signature':signed.signature,'length':tc.chain.length,\n"
+            "        'signing_request':getattr(provider,'last_signing_request',None),\n"
+            "        'signing_result':getattr(provider,'last_signing_result',None)}))\n"
         )
         env = os.environ.copy()
         env.update(TC_CHAIN_DIR=self.trustchain_dir, TC_TOOL_ID=tool_id,
@@ -1251,14 +1317,18 @@ class TrustChainHelper:
             res = subprocess.run([py_exe, "-c", script], capture_output=True, text=True, env=env)
         except OSError:
             res = None
+        try:
+            receipt = json.loads([line for line in res.stdout.splitlines() if line.strip()][-1]) if res else {}
+        except (IndexError, json.JSONDecodeError):
+            receipt = {}
         if res is None or res.returncode != 0:
             self._last_commit_evidence = {"persisted": False, "validation": "single_object_subprocess",
                 "error_type": "PINNED_SUBPROCESS_SIGNING_FAILED"}
+            diagnostic = receipt.get("command_signing_error")
+            if isinstance(diagnostic, dict) and diagnostic.get("error_type") == "SIGN_COMMAND_ERROR":
+                self._last_commit_evidence.update(diagnostic, persisted=False,
+                    error_type="PINNED_SUBPROCESS_SIGNING_FAILED")
             return False
-        try:
-            receipt = json.loads([line for line in res.stdout.splitlines() if line.strip()][-1])
-        except (IndexError, json.JSONDecodeError):
-            receipt = {}
         signature, length = receipt.get("signature"), receipt.get("length")
         after_head = self.ledger_head()
         object_path, record_valid, value = None, False, None
@@ -1284,6 +1354,10 @@ class TrustChainHelper:
             "record_valid": record_valid, "head_valid": head_valid, "signature": signature,
             "object_path": object_path, "length_before": None, "length_after": length,
             "ledger_head": after_head, "merkle_root": None}
+        if persisted:
+            for field in ("signing_request", "signing_result"):
+                if isinstance(receipt.get(field), dict):
+                    self._last_commit_evidence[field] = receipt[field]
         return persisted
 
     def bind_physical_backup(self, checkpoint_name: str, backup_mgr: "BackupManager") -> None:

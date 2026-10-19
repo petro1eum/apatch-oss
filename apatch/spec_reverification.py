@@ -6,7 +6,7 @@ Historical coverage is still derived exclusively from signed ledger records.
 from __future__ import annotations
 
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import hashlib
 from pathlib import Path, PurePosixPath
 import re
@@ -101,15 +101,36 @@ class FileReverification:
     spec: str
     captured: dict
     results: dict | None = None
+    _guard: Any = field(default=None, repr=False, compare=False)
+    _guard_identity: Any = field(default=None, repr=False, compare=False)
+
+    def assert_live(self):
+        from apatch.reverification_guard import FileEventGuard, GuardInvalid
+        if not isinstance(self._guard, FileEventGuard):
+            raise ReverificationError("live pre-verification file event guard required")
+        expected = frozenset(path for row in self.captured.values() for path in row["historical"])
+        if self._guard.root != self.root or self._guard.files != expected:
+            raise ReverificationError("file event guard scope does not match captured files")
+        if self._guard_identity is None or self._guard.identity is not self._guard_identity:
+            raise ReverificationError("original file event observation interval was replaced")
+        try:
+            self._guard.check()
+        except GuardInvalid as exc:
+            raise ReverificationError(str(exc)) from exc
+
+    def close(self):
+        if self._guard is not None:
+            self._guard.close()
 
     def verified(self, results: dict) -> "FileReverification":
-        return FileReverification(self.root, self.spec, deepcopy(self.captured), dict(results))
+        return FileReverification(self.root, self.spec, deepcopy(self.captured), dict(results), self._guard, self._guard_identity)
 
     def payload(self, target_dir: str, artifacts: list) -> dict:
         from apatch.spec_coverage import spec_status_with_coverage
 
         if Path(target_dir).resolve() != Path(self.root).resolve() or self.results is None:
             raise ReverificationError("verification is not bound to this workspace")
+        self.assert_live()
         status = spec_status_with_coverage(self.root, spec=self.spec)
         if not status.get("ok"):
             raise ReverificationError("current requirement evidence unavailable")
@@ -153,6 +174,7 @@ class FileReverification:
             }
         if not proofs:
             raise ReverificationError("verification does not cover session artifacts")
+        self.assert_live()
         return proofs
 
 
@@ -193,7 +215,7 @@ def completed_verification(root, result, *, verify, session_id, timeout_sec=3600
         time.sleep(0.25)
 
 
-def capture_reverification(
+def _capture_reverification(
     root: str, spec: str, rows: list, *, allow_primary_declarations: bool = False,
 ) -> FileReverification | None:
     """Capture before running a verifier. Missing history never means fileless."""
@@ -225,3 +247,40 @@ def capture_reverification(
             "files": measured, "identities": identities,
         }
     return FileReverification(str(Path(root).resolve()), spec, captured) if captured else None
+
+
+def capture_reverification(root: str, spec: str, rows: list, *, allow_primary_declarations=False):
+    """Start observation before hashing; never reconstruct a lost interval."""
+    from apatch.reverification_guard import FileEventGuard, GuardInvalid
+    from dataclasses import replace
+    files = set()
+    for row in rows:
+        if not row.get("has_mutations") and not row.get("files"):
+            continue
+        if allow_primary_declarations and row.get("state") == "in_progress" and not row.get("has_attestation"):
+            continue
+        historical = row.get("file_hashes")
+        if not _valid_files(historical):
+            raise ReverificationError("historical file scope or hashes are incomplete")
+        files.update(historical)
+    guard = None
+    try:
+        if files:
+            guard = FileEventGuard(root, files)
+        snapshot = _capture_reverification(root, spec, rows,
+                                          allow_primary_declarations=allow_primary_declarations)
+        if snapshot is None:
+            if guard is not None:
+                guard.close()
+            return None
+        snapshot = replace(snapshot, _guard=guard, _guard_identity=guard.identity)
+        snapshot.assert_live()
+        return snapshot
+    except (GuardInvalid, OSError) as exc:
+        if guard is not None:
+            guard.close()
+        raise ReverificationError(str(exc)) from exc
+    except BaseException:
+        if guard is not None:
+            guard.close()
+        raise

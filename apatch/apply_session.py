@@ -454,6 +454,8 @@ def run_apply_session(
             pass
         save_session(abs_session, session)
 
+    if session.get("blocked_failure"):
+        return dict(session["blocked_failure"])
     chunks = session["chunks"]
     idx = int(session["chunk_index"])
     if idx >= len(chunks):
@@ -537,23 +539,48 @@ def run_apply_session(
     # runs it once after every candidate in the complete session is present.
     chunk_verify = configured_verify if final_chunk or not deferred_verify else None
 
-    result = apply_from_logs(
-        logs_path,
-        target_dir,
-        tool=session.get("tool"),
-        keyword=session.get("keyword"),
-        steps=steps,
-        replace_all=session.get("replace_all", replace_all),
-        min_confidence=session.get("min_confidence", min_confidence),
-        only_drifted=session.get("only_drifted", only_drifted),
-        verify=chunk_verify,
-        verify_deferred=deferred_verify,
-        verify_baseline=session.get("verify_baseline"),
-        no_trustchain=session.get("no_trustchain", no_trustchain),
-        report_path=chunk_report,
-        quiet=quiet,
-        sandbox_owns_lease=False,
-    )
+    from apatch.notarization_failure import NotarizationFailure
+    try:
+        result = apply_from_logs(
+            logs_path,
+            target_dir,
+            tool=session.get("tool"),
+            keyword=session.get("keyword"),
+            steps=steps,
+            replace_all=session.get("replace_all", replace_all),
+            min_confidence=session.get("min_confidence", min_confidence),
+            only_drifted=session.get("only_drifted", only_drifted),
+            verify=chunk_verify,
+            verify_deferred=deferred_verify,
+            verify_baseline=session.get("verify_baseline"),
+            no_trustchain=session.get("no_trustchain", no_trustchain),
+            report_path=chunk_report,
+            quiet=quiet,
+            sandbox_owns_lease=False,
+        )
+    except NotarizationFailure as error:
+        failure = dict(error.result)
+        checkpoint = failure.get("checkpoint")
+        if checkpoint:
+            session["last_checkpoint"] = checkpoint
+            session["checkpoints"] = list(dict.fromkeys(list(session.get("checkpoints") or []) + [checkpoint]))
+        failure.update(session_path=abs_session, report_path=chunk_report)
+        session["blocked_failure"] = failure
+        # Keep the cursor, backup and signed rows as reconciliation evidence.
+        # Never advance or retry this chunk automatically after a signer exception.
+        save_session(abs_session, session)
+        if session.get("sandbox_lease"):
+            try:
+                from apatch.sandbox import release_lease
+                release_lease(target_dir, lease_id=session.get("lease_id"),
+                              governed_session_id=session.get("governed_session_id"))
+                session["sandbox_lease"] = False
+                save_session(abs_session, session)
+            except Exception:
+                failure["lease_release_failed"] = True
+                session["blocked_failure"] = failure
+                save_session(abs_session, session)
+        return failure
 
     ckpt = result.get("checkpoint")
     if ckpt:

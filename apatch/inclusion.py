@@ -371,7 +371,7 @@ def verify_inclusion(
     }
 
 
-def inclusion_status(root: str = ".") -> Dict[str, Any]:
+def inclusion_status(root: str = ".", *, read_only: bool = False) -> Dict[str, Any]:
     """Compact external-anchor posture for ``doctor``."""
     records = load_inclusion_records(root)
     platform = bool(os.environ.get("APATCH_PLATFORM_URL", "").strip())
@@ -384,7 +384,7 @@ def inclusion_status(root: str = ".") -> Dict[str, Any]:
     try:
         from apatch.trustchain_helper import TrustChainHelper
 
-        local_signed = TrustChainHelper(root).count_signed_blocks()
+        local_signed = TrustChainHelper(root, read_only=read_only).count_signed_blocks()
     except Exception:
         local_signed = None
     return {

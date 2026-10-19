@@ -21,6 +21,8 @@ def parse_spec_dependencies(raw_text: str, current_spec_id: str) -> List[str]:
     seen: set[str] = set()
     out: List[str] = []
     for line in (raw_text or "").splitlines():
+        if line.strip().lower().startswith("owns:"):
+            continue
         if not _DEP_LINE_RE.search(line):
             continue
         for match in _SPEC_ID_RE.finditer(line):
@@ -91,6 +93,51 @@ def _read_spec_raw(source_path: Optional[str]) -> str:
             return fh.read()
     except OSError:
         return ""
+
+
+def resolve_source_binding_artifacts(
+    root: str, spec_id: str, artifacts: Optional[List[Any]],
+    *, requirement_id: Optional[str] = None, spec_path: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """Resolve selected platform-signed references, never caller-supplied authority."""
+    from apatch import governed_work as G, governed_work_delivery as D
+    from apatch.artifact import coerce_artifacts
+
+    required_json = os.environ.get("APATCH_EXECUTION_SOURCE_ARTIFACTS")
+    required = None
+    if required_json is not None:
+        required = json.loads(required_json)
+        if not isinstance(required, list) or len(required) != 1:
+            raise ValueError("the runner source binding data is invalid")
+        if not artifacts:
+            artifacts = required
+    if not artifacts:
+        return []
+    if not isinstance(artifacts, list) or len(artifacts) != 1:
+        raise ValueError("select exactly one ProjectSourceBinding artifact")
+    selected = coerce_artifacts(artifacts)
+    if len(selected) != 1 or selected[0].get("kind") != "project-source-binding":
+        raise ValueError("only a ProjectSourceBinding execution reference is accepted")
+    if required is not None and selected != coerce_artifacts(required):
+        raise ValueError("caller artifacts differ from the run's selected source binding")
+    ref = selected[0]
+    binding = G.load_project_source_binding(root, str(ref["id"]))
+    if binding.get("binding_id") != ref["id"] or G.document_hash(binding) != ref.get("content_hash"):
+        raise ValueError("ProjectSourceBinding id or hash differs from the selected reference")
+    G.validate_project_source_binding(
+        binding, change=G.load_change(root, binding["change_id"]),
+        trusted_authority_keys=D.load_config(root)["binding_authority_keys"],
+    )
+    if binding["spec_id"] != spec_id:
+        raise ValueError("ProjectSourceBinding belongs to another SPEC")
+    refs = binding["requirement_refs"]
+    ids = [item["requirement_id"] for item in refs]
+    if requirement_id is not None and requirement_id not in ids:
+        raise ValueError("ProjectSourceBinding does not cover the selected requirement")
+    spec_hash, current_refs = G._load_spec_inputs(root, spec_id=spec_id, requirement_ids=ids, spec_path=spec_path)
+    if spec_hash != binding["spec_hash"] or current_refs != refs:
+        raise ValueError("ProjectSourceBinding SPEC or requirement hash is stale")
+    return selected
 
 
 def _active_session_requirement(target_dir: str) -> Optional[str]:
@@ -232,6 +279,63 @@ def _blocked(
     }
 
 
+def _read_only_discovery(function):
+    from functools import wraps
+    @wraps(function)
+    def wrapped(*args, **kwargs):
+        from contextlib import nullcontext
+        from apatch.spec import read_only_spec_queries
+        with read_only_spec_queries() if kwargs.get("dry_run") else nullcontext():
+            return function(*args, **kwargs)
+    return wrapped
+
+
+def _execution_preflight(root, needles, finalize):
+    """Aggregate requested effects without changing session or registry state."""
+    from apatch.session_state import load_session_state
+    from apatch.sdd_integrity import admit_effect
+    from apatch.workspace_identity import load_workspace_identity
+    from apatch.trust_identity import active_workspace_identity_scope
+    raw = load_session_state(root)
+    sdd = raw.get("sdd") or {}
+    capability = sdd.get("capability") or {}
+    envelope = capability.get("envelope") or {}
+    blockers = []
+    tools = []
+    if needles:
+        tools += ["apatch_generate_batch", "apatch_simulate", "apatch_apply_session"]
+    if finalize:
+        tools += ["apatch_sdd_verify" if sdd else "apatch_verify_run", "apatch_attest", "apatch_session_end"]
+    if capability:
+        for tool in tools:
+            decision = admit_effect(capability, {"surface": "mcp_tool", "effect": "invoke", "tool": tool})
+            if decision.get("decision") != "allowed":
+                blockers.append({"kind": "operation", "operation": tool, "reasons": decision.get("reasons")})
+        paths = set()
+        for needle in needles or []:
+            action = str(needle.get("action") or "replace")
+            for key in ("source_file", "target_file"):
+                path = needle.get(key)
+                if not path:
+                    continue
+                path = str(path).replace("\\", "/")
+                paths.add(path)
+                decision = admit_effect(capability, {"surface": "mutation", "effect": action, "path": path})
+                if decision.get("decision") != "allowed":
+                    blockers.append({"kind": "path", "path": path, "reasons": decision.get("reasons")})
+        available = (envelope.get("budgets") or {}).get("files")
+        if isinstance(available, int) and len(paths) > available:
+            blockers.append({"kind": "budget", "resource": "files", "required": len(paths), "available": available})
+    workspace = load_workspace_identity(root) or {}
+    expected = str(workspace.get("agent_id") or "")
+    ambient = os.environ.get("APATCH_AGENT_ID", "").strip()
+    actual = expected if active_workspace_identity_scope() is not None else ambient or expected
+    if expected and actual and expected != actual:
+        blockers.append({"kind": "owner", "expected": expected, "actual": actual})
+    return blockers
+
+
+@_read_only_discovery
 def execute_next_workspace(
     target_dir: str = ".",
     *,
@@ -242,6 +346,7 @@ def execute_next_workspace(
     needles: Optional[List[Dict[str, Any]]] = None,
     finalize: bool = False,
     completion_summary: Optional[str] = None,
+    artifacts: Optional[List[Any]] = None,
     logs_path: str = "patches.jsonl",
     verify_deferred: bool = True,
     defer_verify: bool = False,
@@ -263,8 +368,21 @@ def execute_next_workspace(
 
     from apatch.worktree_lane import prepare_execution_root
 
-    prep = prepare_execution_root(target_dir, spec=spec)
-    root = os.path.abspath(prep["path"])
+    # Resolve routing without creating a worktree, then admit the entire nested
+    # effect set before any protocol/session/spec-registry mutation.
+    preview = prepare_execution_root(target_dir, spec=spec, read_only=True)
+    root = os.path.abspath(preview["path"])
+    blockers = _execution_preflight(root, needles, finalize)
+    if preview.get("missing_worktree"):
+        blockers.append({"kind": "workspace", "path": root, "reason": "worktree_missing"})
+    if blockers:
+        return {
+            "ok": False, "dry_run": bool(dry_run), "error_type": "SPEC_PREFLIGHT_BLOCKED",
+            "execution_phase": "preflight", "blockers": blockers,
+            "mutation_performed": False, "recoverable": True,
+            "recommended_action": "resolve_reported_blockers",
+        }
+    prep = preview if dry_run else prepare_execution_root(target_dir, spec=spec)
     if not dry_run:
         from apatch.path_leases import writer_protocol_preflight
 
@@ -368,6 +486,31 @@ def execute_next_workspace(
         return {"ok": False, "error": "no open requirement found"}
 
     req_token = f"{spec_id}#{req_id}"
+
+    try:
+        from apatch.session_state import load_session_state
+        current = load_session_state(root)
+        active_source = [item for item in current.get("artifacts") or []
+                         if isinstance(item, dict) and item.get("kind") == "project-source-binding"]
+        if not current.get("session_id") or current.get("ended_at"):
+            active_source = []
+        source_artifacts = resolve_source_binding_artifacts(
+            root, spec_id, artifacts, requirement_id=req_id, spec_path=source_path,
+        )
+        if current.get("session_id") and not current.get("ended_at"):
+            if source_artifacts and source_artifacts != active_source:
+                raise ValueError("active session lacks the exact pre-mutation source binding")
+            source_artifacts = resolve_source_binding_artifacts(
+                root, spec_id, active_source, requirement_id=req_id, spec_path=source_path,
+            )
+    except (KeyError, OSError, TypeError, ValueError) as exc:
+        return _blocked(
+            "source binding could not be verified before execution",
+            error_type="SOURCE_BINDING_INVALID",
+            recommended_action="review_exact_source_binding",
+            requirement_token=req_token,
+        )
+
 
     if dry_run:
         return {
@@ -516,7 +659,7 @@ def execute_next_workspace(
         resolved = resolve_requirement(root, req_token, spec=spec_id, spec_path=spec_path)
         if not resolved.get("ok"):
             return resolved
-        start = rt.open_session(resolved["intent"], artifacts=[resolved["artifact"]])
+        start = rt.open_session(resolved["intent"], artifacts=source_artifacts + [resolved["artifact"]])
         steps_completed.append("session_start")  # SPEC-EXECUTOR-1 R3
         if not start.get("ok"):
             return start
@@ -585,7 +728,7 @@ def execute_next_workspace(
             rebound = set_session_intent(
                 root,
                 refreshed_resolution["intent"],
-                artifacts=[refreshed_resolution["artifact"]],
+                artifacts=source_artifacts + [refreshed_resolution["artifact"]],
             )
             if not rebound.get("ok"):
                 out = dict(rebound)
@@ -691,7 +834,7 @@ def execute_next_workspace(
             rebound = set_session_intent(
                 root,
                 refreshed_resolution["intent"],
-                artifacts=[refreshed_resolution["artifact"]],
+                artifacts=source_artifacts + [refreshed_resolution["artifact"]],
             )
             if not rebound.get("ok"):
                 out = dict(rebound)

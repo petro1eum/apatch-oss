@@ -221,8 +221,8 @@ def test_installed_pair_and_resource_paths_are_exact_not_a_source_checkout():
     from importlib.metadata import version
     import apatch
     import apatch_studio
-    assert version("apatch") == "0.8.50"
-    assert version("apatch-studio") == "0.1.5"
+    assert version("apatch") == "0.8.51"
+    assert version("apatch-studio") == "0.1.6"
     for module in (apatch, apatch_studio):
         path = Path(module.__file__).resolve()
         assert path.is_relative_to(Path(sys.prefix).resolve())

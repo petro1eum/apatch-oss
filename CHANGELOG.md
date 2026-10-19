@@ -6,6 +6,39 @@
 
 ## [Unreleased]
 
+## [0.8.53] — 2026-10-19
+
+### Fixed
+
+- Preserve validated native Secrets refusal causes without changing the outer command error contract (F01).
+- Correlate exact signing requests and verified saved results; recover a lost response without silently repeating signing (F02).
+- Negotiate a bounded native signing budget with an outer delivery reserve; retain generic command compatibility (F03).
+- Resume task artifacts and real chunk progress after executor restart while retaining unknown signing outcomes and rotating session capabilities (F08).
+
+### Compatibility
+
+- Saved-result recovery and the advertised native deadline require the corresponding Secrets helper/application update. Existing generic signers retain their wire format.
+- Runtime changes are limited to seven files relative to published APatch 0.8.52. Product caller, key, scope and consent checks remain enabled.
+
+## [0.8.52] — 2026-10-19
+
+### Fixed
+
+- Admit the policy-defined remote service `run` action only for an exact service in the frozen task envelope; keep other service and action refusals unchanged.
+
+## [0.8.51] — 2026-10-16
+
+### Fixed
+
+- Bind mutation, verification and completion evidence to the selected session and exact source content; preserve recovery evidence when signing or finalization fails.
+- Keep an existing workspace signer scoped to its canonical workspace, reject unsafe metadata paths, and preserve structured refusal without retrying another signer.
+- Execute frozen verifier commands in a bounded workspace. The Linux backend requires Landlock and libseccomp and fails closed when containment is unavailable.
+
+### Distribution boundaries
+
+- Export the reviewed generic Core changes and retain the existing public preparation helpers; private owner workflows and private migration modules remain excluded.
+- APatch Studio 0.1.6 is the separately versioned adapter. Native Linux architecture, control-project rollback, PyPI publication and live Cowork acceptance remain separate release gates; this entry does not assert that they have completed.
+
 ## [0.8.50] — 2026-10-06
 
 ### Added

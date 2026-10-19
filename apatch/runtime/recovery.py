@@ -72,6 +72,29 @@ def recover_session(target_dir: str, governed_session_id: str) -> Dict[str, Any]
     resumed = MutationRuntime(root, session_id=session_id).resume_session()
     if not resumed.get("ok"):
         return {**resumed, "recovery": "blocked"}
+    from apatch.runtime.effects import EffectRecoveryError, recover_source_effects
+    from apatch.runtime.errors import SessionBindingError
+    from apatch.sandbox import SandboxError
+    runtime = MutationRuntime(root, session_id=session_id,
+                              session_token=resumed["session_token"], enforce_binding=True)
+    try:
+        effects = recover_source_effects(runtime)
+    except SessionBindingError as exc:
+        return {**resumed, **exc.to_dict(), "recovery": "blocked"}
+    except SandboxError as exc:
+        return {**resumed, "ok": False, "recovery": "blocked", "error": str(exc),
+                "error_type": exc.error_type, "details": exc.details, "recoverable": True}
+    except EffectRecoveryError as exc:
+        return {**resumed, "ok": False, "recovery": "blocked", "error": str(exc),
+                "error_type": exc.code, "recoverable": True,
+                "recommended_action": "Preserve the checkpoint; reconcile exact signed effects or perform native rollback."}
+    if not effects.get("ok"):
+        return {**resumed, **effects, "recovery": "blocked"}
+    if effects.get("recovery") == "source_effects_notarized":
+        resumed.update(effects)
+        resumed["resume_mode"] = "apply" if effects.get("continue") else "verify"
+        resumed["next_action"] = ("apatch_apply_session()" if effects.get("continue")
+                                  else "apatch_verify_run() then apatch_attest()")
     hygiene = run_gc(root, mode="safe")
     return {
         **resumed,

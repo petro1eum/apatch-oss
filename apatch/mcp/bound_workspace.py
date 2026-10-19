@@ -21,7 +21,11 @@ _BOUND: Optional[str] = None
 
 
 def _canonical_at(root: Path) -> bool:
-    return (root / ".apatch" / "mcp.json").is_file()
+    try:
+        return (root / ".apatch" / "mcp.json").is_file()
+    except PermissionError:
+        # An inaccessible candidate is not evidence of a bound workspace.
+        return False
 
 
 def discover_bound_workspace(*, start: Optional[Path] = None) -> Optional[str]:

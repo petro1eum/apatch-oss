@@ -38,6 +38,10 @@ NETWORK_CAPABLE = frozenset(
         "apatch.contribution_export",
         "apatch.governed_work_delivery",
         "apatch.inclusion",
+        # Exact local-tool authorization readback; may publish completed evidence.
+        "apatch.mcp.call_admission",
+        # Local PreToolUse challenge + pinned authorization readback, no dispatch.
+        "apatch.mcp.passport_hook",
         "apatch.outcome_delivery",
         "apatch.platform_client",
         "apatch.taxonomy_delivery",

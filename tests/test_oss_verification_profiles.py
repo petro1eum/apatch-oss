@@ -64,7 +64,8 @@ def test_inventory_is_exact_and_hash_bound(tmp_path, change):
     # A release count is an exact versioned declaration, not a waived failure.
     schema = json.loads((ROOT / "PUBLIC-SOURCE-MANIFEST.json").read_text())["schema"]
     assert len(inv['runtime_files']) == {"apatch.public-source.v2": 266,
-                                       "apatch.public-source.v3": 269}[schema]
+                                       "apatch.public-source.v3": 269,
+                                       "apatch.public-source.v4": 280, "apatch.public-source.v5": 281}[schema]
     assert len(inv['source_files']) == 2
     assert [row['dependency'] for row in inv['existing_optional_skips']] == ['tree_sitter_java']
     source = source_fixture(tmp_path, inv)
@@ -814,7 +815,10 @@ def test_intake_source_inventory_matches_every_declared_runtime_byte():
     inv = inventory()
     result = q.verify_inventory_source(inv, ROOT)
     assert result["inventory_validated"] is True
-    assert result["pinned_runtime_files"] == 269
+    schema = json.loads((ROOT / "PUBLIC-SOURCE-MANIFEST.json").read_text())["schema"]
+    assert result["pinned_runtime_files"] == {"apatch.public-source.v2": 266,
+                                              "apatch.public-source.v3": 269,
+                                              "apatch.public-source.v4": 280, "apatch.public-source.v5": 281}[schema]
     assert result["profile_passed"] is False and result["release_authorized"] is False
 
 def test_canonical_peer_without_public_manifest_keeps_unfiltered_legacy_run(tmp_path):

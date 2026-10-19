@@ -62,10 +62,12 @@ class ExistingSignerBinding:
 
     def resolve(self, workspace_root: str):
         """Resolve through the unchanged native loader and require the exact key."""
+        from apatch.trust_identity import CommandSigningError, load_local_identity
         try:
-            from apatch.trust_identity import load_local_identity
-
             identity = load_local_identity(workspace_root)
+        except CommandSigningError as exc:
+            raise ExistingSignerRefused(exc.code,
+                reconciliation_required=exc.reconciliation_required) from None
         except Exception:
             raise ExistingSignerRefused("EXISTING_SIGNER_RESOLUTION_FAILED") from None
         if identity is None or identity.key_provider is None:

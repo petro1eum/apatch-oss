@@ -55,6 +55,13 @@ def probe_configured_server(workspace: str, *, timeout: float = 15.0) -> dict[st
         # Only the selected block; no user ledger, key, lease or alias registry.
         probe_cfg = dict(cfg)
         configured_env = {str(k): str(v) for k, v in cfg.get('env', {}).items() if v is not None}
+        # The launcher re-applies this detached config after selecting its cwd.
+        # Bind every supported routing hint to the disposable workspace, not
+        # merely the parent process env; startup hygiene then remains isolated.
+        from apatch.mcp.bound_workspace import _WORKSPACE_ENV_KEYS
+        for key in _WORKSPACE_ENV_KEYS:
+            configured_env[key] = str(probe_root)
+        configured_env['APATCH_MCP_BOUND'] = str(probe_root)
         configured_env['APATCH_WORKSPACE_REGISTRY'] = str(probe_root / 'workspaces.json')
         configured_env['APATCH_MCP_STDERR_LOG'] = str(probe_root / 'stderr.log')
         probe_cfg['env'] = configured_env

@@ -248,99 +248,104 @@ def slug_ratify_workspace(
     except ReverificationError as exc:
         return _error("verify", str(exc), slug_n, stages,
                       hint="Restore complete original requirement file evidence before ratification.")
-    runner = _OnceVerifyRunner(root, timeout)
-    _ran, failures, broken, _details = runner(root, requirements)
-    green = not failures and not broken and not unverified_rows
-    open_ids = {str(row.get("id") or "") for row in open_rows}
-    broken_ids = {str(item).split(":", 1)[0] for item in broken}
-    missing_ids = {str(row.get("id") or "") for row in unverified_rows}
-    open_blockers = sorted(open_ids & (set(failures) | broken_ids | missing_ids))
-    can_rebind_open = not failures and not open_blockers
-    verify_out: Dict[str, Any] = {
-        "commands_run": runner.commands_run,
-        "elapsed_sec": round(runner.elapsed_sec, 3),
-        "green": green,
-        "can_rebind_open": can_rebind_open,
-    }
-    if not green:
-        verify_out["red"] = {
-            "failures": failures,
-            "broken": broken,
-            "missing_verify": [r["id"] for r in unverified_rows],
+    try:
+        runner = _OnceVerifyRunner(root, timeout)
+        _ran, failures, broken, _details = runner(root, requirements)
+        green = not failures and not broken and not unverified_rows
+        open_ids = {str(row.get("id") or "") for row in open_rows}
+        broken_ids = {str(item).split(":", 1)[0] for item in broken}
+        missing_ids = {str(row.get("id") or "") for row in unverified_rows}
+        open_blockers = sorted(open_ids & (set(failures) | broken_ids | missing_ids))
+        can_rebind_open = not failures and not open_blockers
+        verify_out: Dict[str, Any] = {
+            "commands_run": runner.commands_run,
+            "elapsed_sec": round(runner.elapsed_sec, 3),
+            "green": green,
+            "can_rebind_open": can_rebind_open,
         }
-    if green:
-        verify_summary = "green"
-    elif can_rebind_open and broken:
-        verify_summary = (
-            "open requirements green; {} broken verify reference(s) outside the open set are advisory"
-        ).format(len(broken))
-    else:
-        verify_summary = "red ({})".format(
-            ", ".join(failures + broken + [
-                "{}:missing_verify".format(r["id"]) for r in unverified_rows
-            ])
-        )
-    _stage(
-        stages,
-        "verify",
-        started,
-        can_rebind_open,
-        "{} unique command(s) run once; {}".format(runner.commands_run, verify_summary),
-    )
-
-    # ── rebind/primary attest (one session, one signed commit) ──────────────
-    started = time.monotonic()
-    attested: List[str] = []
-    primary_attested: List[str] = []
-    reattested: List[str] = []
-    rebind_errors: List[Dict[str, Any]] = []
-    attestation_stats = {"sessions_opened": 0, "ledger_commits": 0}
-    if not open_rows:
-        _stage(stages, "rebind", started, True, "no open requirements")
-    elif not can_rebind_open:
+        if not green:
+            verify_out["red"] = {
+                "failures": failures,
+                "broken": broken,
+                "missing_verify": [r["id"] for r in unverified_rows],
+            }
+        if green:
+            verify_summary = "green"
+        elif can_rebind_open and broken:
+            verify_summary = (
+                "open requirements green; {} broken verify reference(s) outside the open set are advisory"
+            ).format(len(broken))
+        else:
+            verify_summary = "red ({})".format(
+                ", ".join(failures + broken + [
+                    "{}:missing_verify".format(r["id"]) for r in unverified_rows
+                ])
+            )
         _stage(
             stages,
-            "rebind",
+            "verify",
             started,
-            False,
-            "skipped: an actual failure or broken open verify blocks {} open requirement(s)".format(
-                len(open_rows)
-            ),
+            can_rebind_open,
+            "{} unique command(s) run once; {}".format(runner.commands_run, verify_summary),
         )
-    else:
-        from apatch.spec_rebind import attest_verified_requirements
 
-        verify_results = {
-            str(r.get("id")): runner.is_green(r.get("verify"))
-            for r in requirements
-            if r.get("verify")
-        }
-        rebound = attest_verified_requirements(
-            root,
-            spec=spec_id,
-            verify_results=verify_results,
-            evidence=runner.evidence(),
-            **({"reverification": snapshot} if snapshot is not None else {}),
-        )
-        if not rebound.get("ok"):
-            return _error("rebind", str(rebound.get("error")), slug_n, stages,
-                          hint="Rebind could not read the spec/ledger; fix that and re-run.")
-        attested = list(rebound.get("attested") or [])
-        primary_ids = {str(r["id"]) for r in primary_rows}
-        stale_ids = {str(r["id"]) for r in stale_rows}
-        primary_attested = [rid for rid in attested if rid in primary_ids]
-        reattested = [rid for rid in attested if rid in stale_ids]
-        rebind_errors = list(rebound.get("errors") or [])
-        attestation_stats = {
-            "sessions_opened": int(rebound.get("sessions_opened") or 0),
-            "ledger_commits": int(rebound.get("ledger_commits") or 0),
-        }
-        _stage(stages, "rebind", started, not rebind_errors,
-               "{} primary + {} stale requirement(s) attested in {} session / {} commit{}".format(
-                   len(primary_attested), len(reattested),
-                   attestation_stats["sessions_opened"],
-                   attestation_stats["ledger_commits"],
-                   f", {len(rebind_errors)} error(s)" if rebind_errors else ""))
+        # ── rebind/primary attest (one session, one signed commit) ──────────────
+        started = time.monotonic()
+        attested: List[str] = []
+        primary_attested: List[str] = []
+        reattested: List[str] = []
+        rebind_errors: List[Dict[str, Any]] = []
+        attestation_stats = {"sessions_opened": 0, "ledger_commits": 0}
+        if not open_rows:
+            _stage(stages, "rebind", started, True, "no open requirements")
+        elif not can_rebind_open:
+            _stage(
+                stages,
+                "rebind",
+                started,
+                False,
+                "skipped: an actual failure or broken open verify blocks {} open requirement(s)".format(
+                    len(open_rows)
+                ),
+            )
+        else:
+            from apatch.spec_rebind import attest_verified_requirements
+
+            verify_results = {
+                str(r.get("id")): runner.is_green(r.get("verify"))
+                for r in requirements
+                if r.get("verify")
+            }
+            rebound = attest_verified_requirements(
+                root,
+                spec=spec_id,
+                verify_results=verify_results,
+                evidence=runner.evidence(),
+                **({"reverification": snapshot} if snapshot is not None else {}),
+            )
+            if not rebound.get("ok"):
+                return _error("rebind", str(rebound.get("error")), slug_n, stages,
+                              hint="Rebind could not read the spec/ledger; fix that and re-run.")
+            attested = list(rebound.get("attested") or [])
+            primary_ids = {str(r["id"]) for r in primary_rows}
+            stale_ids = {str(r["id"]) for r in stale_rows}
+            primary_attested = [rid for rid in attested if rid in primary_ids]
+            reattested = [rid for rid in attested if rid in stale_ids]
+            rebind_errors = list(rebound.get("errors") or [])
+            attestation_stats = {
+                "sessions_opened": int(rebound.get("sessions_opened") or 0),
+                "ledger_commits": int(rebound.get("ledger_commits") or 0),
+            }
+            _stage(stages, "rebind", started, not rebind_errors,
+                   "{} primary + {} stale requirement(s) attested in {} session / {} commit{}".format(
+                       len(primary_attested), len(reattested),
+                       attestation_stats["sessions_opened"],
+                       attestation_stats["ledger_commits"],
+                       f", {len(rebind_errors)} error(s)" if rebind_errors else ""))
+
+    finally:
+        if snapshot is not None:
+            snapshot.close()
 
     # ── gate (same measured results via the verify_runner seam) ─────────────
     started = time.monotonic()

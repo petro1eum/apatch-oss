@@ -1,4 +1,5 @@
 import json
+import subprocess
 import sys
 import types
 
@@ -123,7 +124,8 @@ def test_verify_notarization_hot_path_does_not_scan_history(tmp_path, monkeypatc
     )
     monkeypatch.setattr(TrustChainHelper, "count_signed_blocks", _fail_scan)
     monkeypatch.setattr(TrustChainHelper, "iter_ledger_entries", _fail_scan)
-    monkeypatch.setattr("apatch.enforcement._git_staged_files", lambda _root: ["svc.py"])
+    subprocess.run(["git", "-C", str(tmp_path), "init", "-q"], check=True)
+    subprocess.run(["git", "-C", str(tmp_path), "add", "svc.py"], check=True)
     result = verify_notarization_workspace(str(tmp_path), staged=True)
     assert result["ok"] is True
     assert result["ledger_scan"] == "cached"
@@ -174,10 +176,16 @@ def test_working_tree_notarization_ignores_machine_local_cursor_mcp(tmp_path, mo
         str(tmp_path),
         {"svc.py": {"sha256": file_sha256(str(source))}},
     )
-    monkeypatch.setattr(
-        "apatch.enforcement._git_unstaged_modified",
-        lambda _root: ["svc.py", ".cursor/mcp.json"],
-    )
+    subprocess.run(["git", "-C", str(tmp_path), "init", "-q"], check=True)
+    # Commit distinct baseline bytes, then restore exactly the notarized source
+    # and machine-local configuration. Both paths now have real unstaged diffs.
+    source.write_text("value = 0\n", encoding="utf-8")
+    (cursor / "mcp.json").write_text("{}\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(tmp_path), "add", "svc.py", ".cursor/mcp.json"], check=True)
+    subprocess.run(["git", "-C", str(tmp_path), "-c", "user.name=Fixture",
+                    "-c", "user.email=fixture@example.invalid", "commit", "-qm", "fixture"], check=True)
+    source.write_text("value = 1\n", encoding="utf-8")
+    (cursor / "mcp.json").write_text('{"mcpServers": {}}\n', encoding="utf-8")
 
     result = verify_notarization_workspace(str(tmp_path), working_tree=True)
 

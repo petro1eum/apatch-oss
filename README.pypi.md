@@ -119,6 +119,26 @@ MCP, use `apatch_execute_next` for one requirement or `apatch_spec_run` with
 the actual requirement mutations or a versioned run manifest. The workflow
 handles the governed session, application, verification and attestation.
 
+Connect your coding client to `apatch` using the [MCP setup guide](https://github.com/petro1eum/apatch-oss/blob/main/docs/mcp_setup.md).
+One connection can route human-registered workspace aliases, with each project
+keeping its own identity and permissions. Start in the bound project with
+`apatch_doctor(target_dir=".")`; inspect a registered workspace before selecting
+its `@alias` for another project.
+
+In 0.8.53, native Secrets refusal reasons, verified saved signing results,
+negotiated deadlines and executor restart progress are preserved. Native result
+recovery and deadline negotiation require the matching Secrets update; generic
+signers remain compatible.
+
+Since 0.8.51, mutation, verification and completion evidence stay bound to the
+selected session and source content. Interrupted signing or finalization keeps
+its recovery evidence. Deferred verification still requires the agreed checks
+and signed attestation before work is complete. See the [release notes](https://github.com/petro1eum/apatch-oss/blob/main/CHANGELOG.md).
+
+In 0.8.52, a policy-authorized service `run` action is admitted only for a
+service explicitly listed in the frozen task envelope. Other actions and
+services remain denied; the remote policy still controls the exact command.
+
 **Sandbox/enforcement setup does not automatically freeze a test contract.**
 The strict SDD profile additionally needs the owner-frozen verification contract
 and exact task envelope. Configure that profile deliberately; do not infer its

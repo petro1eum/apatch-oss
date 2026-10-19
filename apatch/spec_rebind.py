@@ -296,6 +296,8 @@ def rebind_stale_requirements(
             errors.append({"requirement": req_id, "error_type": "REVERIFICATION_INVALID",
                            "error": str(exc), "verify_job_id": getattr(exc, "verify_job_id", None)})
         finally:
+            if snapshot is not None:
+                snapshot.close()
             try:
                 rt.close_session()
             except Exception:  # pragma: no cover - close must never mask result

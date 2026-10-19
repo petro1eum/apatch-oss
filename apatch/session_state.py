@@ -333,10 +333,10 @@ def _derive_phase(tool_name: str, result: Dict[str, Any], failure: Optional[Fail
     if result.get("phase") == "done" and result.get("ok"):
         return PHASE_VERIFY
     if tool_name in {"apatch_resume_session", "apatch_recover"} and result.get("resumed"):
-        # A verify failure whose chunk was already rolled back resumes into apply so
-        # corrected needles can be written. Other recoveries resume into verify for
-        # re-check/attest. Preserve that choice through MCP response enrichment.
-        return PHASE_APPLY if result.get("resume_mode") == "reapply" else PHASE_VERIFY
+        # Preserve the durable resume decision through MCP response enrichment.
+        if result.get("resume_mode") == "reconcile":
+            return PHASE_BLOCKED
+        return PHASE_APPLY if result.get("resume_mode") in {"apply", "reapply"} else PHASE_VERIFY
     return TOOL_DEFAULT_PHASE.get(tool_name, PHASE_IDLE)
 
 
@@ -725,6 +725,10 @@ def enrich_tool_response(
     merged = {**prev, **state_update}
     if failure:
         merged["failure"] = failure.to_dict()
+    elif (tool_name in {"apatch_resume_session", "apatch_recover"}
+          and result.get("resumed") and result.get("resume_mode") == "reconcile"):
+        # Rotating transport capability is not evidence that signing succeeded.
+        merged["failure"] = prev.get("failure")
     elif result.get("ok") is not False:
         merged["failure"] = None
     if state_update.get("trustchain") is not None:
