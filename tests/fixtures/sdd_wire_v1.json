@@ -1,0 +1,4040 @@
+{
+  "schema": "apatch.sdd.wire-cases.v1",
+  "profile": "cowork-exact-v1",
+  "note": "Pure format/content-hash examples, not signatures, approvals or execution evidence.",
+  "golden_canonical": "{\"a\":[0,true,null],\"Проверка\":\"😀\"}",
+  "golden_hash": "sha256:34ac44faef6b84d0d7133352fc211851daca450fd55781d74e02e031872d8f15",
+  "cases": [
+    {
+      "name": "core_producer_builtin_mutant",
+      "valid": true,
+      "browser_valid": true,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 900
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:1c7febcea9fb31f8780f4cb0fed848b7f494486bee7d1cd95672774a68bbfc7c"
+        }
+      }
+    },
+    {
+      "name": "legacy_reversible_seed",
+      "valid": true,
+      "browser_valid": true,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_seed",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:2668c1e8bf18ca31e974d8d46ec88ff3829d9b31c2d7c3fdc6c5ebd815a061d7"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:2668c1e8bf18ca31e974d8d46ec88ff3829d9b31c2d7c3fdc6c5ebd815a061d7",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 900
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:24a7509e0d11cbc6e2343eda1357fcdc1a0f2514f5743876007c2b33cf34a5ec"
+        }
+      }
+    },
+    {
+      "name": "zero_budgets",
+      "valid": true,
+      "browser_valid": true,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 0,
+            "insertions": 0,
+            "deletions": 0,
+            "seconds": 0
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:dc33b84c756c7380111283729cbd7755ffd6033db4abae424c7d9389d53a33a2"
+        }
+      }
+    },
+    {
+      "name": "maximum_safe_integer",
+      "valid": true,
+      "browser_valid": true,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 9007199254740991
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:c700b4e687386359ea59917e216e1faf8a289de6480c0523ffbef187bcd2dd18"
+        }
+      }
+    },
+    {
+      "name": "opaque_unknown_fields",
+      "valid": true,
+      "browser_valid": true,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "x_future": {
+          "😀": [
+            true,
+            null,
+            "é"
+          ]
+        },
+        "document_hash": "sha256:d9015aed52644bbe86a7115141db6dec2f17e0b0f4e1c7f87e56f49eac58eaf3"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:d9015aed52644bbe86a7115141db6dec2f17e0b0f4e1c7f87e56f49eac58eaf3",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 900
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "x_future": {
+            "ignored": "opaque"
+          },
+          "document_hash": "sha256:515d6d215860bf51b68bd3dfa6e6b643fff0643f198faee4f4f5df734d01ba90"
+        }
+      }
+    },
+    {
+      "name": "budget_string",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": "900"
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:f1a33d02d593d30410afcf7da83e6aa76f51a7f6c06537e50ee3f0457da883de"
+        }
+      }
+    },
+    {
+      "name": "budget_true",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": true
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:a9f7ad8d4c39c078202d7b74c669f4b9a3f9960f6ddc4a25b56b97c106f7fb69"
+        }
+      }
+    },
+    {
+      "name": "budget_false",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": false
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:efbbda8343ee7e8d78d406c43e2a40e9a4de183c05a93b46daddd67da36086b0"
+        }
+      }
+    },
+    {
+      "name": "budget_null",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": null
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:54164b682cc2d511507c47c59bae24620ea9d2d5c9c46685ce2236f942517ffb"
+        }
+      }
+    },
+    {
+      "name": "budget_fraction",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 0.5
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:3d81832cbc686bd4a1ffbbce81bfe8bbb79ba78e8afd4e699b349bedca0dd7d3"
+        }
+      }
+    },
+    {
+      "name": "budget_integral_float",
+      "valid": false,
+      "browser_valid": true,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 1.0
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:52298804885060ab992123535799bb5dbdfa4c0fc83f3452ad8341db4758c72e"
+        }
+      }
+    },
+    {
+      "name": "budget_negative",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": -1
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:1a18a851f993a93a8fdd56bdf5b9bc5d03e1c1d6afb91c8f708f7080fce9466d"
+        }
+      }
+    },
+    {
+      "name": "budget_unsafe_integer",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 9007199254740992
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:be907f93707c8045a4f0dacca2eb632ebac32c0bec02ff0be47dfb26f2a02d91"
+        }
+      }
+    },
+    {
+      "name": "missing_budget",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:a880460c60d1bb427a63e34567865721e51654d789b8865afcf158b82fb2ea7f"
+        }
+      }
+    },
+    {
+      "name": "unknown_budget_field",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 900,
+            "tokens": 100
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:0f50919be35552f34c233898d75499539b47e6e77d14b3dd238bdc2743a9764b"
+        }
+      }
+    },
+    {
+      "name": "unknown_envelope_version",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v2",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 900
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:fd6914ec68593ce24ce2fcda139d22c7187d32e9de29e1f7a37fedd78dad654c"
+        }
+      }
+    },
+    {
+      "name": "unknown_contract_version",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v2",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:da643f2e589981139871e7e4df1eb267cedd3a764ae82bb14491814186b131c5"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:da643f2e589981139871e7e4df1eb267cedd3a764ae82bb14491814186b131c5",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 900
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:e55f01ce992c7827e7d91599eae56bab951edbe8f60ab05b40a32dfb1309ac17"
+        }
+      }
+    },
+    {
+      "name": "tampered_seal",
+      "valid": false,
+      "browser_valid": true,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 901
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:1c7febcea9fb31f8780f4cb0fed848b7f494486bee7d1cd95672774a68bbfc7c"
+        }
+      }
+    },
+    {
+      "name": "foreign_contract_pin",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 900
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:1c7febcea9fb31f8780f4cb0fed848b7f494486bee7d1cd95672774a68bbfc7c"
+        }
+      }
+    },
+    {
+      "name": "foreign_baseline",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923",
+          "baseline_hash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 900
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:91925fefba2610af8cd4aaacf32cae0236337ddb5de9d6187ac345539f1e36cd"
+        }
+      }
+    },
+    {
+      "name": "unknown_check",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 900
+          },
+          "checks": [
+            "AC-MISSING"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:95576a4a9b94ae9df24f0bb193c36a2577d8b7e557d1cd3ef1c50a26996768ab"
+        }
+      }
+    },
+    {
+      "name": "wrong_requirement_key",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R2",
+          "contract_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 900
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:9a1a9eee91713737a798897420b77e4f1adb98369b28cbadbca57dae3881f21d"
+        }
+      }
+    },
+    {
+      "name": "unsupported_containment",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 900
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "unbounded",
+          "document_hash": "sha256:d05bc888957f8f97d080239e1b2e159e9bce8f80e4630763b48f26766963051b"
+        }
+      }
+    },
+    {
+      "name": "material_string",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": "true",
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:4216b54d4e9311b28efa3b748ec969f25de4c496583f67958b2f7b71eca72bc9"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:4216b54d4e9311b28efa3b748ec969f25de4c496583f67958b2f7b71eca72bc9",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 900
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:f397008f6e29ec65f18d5a631bccdbf01e5fd188559dd4478c2e145e0e63e6a5"
+        }
+      }
+    },
+    {
+      "name": "mutation_count_boolean",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": false,
+        "document_hash": "sha256:8f5b4d2c6e8d98502f7ba3bf2f19ae46b9d36500f88d9908a304b6c6ff115008"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:8f5b4d2c6e8d98502f7ba3bf2f19ae46b9d36500f88d9908a304b6c6ff115008",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 900
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:76cd54a43569920d916e7fe1456f328997fcae627ba401a215b707136d16522a"
+        }
+      }
+    },
+    {
+      "name": "unsupported_falsification",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "arbitrary_command",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:844a1030b08d90ae047324714b741670df852e7f2bb2cd6b73db7b2c4dd40422"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:844a1030b08d90ae047324714b741670df852e7f2bb2cd6b73db7b2c4dd40422",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 900
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:d8e057ea6f94b7a07ad6ed04134132d15b75fe136d2ddf96fa2d5373fc28e59d"
+        }
+      }
+    },
+    {
+      "name": "missing_environment",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:1f89bb839700a421c8721d1692fc7483838e1ff6b7e03c159a70521bc1808e02"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:1f89bb839700a421c8721d1692fc7483838e1ff6b7e03c159a70521bc1808e02",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 900
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:b3f854a4331883040bbb1f2d3b26b68f895c42b126f66bb2f129b8eca5aed6df"
+        }
+      }
+    },
+    {
+      "name": "wrong_command_pin",
+      "valid": false,
+      "browser_valid": true,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:9157132108c7afc63d1fc015975a25c64e9e58efa2f59fea4e253fd91e262311"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:9157132108c7afc63d1fc015975a25c64e9e58efa2f59fea4e253fd91e262311",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 900
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:86f4d7f9e330aa18348e392a5f68a54818b95d722b2f1c0933a1ba7c8e71fe5e"
+        }
+      }
+    },
+    {
+      "name": "unknown_asset_field",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "execute": "ignored"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:755a3c8f5b3fac5e4f6afecf5f8fd508474226d7c21cbf881e94d982b90524a9"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:755a3c8f5b3fac5e4f6afecf5f8fd508474226d7c21cbf881e94d982b90524a9",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 900
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:0038d108a126e128c53ac4252f742fc43b02fce716a9cbe9392f659cb560399f"
+        }
+      }
+    },
+    {
+      "name": "duplicate_checks",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 900
+          },
+          "checks": [
+            "AC-1",
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:1dd1b388c695a8479d0361a7376058c7099695049754653e0ae834711e4852d8"
+        }
+      }
+    },
+    {
+      "name": "null_scope",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": null,
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 900
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:9f2e95393521b2935cb55fa8256654ddc2d51029f01b3ddf7c808ef51fc87d7f"
+        }
+      }
+    },
+    {
+      "name": "sealed_whitespace_normalization",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:ee668997ed9d3b885cde9408c8032a0fdd8ce8007cc086c856bcbb838f2df923",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            " apatch_tool "
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 900
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:d85f6ed4cf07429a7cbae46d0e0fa10e44787a1d2180accfc19b13d7f5948c44"
+        }
+      }
+    },
+    {
+      "name": "invalid_expected_case_id",
+      "valid": false,
+      "browser_valid": false,
+      "contract": {
+        "brief_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rfp_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spec_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "plan_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority": {
+          "actor_id": "owner:fixture",
+          "role": "authority"
+        },
+        "coverage": {
+          "complete": true,
+          "missing": [],
+          "ambiguous": [],
+          "waivers": []
+        },
+        "judge_environment": {
+          "cwd": ".",
+          "env": {}
+        },
+        "obligations": [
+          {
+            "acceptance_id": "AC-1",
+            "test_id": "checks/check_feature.py::test_feature",
+            "oracle": "Проверка согласованного результата 😀",
+            "perspectives": [
+              "positive",
+              "negative",
+              "boundary",
+              "regression"
+            ],
+            "asset_hashes": [
+              "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ],
+            "judge_assets": [
+              {
+                "path": "checks/check_feature.py",
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "command": [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ],
+            "command_hash": "sha256:5d93bfa7cf59d964f38c035ec22afbd45e2f38342b51cf9ad1f5ae8939dd6e9d",
+            "baseline": {
+              "kind": "observed_red",
+              "result_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "material": true,
+            "falsification": {
+              "kind": "reversible_builtin_mutant",
+              "expected": "red",
+              "target_path": "src/feature.py",
+              "target_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "approver": "owner:fixture",
+            "expected_case_ids": [
+              "case-name"
+            ]
+          }
+        ],
+        "schema": "apatch.sdd.verification-contract.v1",
+        "status": "frozen",
+        "implementation_allowed": true,
+        "source_mutation_count_at_freeze": 0,
+        "document_hash": "sha256:9c043df5b3a15fc725602a9e44e77c8060ffec7d9606cc0e7771a76f763fc609"
+      },
+      "envelopes": {
+        "R1": {
+          "schema": "apatch.sdd.task-envelope.v1",
+          "requirement": "SPEC-WIRE-1#R1",
+          "contract_hash": "sha256:9c043df5b3a15fc725602a9e44e77c8060ffec7d9606cc0e7771a76f763fc609",
+          "baseline_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "allowed_reads": [
+            "src/**",
+            "checks/**"
+          ],
+          "allowed_writes": [
+            "src/feature.py"
+          ],
+          "allowed_symbols": [],
+          "forbidden_paths": [
+            "tests/**"
+          ],
+          "tools": [
+            "apatch_tool"
+          ],
+          "commands": [
+            [
+              "python3",
+              "-m",
+              "pytest",
+              "checks/check_feature.py",
+              "-q"
+            ]
+          ],
+          "network": [],
+          "remote": [],
+          "services": [],
+          "budgets": {
+            "files": 1,
+            "insertions": 80,
+            "deletions": 20,
+            "seconds": 900
+          },
+          "checks": [
+            "AC-1"
+          ],
+          "rollback_owner": "session:self",
+          "containment": "mediated_only",
+          "document_hash": "sha256:4bd3f0b5f43f1384bcfb3288118e8b98b505f1fd992d85107758c6eea1d22b74"
+        }
+      }
+    }
+  ]
+}

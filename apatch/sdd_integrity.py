@@ -20,8 +20,11 @@ import sys
 from contextvars import ContextVar
 
 _VERIFIER_SANDBOX = ContextVar("apatch_verifier_sandbox", default=None)
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Sequence, Set
+
+MAX_WIRE_INTEGER = (1 << 53) - 1
+WIRE_BUDGET_FIELDS = frozenset({"files", "insertions", "deletions", "seconds"})
 
 OWNERSHIP = {
     "session": "apatch.runtime.session",
@@ -283,7 +286,9 @@ def _validate_obligation(raw: Mapping[str, Any]) -> Dict[str, Any]:
     if not isinstance(baseline, Mapping) or baseline.get("kind") != "observed_red":
         raise SddContractError("baseline must record observed_red")
     _require_hash(baseline.get("result_hash"), "baseline result_hash")
-    if bool(obligation.get("material")):
+    if type(obligation.get("material")) is not bool:
+        raise SddContractError("material must be a boolean")
+    if obligation["material"]:
         falsification = obligation.get("falsification")
         if not isinstance(falsification, Mapping):
             raise SddContractError("material obligation requires falsification")
@@ -295,13 +300,23 @@ def _validate_obligation(raw: Mapping[str, Any]) -> Dict[str, Any]:
             "falsification target_path",
         )
     _require_text(obligation.get("approver"), "approver")
+    if "expected_case_ids" in obligation:
+        case_ids = _string_list(obligation["expected_case_ids"], "expected_case_ids", allow_empty=False)
+        for case_id in case_ids:
+            _require_hash(case_id, "expected case id")
+        if len(set(case_ids)) != len(case_ids):
+            raise SddContractError("expected_case_ids must not repeat a case")
     return obligation
 
 
 def freeze_contract(request: Mapping[str, Any]) -> Dict[str, Any]:
     """Freeze the complete judge before an implementation mutation exists."""
 
-    mutation_count = int(request.get("source_mutation_count") or 0)
+    if "schema" in request and request["schema"] != "apatch.sdd.verification-contract.v1":
+        raise SddContractError("unsupported verification contract schema")
+    mutation_count = request.get("source_mutation_count", 0)
+    if type(mutation_count) is not int:
+        raise SddContractError("source_mutation_count must be an integer")
     if mutation_count != 0:
         raise SddContractError("verification contract must freeze before source mutation")
     coverage = request.get("coverage")
@@ -381,19 +396,22 @@ def validate_task_envelope(request: Mapping[str, Any]) -> Dict[str, Any]:
         normalized_commands.append(list(command))
     body["commands"] = normalized_commands
     budgets = body.get("budgets")
-    if not isinstance(budgets, Mapping):
-        raise SddContractError("budgets are required")
+    if not isinstance(budgets, Mapping) or set(budgets) != WIRE_BUDGET_FIELDS:
+        raise SddContractError("budgets must contain exactly files, insertions, deletions, seconds")
     normalized_budgets: Dict[str, int] = {}
     for key in ("files", "insertions", "deletions", "seconds"):
-        value = int(budgets.get(key) or 0)
-        if value < 0:
-            raise SddContractError("budgets cannot be negative")
+        value = budgets[key]
+        if type(value) is not int or not 0 <= value <= MAX_WIRE_INTEGER:
+            raise SddContractError(f"budgets.{key} must be a nonnegative safe integer")
         normalized_budgets[key] = value
     body["budgets"] = normalized_budgets
     _require_text(body.get("rollback_owner"), "rollback_owner")
     if body.get("containment") not in ("mediated_only", "sealed"):
         raise SddContractError("containment must be mediated_only or sealed")
-    return _seal(body)
+    checked = _seal(body)
+    if "document_hash" in request and checked["document_hash"] != request["document_hash"]:
+        raise SddContractError("sealed task envelope is noncanonical; normalization requires an explicit new document")
+    return checked
 
 
 _SCOPE_LIST_FIELDS = (
@@ -467,6 +485,8 @@ def issue_capability(
 ) -> Dict[str, Any]:
     """Issue a role-separated, hash-bound local capability projection."""
 
+    if contract.get("schema") != "apatch.sdd.verification-contract.v1":
+        raise SddContractError("unsupported verification contract schema")
     if contract.get("status") != "frozen" or contract.get("implementation_allowed") is not True:
         raise SddContractError("implementation capability requires a frozen contract")
     _verify_seal(contract, "verification contract")
@@ -1673,3 +1693,83 @@ def containment_claim(level: str, *, direct_shell_available: bool) -> Dict[str, 
         "contained": contained,
         "unsupported_channels": unsupported,
     }
+
+
+def validate_native_snapshot(contract: Mapping[str, Any], envelopes: Mapping[str, Any]) -> None:
+    """Read-only cowork-exact-v1 profile of the existing native v1 documents.
+
+    APatch owns these native formats. Platform keeps its independent boundary
+    validator; shared wire cases prove agreement without a runtime dependency.
+    This validates content seals, not identity, consent or signatures.
+    """
+    def require(condition: bool, label: str) -> None:
+        if not condition:
+            raise SddContractError(label)
+
+    def text(value: Any) -> bool:
+        return isinstance(value, str) and bool(value) and value == value.strip() and all(ord(c) >= 32 for c in value)
+
+    def strings(value: Any, nonempty: bool = False) -> bool:
+        return (isinstance(value, list) and (bool(value) or not nonempty)
+                and all(text(v) for v in value) and len(set(value)) == len(value))
+
+    def path(value: Any) -> bool:
+        return (text(value) and "\\" not in value and not PurePosixPath(value).is_absolute()
+                and ".." not in PurePosixPath(value).parts and str(PurePosixPath(value)) == value and value != ".")
+
+    require(isinstance(contract, Mapping) and contract.get("schema") == "apatch.sdd.verification-contract.v1",
+            "unsupported verification contract schema")
+    _verify_seal(contract, "verification contract")
+    require(contract.get("status") == "frozen" and contract.get("implementation_allowed") is True
+            and type(contract.get("source_mutation_count_at_freeze")) is int
+            and contract["source_mutation_count_at_freeze"] == 0, "contract is not pre-implementation frozen")
+    for key in ("brief_hash", "rfp_hash", "spec_hash", "plan_hash", "baseline_hash"):
+        _require_hash(contract.get(key), key)
+    coverage = contract.get("coverage")
+    require(isinstance(coverage, Mapping) and coverage.get("complete") is True
+            and all(coverage.get(k) == [] for k in ("missing", "ambiguous", "waivers")), "native coverage is incomplete")
+    authority = contract.get("authority")
+    require(isinstance(authority, Mapping) and authority.get("role") == "authority"
+            and text(authority.get("actor_id")), "native authority is invalid")
+    environment = contract.get("judge_environment")
+    require(isinstance(environment, Mapping) and set(environment) == {"cwd", "env"}, "judge_environment is required by cowork-exact-v1")
+    require(environment["cwd"] == "." or path(environment["cwd"]), "judge_environment.cwd is invalid")
+    require(isinstance(environment["env"], Mapping) and all(
+        isinstance(k, str) and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", k)
+        and isinstance(v, str) and "\x00" not in v for k, v in environment["env"].items()), "judge_environment.env is invalid")
+    obligations = contract.get("obligations")
+    require(isinstance(obligations, list) and bool(obligations), "frozen obligations are required")
+    checks: Dict[str, Mapping[str, Any]] = {}
+    for raw in obligations:
+        require(isinstance(raw, Mapping), "frozen obligation must be an object")
+        item = _validate_obligation(raw)
+        require(all(text(item.get(k)) for k in ("acceptance_id", "test_id", "oracle", "approver"))
+                and item["acceptance_id"] not in checks, "frozen check identity/facts are invalid")
+        require(strings(item.get("perspectives"), True), "frozen perspectives are invalid")
+        require(all(_valid_hash(v) for v in item["asset_hashes"]), "frozen asset hashes are invalid")
+        require(all(isinstance(a, Mapping) and set(a) == {"path", "sha256"} and path(a["path"])
+                    for a in item["judge_assets"]), "frozen judge asset path is invalid")
+        require(all(text(v) for v in item["command"]) and canonical_hash(item["command"]) == item["command_hash"], "frozen command_hash mismatch")
+        if item["material"]:
+            require(item["falsification"].get("kind") in {"reversible_seed", "reversible_builtin_mutant"}
+                    and path(item["falsification"]["target_path"]), "unsupported falsification profile")
+        checks[item["acceptance_id"]] = item
+    require(isinstance(envelopes, Mapping) and bool(envelopes), "task envelopes are required")
+    spec_id = None
+    for rk, raw in envelopes.items():
+        require(isinstance(raw, Mapping) and "document_hash" in raw, "task envelope must be sealed")
+        envelope = validate_task_envelope(raw)
+        match = re.fullmatch(r"(SPEC-[A-Z0-9][A-Z0-9-]*)#(R[0-9]+)", str(envelope.get("requirement")))
+        require(match is not None and match[2] == rk, "task requirement does not match its key/profile")
+        spec_id = match[1] if spec_id is None else spec_id
+        require(match[1] == spec_id and envelope["contract_hash"] == contract["document_hash"]
+                and envelope["baseline_hash"] == contract["baseline_hash"], "task contract/baseline pins do not match")
+        for key in ("allowed_reads", "allowed_writes", "allowed_symbols", "forbidden_paths", "tools", "network", "remote", "services", "checks"):
+            require(strings(envelope[key], key == "checks"), f"task {key} must be a unique string list")
+        require(all(path(p) for key in ("allowed_reads", "allowed_writes", "forbidden_paths") for p in envelope[key]), "task scope path is invalid")
+        require(set(envelope["checks"]) <= checks.keys(), "task references a missing frozen check")
+        require(all(all(text(v) for v in argv) for argv in envelope["commands"])
+                and {canonical_hash(argv) for argv in envelope["commands"]}
+                == {checks[c]["command_hash"] for c in envelope["checks"]}, "task argv do not match selected checks")
+        require(text(envelope["rollback_owner"]), "task rollback_owner is invalid")
+
