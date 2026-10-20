@@ -65,8 +65,19 @@ def test_late_native_reply_fits_outer_timeout(monkeypatch, native_capabilities, 
     provider = CommandKeyProvider(command, broker.public, "fixture")
     signature = provider.sign(b"exact fixture operation")
     assert provider.verify(b"exact fixture operation", signature)
-    assert sign_timeouts == [150]
+    assert sign_timeouts == [budget["helper_seconds"] + budget["client_reserve_seconds"]]
     assert broker.signs == 1 and len(broker.requests) == 1
+
+
+def test_visible_consent_has_two_minutes_and_outer_wait_covers_it(native_capabilities):
+    # Read the capability from the actual compiled helper, rather than a mock
+    # document: the former 20-second window must fail this regression check.
+    budget = native_capabilities["signing_budget"]
+    assert budget["consent_seconds"] == 120
+    assert budget["presentation_seconds"] == 5
+    assert budget["biometric_seconds"] == 60
+    assert budget["helper_seconds"] == 240
+    assert budget["helper_seconds"] + budget["client_reserve_seconds"] == 250
 
 
 @pytest.mark.parametrize(("field", "value"), [
