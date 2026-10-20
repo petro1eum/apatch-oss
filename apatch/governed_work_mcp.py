@@ -261,12 +261,17 @@ def _publication_documents(
     evidence_dir = root / "evidence"
     if evidence_dir.is_dir():
         for path in sorted(evidence_dir.glob("*.json")):
+            candidate = G._read_document(path)
+            # A workspace retains receipts from earlier accounts and tasks.
+            # Select this binding before checking its current actor signature;
+            # unrelated historical signers cannot invalidate this selection.
+            if candidate.get("project_source_binding_id") != binding_id:
+                continue
             bundle = G.validate_work_evidence_bundle(
-                G._read_document(path),
+                candidate,
                 trusted_actor_keys=trusted,
             )
-            if bundle["project_source_binding_id"] == binding_id:
-                matches.append(bundle)
+            matches.append(bundle)
     if len(matches) != 1:
         raise G.GovernedWorkError(
             "exactly one current evidence bundle is required for the binding"
@@ -802,12 +807,14 @@ def _publication_documents_for_plan(
     evidence_dir = root / "evidence"
     if evidence_dir.is_dir():
         for path in sorted(evidence_dir.glob("*.json")):
+            candidate = G._read_document(path)
+            if candidate.get("bundle_id") != bundle_id:
+                continue
             bundle = G.validate_work_evidence_bundle(
-                G._read_document(path),
+                candidate,
                 trusted_actor_keys=trusted,
             )
-            if bundle["bundle_id"] == bundle_id:
-                matches.append(bundle)
+            matches.append(bundle)
     if len(matches) != 1:
         raise G.GovernedWorkError(
             "share plan must reference exactly one current evidence bundle"
