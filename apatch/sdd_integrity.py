@@ -13,7 +13,13 @@ import json
 import os
 import re
 import secrets
+import shlex
 import subprocess
+import stat
+import tempfile
+import time
+import xml.etree.ElementTree as ET
+from apatch.task_budget import TaskBudget, TaskBudgetError
 import shutil
 import signal
 import sys
@@ -593,6 +599,8 @@ def admit_effect(capability: Mapping[str, Any], effect: Mapping[str, Any]) -> Di
     if effect.get("plan_match") is False:
         reasons.append("plan_mismatch")
     paths = _paths_for_effect(effect)
+    if any(_path_matches(path, ".apatch/task_budgets/**") for path in paths):
+        reasons.append("task_budget_control_state")
     forbidden = list(envelope.get("forbidden_paths") or []) + list(
         capability.get("judge_patterns") or []
     )
@@ -770,6 +778,13 @@ def admit_session_effect(target_dir: str, effect: Mapping[str, Any]) -> Dict[str
     if decision["decision"] != "allowed":
         _record_denial(target_dir, raw, decision)
         raise SddAdmissionError(decision)
+    try:
+        decision["budget"] = TaskBudget(target_dir, sdd["capability"]["envelope"]).check()
+    except TaskBudgetError as exc:
+        decision = _denial(sdd.get("capability") or {}, [exc.reason])
+        decision.update(exc.to_dict())
+        _record_denial(target_dir, raw, decision)
+        raise SddAdmissionError(decision) from exc
     return decision
 
 
@@ -796,6 +811,13 @@ def evaluate_verification(
         reasons.append("all_skipped")
     if failed != 0 or int(result.get("passed") or 0) != executed:
         reasons.append("not_green")
+    if result.get("command_failures") and "not_green" not in reasons:
+        reasons.append("not_green")
+    if result.get("content_snapshot_valid") is False:
+        reasons.append("verification_content_unavailable")
+    if skipped:
+        reasons.append("skipped_required_tests")
+    reasons.extend(str(code) for code in result.get("report_errors") or [])
     if bool(result.get("asset_drift")):
         reasons.append("asset_drift")
     if bool(result.get("tautological")):
@@ -872,6 +894,185 @@ def _workspace_file(target_dir: str, value: Any, label: str) -> tuple[str, Path]
     except ValueError as exc:
         raise SddContractError(f"{label} resolves outside the workspace") from exc
     return relative, candidate
+
+
+def _is_pytest_argv(command: Sequence[str]) -> bool:
+    if not command:
+        return False
+    if Path(command[0]).name == "env" and len(command) > 2 and command[1] in {"-i", "--ignore-environment"}:
+        offset = 2
+        while offset < len(command) and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*=.*", command[offset], re.S):
+            offset += 1
+        return _is_pytest_argv(command[offset:])
+    executable = Path(command[0]).name.lower()
+    if executable in ("pytest", "py.test", "pytest.exe", "py.test.exe"):
+        return True
+    if not re.fullmatch(r"(?:python|pypy)[\d.]*(?:\.exe)?", executable):
+        return False
+    for index, argument in enumerate(command[1:], 1):
+        if argument in ("-c", "--"):
+            return False
+        if argument == "-m":
+            return index + 1 < len(command) and command[index + 1] == "pytest"
+    return False
+
+
+def _read_pytest_report(path: Path, run_id: str) -> Dict[str, Any]:
+    """Read this run's JUnit facts, never a success-looking stdout summary.
+
+    Only hashes of case identities leave the verifier: parameterized names and
+    report output can contain private data. The argv and frozen judge stay exact.
+    """
+    if path.stat().st_size > 8 * 1024 * 1024:
+        raise ValueError("test report exceeds its bound")
+    payload = path.read_bytes()
+    root = ET.fromstring(payload)
+    suites = list(root.iter("testsuite"))
+    if len(suites) != 1 or suites[0].get("name") != run_id:
+        raise ValueError("not this run's test report")
+    suite = suites[0]
+    cases: List[Dict[str, str]] = []
+    observed = {"passed": 0, "failed": 0, "error": 0, "skipped": 0}
+    identities: Set[str] = set()
+    for case in suite.findall("testcase"):
+        name = case.get("name")
+        if not name:
+            raise ValueError("missing test case identity")
+        case_id = canonical_hash({"classname": case.get("classname", ""), "name": name})
+        if case_id in identities:
+            raise ValueError("duplicate test case identity")
+        identities.add(case_id)
+        outcomes = [tag for tag in ("failure", "error", "skipped") if case.find(tag) is not None]
+        if len(outcomes) > 1:
+            raise ValueError("ambiguous test case outcome")
+        outcome = {"failure": "failed"}.get(outcomes[0], outcomes[0]) if outcomes else "passed"
+        observed[outcome] += 1
+        cases.append({"case_id": case_id, "outcome": outcome})
+    declared = {field: int(suite.attrib[field]) for field in ("tests", "failures", "errors", "skipped")}
+    if declared != {"tests": len(cases), "failures": observed["failed"],
+                    "errors": observed["error"], "skipped": observed["skipped"]}:
+        raise ValueError("test report counts disagree with cases")
+    return {
+        "format": "pytest-junit",
+        "report_hash": _sha256_bytes(payload),
+        "collected": len(cases),
+        "executed": len(cases) - observed["skipped"],
+        "passed": observed["passed"],
+        "failed": observed["failed"] + observed["error"],
+        "errors": observed["error"],
+        "skipped": observed["skipped"],
+        "cases": cases,
+    }
+
+
+def _verification_content_snapshot(
+    target_dir: str,
+    contract: Mapping[str, Any],
+    envelope: Mapping[str, Any],
+    obligations: Sequence[Mapping[str, Any]],
+) -> Dict[str, Any]:
+    """Pin declared workspace inputs by content, independently of Git status.
+
+    The full manifest stays in local session state; evidence carries its hash.
+    Runtime journals and generated caches are excluded from directory walks;
+    an explicitly named file is still included. External/undeclared dependencies
+    are outside this snapshot, and symlinks cannot silently escape its scope.
+    """
+    import platform
+    import sys
+
+    root = Path(target_dir).resolve(strict=True)
+    patterns = set(envelope.get("allowed_reads") or []) | set(envelope.get("allowed_writes") or [])
+    for obligation in obligations:
+        patterns.update(asset["path"] for asset in obligation.get("judge_assets") or [])
+        target = (obligation.get("falsification") or {}).get("target_path")
+        if target:
+            patterns.add(target)
+    patterns = {_safe_pattern(pattern, "verification input") for pattern in patterns}
+    roots: Set[Path] = set()
+    for pattern in patterns:
+        prefix: List[str] = []
+        for part in Path(pattern).parts:
+            if any(character in part for character in "*?["):
+                break
+            prefix.append(part)
+        roots.add(root.joinpath(*prefix))
+    transient = {".git", ".apatch", ".trustchain", "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache"}
+    selected: Set[Path] = set()
+    walked: List[Path] = []
+
+    def select(path: Path) -> None:
+        relative = path.relative_to(root).as_posix()
+        if any(_path_matches(relative, pattern) for pattern in patterns):
+            selected.add(path)
+
+    def walk_error(error: OSError) -> None:
+        raise error
+
+    for base in sorted(roots):
+        if any(base == parent or parent in base.parents for parent in walked):
+            continue
+        # Reject symlinks in the selected root or any of its ancestry.
+        if any(path.is_symlink() for path in (base, *base.parents) if path == root or root in path.parents):
+            raise SddContractError("verification content snapshot cannot follow symlinks")
+        if base.is_dir():
+            walked.append(base)
+            for folder, dirs, names in os.walk(base, followlinks=False, onerror=walk_error):
+                dirs[:] = sorted(name for name in dirs if name not in transient)
+                if any((Path(folder) / name).is_symlink() for name in dirs):
+                    raise SddContractError("verification content snapshot cannot follow symlinks")
+                for name in names:
+                    select(Path(folder) / name)
+        elif base.exists():
+            select(base)
+
+    files: Dict[str, Any] = {}
+
+    def file_identity(info: os.stat_result) -> tuple:
+        return (info.st_dev, info.st_ino, info.st_mode, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
+
+    for path in sorted(selected):
+        if path.is_symlink():
+            raise SddContractError("verification content snapshot cannot follow symlinks")
+        flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+        with os.fdopen(os.open(path, flags), "rb") as stream:
+            before = os.fstat(stream.fileno())
+            if not stat.S_ISREG(before.st_mode):
+                raise SddContractError("verification input must be a regular file")
+            digest = hashlib.file_digest(stream, "sha256").hexdigest() if hasattr(hashlib, "file_digest") else None
+            if digest is None:  # Python 3.10
+                hasher = hashlib.sha256()
+                for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                    hasher.update(chunk)
+                digest = hasher.hexdigest()
+            if (file_identity(before) != file_identity(os.fstat(stream.fileno()))
+                    or file_identity(before) != file_identity(path.stat())):
+                raise SddContractError("verification content changed while taking snapshot")
+        files[path.relative_to(root).as_posix()] = {
+            "sha256": "sha256:" + digest, "mode": stat.S_IMODE(before.st_mode),
+        }
+    if not files:
+        raise SddContractError("verification content snapshot has no input files")
+    environment = contract.get("judge_environment") or {}
+    if not isinstance(environment, Mapping) or not isinstance(environment.get("env") or {}, Mapping):
+        raise SddContractError("verification content snapshot requires a valid judge environment")
+    names = {"PATH", "PYTHONPATH", "PYTHONHOME", "VIRTUAL_ENV", "PYTEST_ADDOPTS", "PYTEST_PLUGINS"}
+    names.update((environment.get("env") or {}).keys())
+    if not all(isinstance(name, str) for name in names):
+        raise SddContractError("verification environment names must be strings")
+    return _seal({
+        "schema": "apatch.sdd.verification-content.v1",
+        "contract_hash": contract.get("document_hash"),
+        "envelope_hash": envelope.get("document_hash"),
+        "scope": sorted(patterns),
+        "files": files,
+        "environment_hash": canonical_hash({
+            "python": platform.python_version(), "implementation": platform.python_implementation(),
+            "platform": sys.platform, "executable": sys.executable,
+            "env": {name: os.environ.get(name) for name in sorted(names)},
+        }),
+    })
+
 
 
 def _persist_verifier_diagnostic(target_dir: str, payload: bytes) -> Dict[str, Any]:
@@ -965,55 +1166,102 @@ def _run_frozen_argv(
     target_dir: str,
     command: Sequence[str],
     *,
-    timeout: int,
+    timeout: float,
+    budget: TaskBudget | None = None,
+    deadline: float | None = None,
 ) -> Dict[str, Any]:
     """Run one authority-frozen argv without exposing its output."""
 
     try:
-        policy = _VERIFIER_SANDBOX.get()
-        if policy and sys.platform == "linux":
-            bound = json.loads(Path(policy).read_text(encoding="utf-8"))
-            workspace = str(Path(target_dir).resolve())
-            if bound.get("backend") != "landlock-seccomp" or bound.get("workspace") != workspace:
-                raise SddContractError("isolated verifier Linux policy binding mismatch")
-            launcher = Path(__file__).with_name("linux_verifier.py")
-            prefix = [sys.executable, "-I", "-B", str(launcher), workspace, "--"]
-        else:
-            prefix = ["/usr/bin/sandbox-exec", "-f", str(policy)] if policy else []
-        argv = prefix + list(command)
-        process = subprocess.Popen(
-            argv, cwd=target_dir, shell=False, stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            start_new_session=(os.name == "posix"), close_fds=True,
-        )
-        try:
-            stdout, stderr = process.communicate(timeout=max(1, int(timeout)))
-        except subprocess.TimeoutExpired:
-            if os.name == "posix":
-                try:
-                    os.killpg(process.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
+        if budget is not None:
+            timeout = min(timeout, budget.remaining())
+        if deadline is not None:
+            timeout = min(timeout, deadline - time.monotonic())
+        if timeout <= 0:
+            raise TaskBudgetError("verifier_runtime_cap_exhausted")
+        # The report is an observation output inside the existing isolated
+        # verifier workspace, so the OS write restriction remains intact.
+        with tempfile.TemporaryDirectory(prefix=".apatch-sdd-report-", dir=target_dir if _VERIFIER_SANDBOX.get() else None) as report_dir:
+            report_path = Path(report_dir) / "tests.xml"
+            run_id = "apatch_sdd_" + secrets.token_hex(16)
+            env = os.environ.copy()
+            env["PYTHONDONTWRITEBYTECODE"] = "1"
+            observed_command = list(command)
+            if _is_pytest_argv(command):
+                clean_env = Path(command[0]).name == "env"
+                offset, frozen_env = 2, {}
+                if clean_env:
+                    while offset < len(command) and "=" in command[offset]:
+                        key, value = command[offset].split("=", 1)
+                        frozen_env[key] = value
+                        offset += 1
+                env["PYTEST_ADDOPTS"] = " ".join(filter(None, (
+                    (frozen_env if clean_env else env).get("PYTEST_ADDOPTS", ""),
+                    "--junitxml=" + shlex.quote(str(report_path)),
+                    "-o junit_suite_name=" + run_id,
+                )))
+                if clean_env:
+                    observed_command[offset:offset] = [
+                        "PYTHONDONTWRITEBYTECODE=1", "PYTEST_ADDOPTS=" + env["PYTEST_ADDOPTS"],
+                    ]
+            policy = _VERIFIER_SANDBOX.get()
+            if policy and sys.platform == "linux":
+                bound = json.loads(Path(policy).read_text(encoding="utf-8"))
+                workspace = str(Path(target_dir).resolve())
+                if bound.get("backend") != "landlock-seccomp" or bound.get("workspace") != workspace:
+                    raise SddContractError("isolated verifier Linux policy binding mismatch")
+                launcher = Path(__file__).with_name("linux_verifier.py")
+                prefix = [sys.executable, "-I", "-B", str(launcher), workspace, "--"]
             else:
-                process.kill()
-            stdout, stderr = process.communicate(timeout=2)
-            raise subprocess.TimeoutExpired(argv, timeout, output=stdout, stderr=stderr)
-        finally:
-            # A successful judge must not leave delayed children running either.
-            if os.name == "posix":
-                try:
-                    os.killpg(process.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
-        completed = subprocess.CompletedProcess(argv, process.returncode, stdout, stderr)
-        payload = (completed.stdout or b"") + b"\x00" + (completed.stderr or b"")
-        return {
-            "ok": completed.returncode == 0,
-            "returncode": int(completed.returncode),
-            "output_hash": _sha256_bytes(payload),
-            "output_bytes": len(payload),
-            **_persist_verifier_diagnostic(target_dir, payload),
-        }
+                prefix = ["/usr/bin/sandbox-exec", "-f", str(policy)] if policy else []
+            argv = prefix + observed_command
+            process = subprocess.Popen(
+                argv, cwd=target_dir, env=env, shell=False, stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                start_new_session=(os.name == "posix"), close_fds=True,
+            )
+            try:
+                stdout, stderr = process.communicate(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                if os.name == "posix":
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                else:
+                    process.kill()
+                stdout, stderr = process.communicate(timeout=2)
+                raise subprocess.TimeoutExpired(argv, timeout, output=stdout, stderr=stderr)
+            finally:
+                # A successful judge must not leave delayed children running either.
+                if os.name == "posix":
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+            completed = subprocess.CompletedProcess(argv, process.returncode, stdout, stderr)
+            payload = (completed.stdout or b"") + b"\x00" + (completed.stderr or b"")
+            outcome = {
+                "ok": completed.returncode == 0,
+                "returncode": int(completed.returncode),
+                "output_hash": _sha256_bytes(payload),
+                "output_bytes": len(payload),
+                **_persist_verifier_diagnostic(target_dir, payload),
+            }
+            if budget is not None:
+                budget.check()
+            if deadline is not None and time.monotonic() >= deadline:
+                raise TaskBudgetError("verifier_runtime_cap_exhausted")
+            try:
+                outcome["test_report"] = _read_pytest_report(report_path, run_id)
+            except FileNotFoundError:
+                outcome["test_report_error"] = "test_report_missing"
+            except (OSError, ValueError, KeyError, ET.ParseError):
+                outcome["test_report_error"] = "test_report_invalid"
+            return outcome
+    except TaskBudgetError as exc:
+        return {"ok": False, "returncode": 124, "budget_exhausted": exc.reason,
+                "output_bytes": 0, "output_hash": _sha256_bytes(b"")}
     except subprocess.TimeoutExpired as exc:
         payload = (exc.stdout or b"") + b"\x00" + (exc.stderr or b"")
         return {
@@ -1195,13 +1443,26 @@ def _run_frozen_falsification(
     obligation: Mapping[str, Any],
     *,
     session_id: str,
-    timeout: int,
+    timeout: float,
+    expected_case_ids: Set[str],
+    budget: TaskBudget,
+    deadline: float,
 ) -> Dict[str, Any]:
     falsification = obligation.get("falsification") or {}
     relative, path = _workspace_file(
         target_dir, falsification.get("target_path"), "falsification target_path"
     )
     command = list(obligation.get("command") or [])
+    # Refuse before introducing a mutant when there is no time left.
+    try:
+        budget.remaining()
+        if time.monotonic() >= deadline:
+            raise TaskBudgetError("verifier_runtime_cap_exhausted")
+    except TaskBudgetError as exc:
+        return {"observed_red": False, "restored_green": False,
+                "budget_exhausted": exc.reason,
+                "red_result_hash": canonical_hash(exc.to_dict()),
+                "restored_result_hash": canonical_hash(exc.to_dict())}
     before = path.read_bytes()
     before_mode = path.stat().st_mode
     if path.suffix == ".py":
@@ -1226,11 +1487,13 @@ def _run_frozen_falsification(
         try:
             path.write_bytes(mutant)
             os.chmod(path, before_mode)
-            red = _run_frozen_argv(target_dir, command, timeout=timeout)
+            red = _run_frozen_argv(target_dir, command, timeout=timeout, budget=budget, deadline=deadline)
         finally:
             path.write_bytes(before)
             os.chmod(path, before_mode)
-        restored = _run_frozen_argv(target_dir, command, timeout=timeout)
+        # Byte/mode restoration above is unconditional. A restored GREEN still
+        # needs remaining time; exhaustion cannot grant another test window.
+        restored = _run_frozen_argv(target_dir, command, timeout=timeout, budget=budget, deadline=deadline)
     finally:
         if not owner_had_lease:
             release_path_leases(
@@ -1241,11 +1504,19 @@ def _run_frozen_falsification(
 
     bytes_restored = path.read_bytes() == before
     mode_restored = path.stat().st_mode == before_mode
+    red_report = red.get("test_report") or {}
+    restored_report = restored.get("test_report") or {}
+    restored_ids = {case["case_id"] for case in restored_report.get("cases") or []}
     return {
-        "observed_red": red.get("ok") is False,
-        "restored_green": bool(restored.get("ok") and bytes_restored and mode_restored),
+        "observed_red": red.get("ok") is False and int(red_report.get("failed") or 0) > 0,
+        "restored_green": bool(
+            restored.get("ok") and restored_report.get("executed")
+            and not restored_report.get("failed") and not restored_report.get("skipped")
+            and restored_ids == expected_case_ids and bytes_restored and mode_restored
+        ),
         "red_result_hash": canonical_hash(red),
         "restored_result_hash": canonical_hash(restored),
+        "budget_exhausted": red.get("budget_exhausted") or restored.get("budget_exhausted"),
         "bytes_restored": bytes_restored,
         "mode_restored": mode_restored,
         "restored_result": restored,
@@ -1299,13 +1570,17 @@ def run_frozen_session_verification(
         or capability.get("contract_hash") != contract["document_hash"]
     ):
         raise SddContractError("verifier budget requires the exact bound frozen envelope")
-    signed_seconds = checked_envelope["budgets"]["seconds"]
-    effective_timeout = signed_seconds if signed_seconds > 0 else 300
+    budget = TaskBudget(root, checked_envelope)
+    try:
+        effective_timeout = budget.remaining()
+    except TaskBudgetError as exc:
+        return {**exc.to_dict(), "session_id": session_id}
     if timeout is not None:
         if type(timeout) is not int or timeout <= 0:
             raise SddContractError("runtime timeout must be a positive integer cap")
         effective_timeout = min(effective_timeout, timeout)
     timeout = effective_timeout
+    deadline = time.monotonic() + timeout
     obligations = _selected_frozen_obligations(contract, checked_envelope)
 
     for obligation in obligations:
@@ -1319,18 +1594,27 @@ def run_frozen_session_verification(
                 "session_id": session_id,
             }
 
+    try:
+        content_snapshot = _verification_content_snapshot(root, contract, checked_envelope, obligations)
+    except (OSError, SddContractError):
+        return {
+            "ok": False, "error_type": "SDD_VERIFIER_ADMISSION_FAILED",
+            "error_code": "verification_content_unavailable", "mutation_performed": False,
+            "session_id": session_id,
+        }
     before_inputs = _verification_input_binding(root, checked_envelope, obligations)
     verification_run_id = "sddvr_" + secrets.token_hex(16)
     execution_root, execution_policy = _prepare_verifier_workspace(root, checked_envelope, obligations, verification_run_id)
     execution_inputs = _verification_input_binding(str(execution_root), checked_envelope, obligations)
     sandbox_token = _VERIFIER_SANDBOX.set(str(execution_policy))
+    commands: List[Dict[str, Any]] = []
+    counts = dict.fromkeys(("collected", "executed", "passed", "failed", "skipped"), 0)
+    command_failures = 0
+    report_errors: List[str] = []
     try:
-        commands: List[Dict[str, Any]] = []
-        passed = 0
-        failed = 0
         for obligation in obligations:
             outcome = _run_frozen_argv(
-                str(execution_root), list(obligation.get("command") or []), timeout=timeout
+                str(execution_root), list(obligation.get("command") or []), timeout=timeout, budget=budget, deadline=deadline
             )
             commands.append(
                 {
@@ -1339,20 +1623,36 @@ def run_frozen_session_verification(
                     **outcome,
                 }
             )
-            if outcome.get("ok"):
-                passed += 1
-            else:
-                failed += 1
+            if not outcome.get("ok"):
+                command_failures += 1
+            report = outcome.get("test_report")
+            if not isinstance(report, Mapping):
+                report_errors.append(str(outcome.get("budget_exhausted") or outcome.get("test_report_error") or "test_report_missing"))
+                continue
+            for key in counts:
+                counts[key] += report[key]
+            if "expected_case_ids" in obligation and set(obligation["expected_case_ids"]) != {
+                case["case_id"] for case in report["cases"]
+            }:
+                report_errors.append("test_case_mismatch")
+            if outcome.get("timed_out") or outcome.get("budget_exhausted"):
+                break
 
         material = [item for item in obligations if bool(item.get("material"))]
         falsification_results: List[Dict[str, Any]] = []
-        if failed == 0:
+        if not command_failures and not report_errors and not counts["failed"] and not counts["skipped"] and counts["executed"]:
             for obligation in material:
+                measured = next(item["test_report"] for item in commands
+                                if item["acceptance_id"] == obligation["acceptance_id"])
                 falsification_results.append(
                     _run_frozen_falsification(
-                        str(execution_root), obligation, session_id=session_id, timeout=timeout
+                        str(execution_root), obligation, session_id=session_id, timeout=timeout,
+                        expected_case_ids={case["case_id"] for case in measured["cases"]},
+                        budget=budget, deadline=deadline,
                     )
                 )
+                if falsification_results[-1].get("budget_exhausted"):
+                    break
         observed_red = not material or (
             len(falsification_results) == len(material)
             and all(item.get("observed_red") is True for item in falsification_results)
@@ -1364,9 +1664,13 @@ def run_frozen_session_verification(
 
     finally:
         _VERIFIER_SANDBOX.reset(sandbox_token)
+    try:
+        after_snapshot = _verification_content_snapshot(root, contract, checked_envelope, obligations)
+    except (OSError, SddContractError):
+        after_snapshot = None
     execution_drift = execution_inputs != _verification_input_binding(str(execution_root), checked_envelope, obligations)
     after_inputs = _verification_input_binding(root, checked_envelope, obligations)
-    verifier_mutated = execution_drift or before_inputs != after_inputs
+    verifier_mutated = execution_drift or before_inputs != after_inputs or (after_snapshot is not None and after_snapshot != content_snapshot)
     perspectives = sorted(
         {
             str(perspective)
@@ -1377,20 +1681,29 @@ def run_frozen_session_verification(
     result = {
         "capability_role": "verifier",
         "mutated": verifier_mutated,
-        "collected": len(obligations),
-        "executed": len(commands),
-        "passed": passed,
-        "failed": failed,
-        "skipped": 0,
+        "content_snapshot_valid": after_snapshot is not None,
+        **counts,
+        "command_failures": command_failures,
+        "report_errors": sorted(set(report_errors)),
         "perspectives": perspectives,
+        "perspectives_source": "frozen_contract_declaration",
         "asset_drift": False,
-        "tautological": False,
         "commands": commands,
         "falsification": {
             "observed_red": observed_red,
             "restored_green": restored_green,
         },
     }
+    budget_failure = next((item.get("budget_exhausted") for item in commands + falsification_results
+                           if item.get("budget_exhausted")), None)
+    try:
+        result["budget"] = budget.check()
+        if time.monotonic() >= deadline:
+            raise TaskBudgetError("verifier_runtime_cap_exhausted")
+    except TaskBudgetError as exc:
+        budget_failure = exc.reason
+    if budget_failure:
+        result["report_errors"] = sorted(set(result["report_errors"] + [budget_failure]))
     aggregate = {
         "acceptance_id": "+".join(
             str(item.get("acceptance_id") or "") for item in obligations
@@ -1408,6 +1721,8 @@ def run_frozen_session_verification(
             "obligation_id": aggregate["acceptance_id"],
             "verification_run_id": verification_run_id,
             "input_binding": after_inputs,
+            "session_id": session_id,
+            "content_snapshot_hash": content_snapshot["document_hash"],
             "decision": decision,
             "result": result,
         }
@@ -1425,7 +1740,7 @@ def run_frozen_session_verification(
             "restored_green": restored_green,
             "bytes_restored": all(item.get("bytes_restored") is True for item in falsification_results),
             "mode_restored": all(item.get("mode_restored") is True for item in falsification_results),
-            "restored_result": {"ok": all((item.get("restored_result") or {}).get("ok") is True for item in falsification_results), "checks": [item.get("restored_result") for item in falsification_results]},
+            "restored_result": {"ok": all(item.get("restored_green") is True for item in falsification_results)},
             "result_hashes": result_hashes,
         }
     )
@@ -1433,9 +1748,10 @@ def run_frozen_session_verification(
     updated_sdd.update(
         {
             "verification": verification,
+            "verification_content_snapshot": content_snapshot,
+            "unresolved_incidents": incidents,
             "falsification": falsification,
             "verification_run_id": verification_run_id,
-            "unresolved_incidents": incidents,
         }
     )
     _save_sdd_binding(root, raw, updated_sdd)
@@ -1443,20 +1759,26 @@ def run_frozen_session_verification(
     accepted = decision.get("accepted") is True
     error_code = None
     if not accepted:
-        if verifier_mutated:
+        if after_snapshot is None:
+            error_code = "verification_content_unavailable"
+        elif verifier_mutated:
             error_code = "verifier_mutated_assets"
-        elif failed:
+        elif report_errors:
+            error_code = report_errors[0]
+        elif counts["failed"] or command_failures:
             error_code = "frozen_check_failed"
+        elif counts["skipped"]:
+            error_code = "required_tests_skipped"
         else:
             error_code = "falsification_failed"
     response = {
         "ok": accepted,
         "verification_run_id": verification_run_id,
         "session_id": session_id,
-        "execution_workspace": ".apatch/verification-runs/" + verification_run_id + "/workspace",
-        "unresolved_incidents": incidents,
         "verification": verification,
         "falsification": falsification,
+        "execution_workspace": ".apatch/verification-runs/" + verification_run_id + "/workspace",
+        "unresolved_incidents": incidents,
         "mutation_performed": False,
     }
     if error_code:
@@ -1468,6 +1790,8 @@ def run_frozen_session_verification(
                 "recommended_action": "fix_forward",
             }
         )
+    if budget_failure:
+        response.update(TaskBudgetError(budget_failure).to_dict())
     return response
 
 
@@ -1561,16 +1885,6 @@ def build_session_attestation_evidence(
     decision = verification.get("decision") if isinstance(verification, Mapping) else None
     if not isinstance(decision, Mapping) or decision.get("accepted") is not True:
         raise SddContractError("meaningful verifier result is required before attestation")
-    if verification.get("verification_run_id"):
-        _verify_seal(verification, "session verification")
-        contract = sdd.get("verification_contract") or {}
-        envelope = (sdd.get("capability") or {}).get("envelope") or {}
-        obligations = _selected_frozen_obligations(contract, envelope)
-        expected_inputs = verification.get("input_binding")
-        if not isinstance(expected_inputs, Mapping) or expected_inputs != _verification_input_binding(
-            target_dir, envelope, obligations
-        ):
-            raise SddContractError("frozen verification inputs drifted; run the frozen verifier again")
     falsification = sdd.get("falsification")
     if bool(sdd.get("material_gate_required")) and not (
         isinstance(falsification, Mapping)
@@ -1578,6 +1892,43 @@ def build_session_attestation_evidence(
         and falsification.get("restored_green") is True
     ):
         raise SddContractError("material gate requires observed red and restored green")
+
+    snapshot = sdd.get("verification_content_snapshot")
+    if not isinstance(snapshot, Mapping):
+        raise SddContractError("verification content snapshot is required; rerun frozen verification")
+    _verify_seal(verification, "session verification")
+    _verify_seal(snapshot, "verification content snapshot")
+    if (verification.get("content_snapshot_hash") != snapshot.get("document_hash")
+            or verification.get("session_id") != state.get("session_id")):
+        raise SddContractError("verification content snapshot does not match this GREEN and session")
+    contract = sdd.get("verification_contract")
+    envelope = (sdd.get("capability") or {}).get("envelope")
+    if not isinstance(contract, Mapping) or not isinstance(envelope, Mapping):
+        raise SddContractError("verification content snapshot requires its frozen contract and envelope")
+    _verify_seal(contract, "verification contract")
+    checked_envelope = validate_task_envelope(envelope)
+    if (contract.get("document_hash") != sdd.get("contract_hash")
+            or checked_envelope["contract_hash"] != contract.get("document_hash")
+            or checked_envelope["document_hash"] != sdd.get("envelope_hash")):
+        raise SddContractError("verification content snapshot requires the exact frozen binding")
+    try:
+        TaskBudget(target_dir, checked_envelope).check()
+    except TaskBudgetError as exc:
+        raise SddContractError("task budget blocks attestation: " + exc.reason) from exc
+    try:
+        current_snapshot = _verification_content_snapshot(
+            target_dir, contract, checked_envelope,
+            _selected_frozen_obligations(contract, checked_envelope),
+        )
+    except (OSError, SddContractError) as exc:
+        raise SddContractError("verification content snapshot is unavailable; rerun frozen verification") from exc
+    if current_snapshot != snapshot:
+        raise SddContractError("verification content changed since GREEN; rerun frozen verification")
+
+    if verification.get("input_binding") != _verification_input_binding(
+        target_dir, checked_envelope, _selected_frozen_obligations(contract, checked_envelope)
+    ):
+        raise SddContractError("frozen verification inputs drifted; run the frozen verifier again")
 
     from apatch.traceability import build_traceability_index
 
@@ -1600,16 +1951,6 @@ def build_session_attestation_evidence(
         if item and str(item) not in checkpoint_refs:
             checkpoint_refs.append(str(item))
 
-    import platform
-    import sys
-
-    environment_hash = canonical_hash(
-        {
-            "python": platform.python_version(),
-            "implementation": platform.python_implementation(),
-            "platform": sys.platform,
-        }
-    )
     return build_attestation_evidence(
         contract_hash=str(sdd.get("contract_hash") or ""),
         envelope_hash=str(sdd.get("envelope_hash") or ""),
@@ -1618,7 +1959,7 @@ def build_session_attestation_evidence(
         adherence=adherence,
         verification=verification,
         falsification=falsification or {},
-        environment_hash=environment_hash,
+        environment_hash=snapshot["environment_hash"],
         checkpoint_refs=checkpoint_refs,
         ledger_refs=ledger_refs,
         task_envelope=(sdd.get("capability") or {}).get("envelope"),
