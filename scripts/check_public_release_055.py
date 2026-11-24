@@ -24,6 +24,7 @@ SHIPPED_ONLY = {
     "apatch/sdd_engineering_ownership_handoff.py": "d0ce38dade1d3026e4ab1d2cff2576491bd815bf5f16e4e160e9f0d6f4e7ca98",
 }
 RELEASE_FILES = {
+    "README.pypi.md",
     "scripts/check_public_release_055.py", "scripts/qualify_oss.py",
     "docs/oss-verification-profiles.json", "docs/oss-verification.md",
     "tests/test_public_source_boundary.py", "tests/test_public_stabilization_boundary.py",
@@ -69,7 +70,7 @@ def document(root, source_commit):
     shipped = {p: h for p, h in previous.items() if p.startswith(ROOTS)} | SHIPPED_ONLY
     product, source = tree(root, PRODUCT), tree(root, source_commit)
     require(set(product) <= set(source), "reviewed source file removed")
-    changed = {p for p in source if source[p] != product.get(p)}
+    changed = {p for p in source if p != MANIFEST and source[p] != product.get(p)}
     require(changed <= RELEASE_FILES, "changes outside release tooling: " + str(sorted(changed - RELEASE_FILES)))
     require(MANIFEST in source, "missing baseline")
     source.pop(MANIFEST)
