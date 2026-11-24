@@ -12,7 +12,7 @@ from pathlib import Path
 
 SCHEMA = "apatch.public-source.v6"
 BASE = "d64fbc965d9fe130259cdf434403a696c67d4616"
-PRODUCT = "904b49585227b4df53a12a96dac52ac81812f794"
+PRODUCT = "41f00cb82771a34bcc46730cb79acd046c843f73"
 MANIFEST = "PUBLIC-SOURCE-MANIFEST.json"
 BASE_MANIFEST = "5ab8fa224fd8d3aa990cd15f9af654a98260b9ecfd5563ce5c82e6a329a23ae6"
 WHEEL = "3fcdad914741fac3e2a7ce05998a03ed30831c75a5e8bf530f0e00a980c8a818"
@@ -103,7 +103,7 @@ def document(root, source_commit):
             delta.append(dict(path=name, before_sha256=previous.get(name), after_sha256=digest))
     require(set(shipped) <= runtime and not (set(previous) - set(source)), "missing baseline file")
     require(set(modified) == {"apatch/governed_work_mcp.py", "apatch/mcp/sanitize.py",
-                              "apatch/mcp/server.py", "apatch/sdd_integrity.py"}, "runtime delta")
+                              "apatch/mcp/server.py", "apatch/sdd_integrity.py", "apatch/tool_paths.py"}, "runtime delta")
     require(runtime - set(shipped) == {"apatch/task_budget.py"}, "runtime additions")
     return dict(schema=SCHEMA, version="0.8.55", baseline_commit=BASE,
                 reviewed_source_commit=source_commit, product_commit=PRODUCT,

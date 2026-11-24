@@ -34,10 +34,12 @@ changed run pass: review the change and its evidence first.
 The v6 manifest compares the public 0.8.53 manifest and its actual PyPI
 archives separately. The earlier wheel already shipped the project-admission
 and engineering ownership modules omitted from its Git file list. Against
-that wheel, 279 of 284 runtime files are unchanged; four changed and one
+that wheel, 278 of 284 runtime files are unchanged; five changed and one
 was added. The package also installs the 20 existing consumer templates.
 The reviewed product commit and the exact public release-input commit are
-recorded separately. The v2-v5 validators and Git history remain intact.
+recorded separately. The fifth changed file keeps shell-form SDK self-checks
+on the same Python as the SDK, without modifying consumer tool discovery.
+The v2-v5 validators and Git history remain intact.
 
 Install the candidate Core wheel with the verification extras and a real
 Studio wheel for the two HTTP guard checks. The historical installed-pair
