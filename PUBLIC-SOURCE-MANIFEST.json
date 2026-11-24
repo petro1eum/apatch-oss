@@ -2,8 +2,8 @@
   "schema": "apatch.public-source.v6",
   "version": "0.8.55",
   "baseline_commit": "d64fbc965d9fe130259cdf434403a696c67d4616",
-  "reviewed_source_commit": "5d7aba2c87f4d2150c5d5a5533c4611b5d58c186",
-  "product_commit": "904b49585227b4df53a12a96dac52ac81812f794",
+  "reviewed_source_commit": "b34a3598aedae2dbb61d593693ed7b4132c70b55",
+  "product_commit": "41f00cb82771a34bcc46730cb79acd046c843f73",
   "historical_public_source": {
     "public_commit": "d64fbc965d9fe130259cdf434403a696c67d4616",
     "manifest_sha256": "5ab8fa224fd8d3aa990cd15f9af654a98260b9ecfd5563ce5c82e6a329a23ae6",
@@ -24199,7 +24199,7 @@
   "generated_artifacts_excluded": true,
   "self_excluded": "PUBLIC-SOURCE-MANIFEST.json",
   "runtime_files_total": 284,
-  "runtime_files_unchanged": 279,
+  "runtime_files_unchanged": 278,
   "runtime_files_added": [
     "apatch/task_budget.py"
   ],
@@ -24207,7 +24207,8 @@
     "apatch/governed_work_mcp.py",
     "apatch/mcp/sanitize.py",
     "apatch/mcp/server.py",
-    "apatch/sdd_integrity.py"
+    "apatch/sdd_integrity.py",
+    "apatch/tool_paths.py"
   ],
   "release_delta": [
     {
@@ -24256,6 +24257,11 @@
       "after_sha256": "feae392a3db6ba0635c011d88cc290a034207b15a4188c7173e038de5fc88606"
     },
     {
+      "path": "apatch/tool_paths.py",
+      "before_sha256": "6d03acfd4b6f8d6809b7ab169a4362f7fe632b24f56902e65e4f5132b3833da0",
+      "after_sha256": "27a1af8b199c8a23e7723dcb1220ec40e70b7a12dd664d31a4d3a1991a40d4f9"
+    },
+    {
       "path": "docs/CONTRACT-WIRE-COMPATIBILITY.md",
       "before_sha256": null,
       "after_sha256": "3b9971880b16e8d1c57d0872ce2d1785df9f45de24cd1148dd62befef77a33c5"
@@ -24268,12 +24274,12 @@
     {
       "path": "docs/oss-verification-profiles.json",
       "before_sha256": "0d8f07306fae3b6380daf118392fa948db74bd73e53121f265db1456533f1391",
-      "after_sha256": "4e8d33572ef9ac31a84eaeada68f7fccbc6027421c2780d02f3437dbd54fefe6"
+      "after_sha256": "67073546bc1bb65a84190182f52e36f7558dcb189b2098b22bd40b4bd7003fb5"
     },
     {
       "path": "docs/oss-verification.md",
       "before_sha256": "465e27365710218fea366fb2a9587a57f9d785d70a32b3884cb5f7524d287346",
-      "after_sha256": "f3aecf210944e3dabad3dceeb7cd27828a7c234fb0aaa5a48b48ddd254680ffe"
+      "after_sha256": "8f2d5cf4dde7e62898a07416fca0629727cb6b006b995b92112a693e2ffc5bbd"
     },
     {
       "path": "pyproject.toml",
@@ -24283,7 +24289,7 @@
     {
       "path": "scripts/check_public_release_055.py",
       "before_sha256": null,
-      "after_sha256": "981f40633274057bf7c7987107643c2d77fedd57bdd834620e4e21c31f56f86e"
+      "after_sha256": "e87c0db134924faaa49d629706796b9a568ae98b5d7365cad3566c0310d8c0c5"
     },
     {
       "path": "scripts/qualify_oss.py",
@@ -24344,6 +24350,11 @@
       "path": "tests/test_signing_timeout_budget.py",
       "before_sha256": "da6af1f948f0ae18387e93791f13233dbbccb26c98ad4876ea173ba165545fab",
       "after_sha256": "b584242b90e3d9bc3ec35623067ce954a4ec412df0b4398493300754b2cb6269"
+    },
+    {
+      "path": "tests/test_tool_paths.py",
+      "before_sha256": "fd83d78dbc71ae3c8383f4616e39c8e10b98deb66239d68714b2da4342ab025a",
+      "after_sha256": "65de2b8106197d242cce507eb2edd6590457ac0d3ec8ee01fba4d87391860597"
     }
   ],
   "files": [
@@ -26323,10 +26334,10 @@
     },
     {
       "path": "apatch/tool_paths.py",
-      "sha256": "6d03acfd4b6f8d6809b7ab169a4362f7fe632b24f56902e65e4f5132b3833da0",
-      "bytes": 13939,
+      "sha256": "27a1af8b199c8a23e7723dcb1220ec40e70b7a12dd664d31a4d3a1991a40d4f9",
+      "bytes": 14153,
       "mode": "0o644",
-      "runtime_baseline_unchanged": true
+      "runtime_baseline_unchanged": false
     },
     {
       "path": "apatch/toolchain.py",
@@ -27254,15 +27265,15 @@
     },
     {
       "path": "docs/oss-verification-profiles.json",
-      "sha256": "4e8d33572ef9ac31a84eaeada68f7fccbc6027421c2780d02f3437dbd54fefe6",
+      "sha256": "67073546bc1bb65a84190182f52e36f7558dcb189b2098b22bd40b4bd7003fb5",
       "bytes": 30305,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
     {
       "path": "docs/oss-verification.md",
-      "sha256": "f3aecf210944e3dabad3dceeb7cd27828a7c234fb0aaa5a48b48ddd254680ffe",
-      "bytes": 9219,
+      "sha256": "8f2d5cf4dde7e62898a07416fca0629727cb6b006b995b92112a693e2ffc5bbd",
+      "bytes": 9349,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -28318,8 +28329,8 @@
     },
     {
       "path": "scripts/check_public_release_055.py",
-      "sha256": "981f40633274057bf7c7987107643c2d77fedd57bdd834620e4e21c31f56f86e",
-      "bytes": 6655,
+      "sha256": "e87c0db134924faaa49d629706796b9a568ae98b5d7365cad3566c0310d8c0c5",
+      "bytes": 6679,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -32112,8 +32123,8 @@
     },
     {
       "path": "tests/test_tool_paths.py",
-      "sha256": "fd83d78dbc71ae3c8383f4616e39c8e10b98deb66239d68714b2da4342ab025a",
-      "bytes": 5174,
+      "sha256": "65de2b8106197d242cce507eb2edd6590457ac0d3ec8ee01fba4d87391860597",
+      "bytes": 6043,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
