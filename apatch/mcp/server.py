@@ -308,6 +308,7 @@ PARAM_DOCS: Dict[str, str] = {
     # Apply session / chunking
     "chunk_max_files": "Max files per apply chunk (default 5).",
     "verify_deferred": "Defer verify until the whole session completes.",
+    "defer_verify": "Do not run the requirement check during apply; run the bound check at finalize.",
     "reset": "Reset/discard the in-progress apply session.",
     "abort": "Abort the current apply session and roll back.",
     "session_path": "Path to the apply-session state file.",
@@ -318,6 +319,7 @@ PARAM_DOCS: Dict[str, str] = {
     "requirement_ids": "Optional exact Rk ids to include; accepts bare R6 or SPEC-X#R6.",
     "exclude_requirement_ids": "Optional exact Rk ids to leave stale even when included by the broader filter.",
     # Verify / trustchain / attestation
+    "project_admission": "Include the project's MCP config and passport hook in the signed policy manifest.",
     "verify": (
         "Verify command: shell string ('pytest tests/') or argv list "
         "(['pytest', '-k', 'not slow'] — no shell quoting pitfalls)."
