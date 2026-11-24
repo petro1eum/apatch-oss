@@ -150,10 +150,19 @@ facts, three views ([RFP-020](https://github.com/petro1eum/apatch-oss/blob/main/
 
 ### Installation options
 
+For the terminal or an MCP-capable editor, install the
+[published Core](https://pypi.org/project/apatch/) in a virtual environment:
+
 ```bash
 python -m pip install apatch         # Local CLI, patch engine and TrustChain evidence
 python -m pip install "apatch[mcp]"  # Add the MCP interface for AI agents
 ```
+
+For a local browser workspace, install
+[APatch Studio OSS](https://pypi.org/project/apatch-studio/) instead in its own
+Python 3.11+ environment. Studio installs a compatible Core automatically. See
+the [Studio quick start](https://github.com/petro1eum/apatch-studio-oss#install).
+Each package has its own version; a change on `main` is not a PyPI release.
 
 Additional extras: `yaml` for YAML manifests, `languages` for Java/C#/Ruby/PHP
 grammars, `platform` for the optional Platform transport, and `dev` for source
@@ -301,7 +310,7 @@ checked documentation box is not a substitute for requirement-level evidence.
 with the same license text as TrustChain OSS. The license is included in both
 the wheel and source distribution.
 
-APatch Studio is one market-facing product with two planned editions: APatch Studio OSS and APatch Studio Pro.
+APatch Studio has two editions: APatch Studio OSS and APatch Studio Pro.
 
 This package contains the APatch OSS CLI/MCP runtime and the bundled MIT Avatar
 contract. It does not bundle Pro implementations or managed services. APatch Studio
