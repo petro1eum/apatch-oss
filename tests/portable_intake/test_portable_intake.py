@@ -217,14 +217,25 @@ def test_public_studio_keeps_native_intake_route_inside_security_guard(consumer,
     assert fixtures.snapshot(f.root) == before and signed_rows(f) == []
 
 
-def test_installed_pair_and_resource_paths_are_exact_not_a_source_checkout():
-    from importlib.metadata import version
-    import apatch
-    import apatch_studio
-    assert version("apatch") == "0.8.51"
-    assert version("apatch-studio") == "0.1.6"
-    for module in (apatch, apatch_studio):
-        path = Path(module.__file__).resolve()
-        assert path.is_relative_to(Path(sys.prefix).resolve())
-        assert "site-packages" in path.parts
-    fixtures.api()
+def test_installed_pair_and_resource_paths_are_exact_not_a_source_checkout(tmp_path):
+    """Run the byte-exact historical judge with its two actual, hash-pinned wheels."""
+    import venv
+
+    root = Path(__file__).resolve().parents[2]
+    commit = "d64fbc965d9fe130259cdf434403a696c67d4616"
+    for name in ("test_portable_intake.py", "native_intake_fixture.py", "helper-pins.json"):
+        data = subprocess.check_output(
+            ["git", "--no-replace-objects", "show", f"{commit}:tests/portable_intake/{name}"], cwd=root)
+        (tmp_path / name).write_bytes(data)
+    venv.EnvBuilder(with_pip=True).create(tmp_path / "historical")
+    python = tmp_path / "historical" / "bin" / "python"
+    urls = [
+        "https://files.pythonhosted.org/packages/d8/a4/6a8cd595db8d1c5bd008e04e04e5ba57317ffb76b1c6982ecea958dd2250/apatch-0.8.51-py3-none-any.whl#sha256=08c60467e5463641120238c3bc35a974a39ee56d1e603f8b8ed37a7ad10db9aa",
+        "https://files.pythonhosted.org/packages/05/ad/864a575414c67c7c79c08097308703b17909a15e840a11edd190daaea135/apatch_studio-0.1.6-py3-none-any.whl#sha256=202ae512ffcaa05ed4bb15a94642ff3ca9ea963f7f0d2fadc02fa60a94fa42f8",
+    ]
+    subprocess.run([str(python), "-I", "-m", "pip", "--isolated", "install",
+                    "--index-url", "https://pypi.org/simple", *urls, "pytest>=8,<10"],
+                   cwd=tmp_path, check=True, timeout=240)
+    subprocess.run([str(python), "-I", "-m", "pytest", "-q", "--import-mode=importlib",
+                    "test_portable_intake.py::test_installed_pair_and_resource_paths_are_exact_not_a_source_checkout"],
+                   cwd=tmp_path, check=True, timeout=60)

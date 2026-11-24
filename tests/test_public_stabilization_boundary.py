@@ -2,7 +2,10 @@
 import ast,copy,hashlib,json,shutil
 from pathlib import Path
 import pytest
-if json.loads((Path(__file__).resolve().parents[1]/'PUBLIC-SOURCE-MANIFEST.json').read_text())['schema']=='apatch.public-source.v5':
+schema=json.loads((Path(__file__).resolve().parents[1]/'PUBLIC-SOURCE-MANIFEST.json').read_text())['schema']
+if schema=='apatch.public-source.v6':
+ from scripts.check_public_release_055 import validate
+elif schema=='apatch.public-source.v5':
  from scripts.check_public_stabilization_v5 import validate,EXPECTED_RUNTIME
 else:
  from scripts.check_public_stabilization import validate,EXPECTED_RUNTIME

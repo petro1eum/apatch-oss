@@ -312,6 +312,9 @@ Third-party assets and user extensions retain their respective licenses.
 Publishing or exporting work evidence does not transfer ownership of source,
 private data or professional work, and does not grant external training rights.
 
-## Studio service compatibility 0.8.54
+## Core 0.8.55 and Studio compatibility
 
-This maintenance source adds the shared v1 native snapshot reader and strict wire validation needed by the installed Studio 0.1.7 service. It preserves the released 0.8.53 verifier runner and signing implementation. It does not incorporate the separate uncommitted CDD-G01/G02/G05 verifier and budget work. The historical 0.8.53 public-source manifest remains baseline evidence, not a 0.8.54 publication receipt; this branch does not claim a PyPI upload. The shared wire corpus passed 47 cases.
+Core 0.8.55 includes the shared v1 contract reader used by Studio 0.1.7.
+It checks actual test results, binds verification to the selected evidence and
+file contents, and carries the task budget across retries and process restarts.
+Installing Core does not start Studio or change an existing workspace.

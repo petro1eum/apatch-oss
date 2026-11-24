@@ -6,6 +6,17 @@
 
 ## [Unreleased]
 
+## [0.8.55] (source candidate)
+
+- Bind verifier results to the selected evidence and its source content.
+- Persist the task budget so resumed work accounts for earlier operations.
+- This is a source version, not a claim that these archives are available on PyPI.
+
+## [0.8.54] (source compatibility change)
+
+- Read and validate the shared v1 contract snapshot used by Studio 0.1.7.
+  The verifier and signing implementation from 0.8.53 are unchanged in this change.
+
 ## [0.8.53] — 2026-10-19
 
 ### Fixed

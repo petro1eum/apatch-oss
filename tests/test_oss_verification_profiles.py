@@ -65,7 +65,8 @@ def test_inventory_is_exact_and_hash_bound(tmp_path, change):
     schema = json.loads((ROOT / "PUBLIC-SOURCE-MANIFEST.json").read_text())["schema"]
     assert len(inv['runtime_files']) == {"apatch.public-source.v2": 266,
                                        "apatch.public-source.v3": 269,
-                                       "apatch.public-source.v4": 280, "apatch.public-source.v5": 281}[schema]
+                                       "apatch.public-source.v4": 280, "apatch.public-source.v5": 281,
+                                       "apatch.public-source.v6": 284}[schema]
     assert len(inv['source_files']) == 2
     assert [row['dependency'] for row in inv['existing_optional_skips']] == ['tree_sitter_java']
     source = source_fixture(tmp_path, inv)
@@ -818,8 +819,25 @@ def test_intake_source_inventory_matches_every_declared_runtime_byte():
     schema = json.loads((ROOT / "PUBLIC-SOURCE-MANIFEST.json").read_text())["schema"]
     assert result["pinned_runtime_files"] == {"apatch.public-source.v2": 266,
                                               "apatch.public-source.v3": 269,
-                                              "apatch.public-source.v4": 280, "apatch.public-source.v5": 281}[schema]
+                                              "apatch.public-source.v4": 280, "apatch.public-source.v5": 281,
+                                              "apatch.public-source.v6": 284}[schema]
     assert result["profile_passed"] is False and result["release_authorized"] is False
+
+
+@pytest.mark.parametrize("fault", ["unrelated_file", "symlink", "wrong_bytes"])
+def test_native_signer_fixture_does_not_expose_a_checkout(tmp_path, fault):
+    q = qualifier()
+    mac = tmp_path / "local" / "secrets-console" / "macos"
+    mac.mkdir(parents=True)
+    for name in ("BrokerSigningBudget.swift", "BrokerSignerMain.swift"):
+        (mac / name).write_bytes(b"not a reviewed native input")
+    if fault == "unrelated_file":
+        (tmp_path / "unrelated").touch()
+    elif fault == "symlink":
+        (mac / "BrokerSigningBudget.swift").unlink()
+        (mac / "BrokerSigningBudget.swift").symlink_to(mac / "BrokerSignerMain.swift")
+    with pytest.raises(q.InventoryError):
+        q.native_signer_fixture(str(tmp_path))
 
 def test_canonical_peer_without_public_manifest_keeps_unfiltered_legacy_run(tmp_path):
     q = qualifier()

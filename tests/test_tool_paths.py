@@ -2,6 +2,7 @@
 
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -145,3 +146,19 @@ def test_independent_consumer_workspace_keeps_its_own_interpreter(tmp_path, monk
     actual = resolve_executable("python3", workspace=str(tmp_path))
     assert actual == str(chosen)
     assert actual != sys.executable
+
+
+def test_self_conformance_shell_uses_its_host_while_consumer_keeps_its_python(tmp_path, monkeypatch):
+    other = tmp_path / "tools"
+    other.mkdir()
+    python = other / "python3"
+    python.write_text("#!/bin/sh\nprintf '%s\\n' consumer\n")
+    python.chmod(0o755)
+    monkeypatch.setattr(runtime_tool_paths, "build_path_prefix", lambda _workspace: [str(other)])
+    monkeypatch.setattr(runtime_tool_paths, "TOOL_NAMES", ())
+    sdk = Path(runtime_tool_paths.__file__).resolve().parents[1]
+    for workspace, expected in [(sdk, sys.prefix), (tmp_path, "consumer")]:
+        env = build_subprocess_env(str(workspace), {"PATH": os.defpath})
+        out = subprocess.check_output(["python3", "-I", "-c", "import sys;print(sys.prefix)"],
+                                      cwd=workspace, env=env, text=True)
+        assert out.strip() == expected
