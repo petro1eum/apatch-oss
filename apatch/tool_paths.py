@@ -293,6 +293,9 @@ def build_subprocess_env(
         path = resolve_executable(name, workspace=workspace)
         if path:
             prefix.insert(0, os.path.dirname(path))
+    # Shell-form SPEC commands must use the same interpreter as argv-form checks.
+    if Path(workspace).resolve() == Path(__file__).resolve().parents[1]:
+        prefix.insert(0, str(Path(sys.executable).parent))
     prefix = _unique_dirs(prefix)
     existing = env.get("PATH", "")
     env["PATH"] = os.pathsep.join(prefix + ([existing] if existing else []))
