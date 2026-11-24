@@ -2,7 +2,7 @@
   "schema": "apatch.public-source.v6",
   "version": "0.8.55",
   "baseline_commit": "d64fbc965d9fe130259cdf434403a696c67d4616",
-  "reviewed_source_commit": "5ce32d170714b82e4224942d59dc27cedd764fe0",
+  "reviewed_source_commit": "5d7aba2c87f4d2150c5d5a5533c4611b5d58c186",
   "product_commit": "904b49585227b4df53a12a96dac52ac81812f794",
   "historical_public_source": {
     "public_commit": "d64fbc965d9fe130259cdf434403a696c67d4616",
@@ -24218,7 +24218,7 @@
     {
       "path": "README.pypi.md",
       "before_sha256": "463f824ddc205cfd5c8934be3002def6430f6c94c3fc111bdd16ff3201cce712",
-      "after_sha256": "eb4d2f551e5634daa924cedf4c80cf14cc4a6f814e3dcb46b9614dbe46cc039d"
+      "after_sha256": "c5dde194decb03fbe7585b5f3c7b2c3b20f54ab85ba12b5e93e9d9b33a4e32e2"
     },
     {
       "path": "apatch/governed_work_mcp.py",
@@ -24283,7 +24283,7 @@
     {
       "path": "scripts/check_public_release_055.py",
       "before_sha256": null,
-      "after_sha256": "d817850c41db75532defce120500a4c7a4184a84dee9d7bb6da739ddbfc02433"
+      "after_sha256": "981f40633274057bf7c7987107643c2d77fedd57bdd834620e4e21c31f56f86e"
     },
     {
       "path": "scripts/qualify_oss.py",
@@ -24496,8 +24496,8 @@
     },
     {
       "path": "README.pypi.md",
-      "sha256": "eb4d2f551e5634daa924cedf4c80cf14cc4a6f814e3dcb46b9614dbe46cc039d",
-      "bytes": 18365,
+      "sha256": "c5dde194decb03fbe7585b5f3c7b2c3b20f54ab85ba12b5e93e9d9b33a4e32e2",
+      "bytes": 18174,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
@@ -28318,8 +28318,8 @@
     },
     {
       "path": "scripts/check_public_release_055.py",
-      "sha256": "d817850c41db75532defce120500a4c7a4184a84dee9d7bb6da739ddbfc02433",
-      "bytes": 6615,
+      "sha256": "981f40633274057bf7c7987107643c2d77fedd57bdd834620e4e21c31f56f86e",
+      "bytes": 6655,
       "mode": "0o644",
       "runtime_baseline_unchanged": false
     },
