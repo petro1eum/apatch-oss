@@ -301,12 +301,20 @@ def public_files(source):
 # available from the public OSS repository, never the local repository's object
 # directory, configuration, workspaces, keys, hooks or private/dangling refs.
 PUBLIC_SOURCE_REPOSITORY = "https://github.com/petro1eum/apatch-oss.git"
+PUBLIC_INSTALLED_SCHEMAS = {"apatch.public-source.v" + str(i) for i in (3, 4, 5, 6)}
 
 
 def _snapshot_public_provenance(source, destination):
     manifest = read_json(source / "PUBLIC-SOURCE-MANIFEST.json")
-    if manifest.get("schema") not in {"apatch.public-source.v3", "apatch.public-source.v4", "apatch.public-source.v5"}:
+    if manifest.get("schema") not in PUBLIC_INSTALLED_SCHEMAS:
         return
+    source_055 = None
+    if manifest["schema"] == "apatch.public-source.v6":
+        source_055 = manifest.get("reviewed_source_commit")
+        if (not isinstance(source_055, str) or not re.fullmatch(r"[0-9a-f]{40}", source_055)
+                or manifest["baseline_commit"] != "d64fbc965d9fe130259cdf434403a696c67d4616"):
+            raise InventoryError("invalid 0.8.55 source provenance")
+        manifest = manifest["historical_public_source"]["manifest"]
     is_stabilization = manifest.get("schema") in {"apatch.public-source.v4", "apatch.public-source.v5"}
     if is_stabilization:
         # Fetch only the already-public baseline; reviewed current bytes remain
@@ -327,7 +335,7 @@ def _snapshot_public_provenance(source, destination):
                           capture_output=True, text=True, timeout=30, env=environment)
     if head.returncode or re.fullmatch(r"[0-9a-f]{40}\n?", head.stdout) is None:
         raise InventoryError("public source checkout has no exact commit")
-    commit = "a06a47d5059029d5016f925af988e1fcf4a981c3" if is_stabilization else head.stdout.strip()
+    commit = source_055 or ("a06a47d5059029d5016f925af988e1fcf4a981c3" if is_stabilization else head.stdout.strip())
     ancestor = subprocess.run(["git", *options, "-C", str(source), "merge-base", "--is-ancestor", anchor, commit],
                               capture_output=True, timeout=30, env=environment)
     if ancestor.returncode:
@@ -414,11 +422,32 @@ def source_unchanged(source, files):
             raise InventoryError("verification modified reviewed source: " + name)
 
 
+def native_signer_fixture(directory):
+    """Only a dedicated two-file export, never the maintainer's Secrets checkout."""
+    root = Path(directory)
+    pins = {
+        "local/secrets-console/macos/BrokerSigningBudget.swift": "dc5e1d8aebb40721598f83452d9d9a01b25de5a108fd644aa2bb43bc693917df",
+        "local/secrets-console/macos/BrokerSignerMain.swift": "668ef18329ed0b0f7a828fa27d415ee8b6b2bab420179d798412c6c0327ab908",
+    }
+    if not root.is_absolute() or root.is_symlink() or not root.is_dir():
+        raise InventoryError("native signer fixture must be an isolated export")
+    members = list(root.rglob("*"))
+    expected = set(pins) | {"local", "local/secrets-console", "local/secrets-console/macos"}
+    if ({p.relative_to(root).as_posix() for p in members} != expected
+            or any(p.is_symlink() for p in members)
+            or any((root / p).stat().st_nlink != 1 or sha256(_read_source(root, p)) != h
+                   for p, h in pins.items())):
+        raise InventoryError("native signer fixture does not match the reviewed input")
+    return str(root.resolve())
+
+
 def verification_environment(work):
     if os.environ.get("PYTEST_ADDOPTS") or os.environ.get("PYTEST_PLUGINS"):
         raise InventoryError("caller-provided pytest options/plugins are not a qualified full run")
     # Keep secrets, service destinations and user workspace registries out of QA.
     env = {key: os.environ[key] for key in ("LANG", "LC_ALL", "TMPDIR", "SYSTEMROOT") if key in os.environ}
+    if fixture := os.environ.get("APATCH_OSS_SIGNER_FIXTURE"):
+        env["SECRETS_SOURCE_ROOT"] = native_signer_fixture(fixture)
     private_home = work / "home"
     private_home.mkdir(exist_ok=True)
     env.update(HOME=str(private_home), USERPROFILE=str(private_home),
@@ -489,7 +518,7 @@ def collect_suite(source, output, *, timeout=1800):
     manifest_path = source / "PUBLIC-SOURCE-MANIFEST.json"
     manifest = read_json(manifest_path) if manifest_path.is_file() else {}
     command = (intake_suite_command(output, plugin)
-               if manifest.get("schema") in {"apatch.public-source.v3", "apatch.public-source.v4", "apatch.public-source.v5"} else suite_command(output))
+               if manifest.get("schema") in PUBLIC_INSTALLED_SCHEMAS else suite_command(output))
     process = run_capture(command, cwd=source, env=env, output=output, label="suite", timeout=timeout)
     if process["timed_out"]:
         raise InventoryError("full suite timed out; raw output retained")

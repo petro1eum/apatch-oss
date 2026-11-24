@@ -29,6 +29,31 @@ changed run pass: review the change and its evidence first.
 
 ## Run from a reviewed public checkout
 
+### Core 0.8.55
+
+The v6 manifest compares the public 0.8.53 manifest and its actual PyPI
+archives separately. The earlier wheel already shipped the project-admission
+and engineering ownership modules omitted from its Git file list. Against
+that wheel, 279 of 284 runtime files are unchanged; four changed and one
+was added. The package also installs the 20 existing consumer templates.
+The reviewed product commit and the exact public release-input commit are
+recorded separately. The v2-v5 validators and Git history remain intact.
+
+Install the candidate Core wheel with the verification extras and a real
+Studio wheel for the two HTTP guard checks. The historical installed-pair
+test runs its original Git judge in a separate environment with the original
+PyPI wheels; it cannot substitute the candidate for either historical package.
+
+The nine native signing compatibility cases introduced after the original
+standalone profile require a real macOS helper. For a release qualification
+set `APATCH_OSS_SIGNER_FIXTURE` to a dedicated, two-file export of the reviewed
+Swift budget and signer sources. The verifier checks both hashes, refuses
+additional or linked files, and gives only this directory to the unchanged
+Swift harness. No app, keychain, account or production signer is invoked and
+the peer is not part of either archive. Without the native input the Core
+tests can still run, but native skips do **not** qualify a release. Linux
+installation and runtime checks are separate from this macOS producer check.
+
 Use a clean POSIX qualification environment, not the running MCP environment.
 Install a wheel built from this exact checkout with its public verification
 dependencies (`dev`, `mcp`, `trustchain`, `yaml`, `platform`; `languages` is optional).
