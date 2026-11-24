@@ -1,7 +1,10 @@
 # APatch Studio, APatch OSS and TrustChain Cowork
 
 This repository supplies the **APatch OSS runtime**, not the Studio UI or the hosted Pro service.
-APatch 0.8.48 is the MIT-licensed OSS release represented by this source tree.
+For the published runtime, use [apatch on PyPI](https://pypi.org/project/apatch/).
+For the local browser interface, use the
+[Studio OSS installation guide](https://github.com/petro1eum/apatch-studio-oss#install).
+The two packages are versioned and released independently.
 
 ## User paths
 

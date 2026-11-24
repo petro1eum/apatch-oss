@@ -1,17 +1,16 @@
 # APatch delivery and integration boundary
 
-Updated for the public OSS 0.8.48 release, 2026-09-26.
 This describes existing delivery boundaries, not a new product strategy or a pricing plan.
 
 | Surface | Role | Included in this repository |
 | --- | --- | --- |
 | APatch OSS runtime | Local governed execution, CLI, full professional MCP API, verification, recovery, evidence and optional integration adapters | Yes |
-| **APatch Studio OSS** | Local user interface and optional client for connected work | Separate delivery |
+| **APatch Studio OSS** | Local user interface and optional client for connected work | No; install the separate [Studio package](https://pypi.org/project/apatch-studio/) |
 | **APatch Studio Pro** | Commitment agreement, execution oversight and acceptance within TrustChain Cowork project context | No hosted Pro implementation |
 | TrustChain Cowork / Platform | Shared projects, people and agents, context and service authority | External service |
 | HC Tracker / Avatar | Optional professional-history, time and evidence integration | APatch-side adapters and the bundled canonical MIT contract; the Avatar/HC service is external |
 
-APatch 0.8.48 is released under MIT from the clean public source snapshot.
+The [Core package](https://pypi.org/project/apatch/) is released under MIT.
 Publishing this runtime does not qualify or release the Studio UI or the hosted Cowork assembly.
 
 ## Shared engineering quality
